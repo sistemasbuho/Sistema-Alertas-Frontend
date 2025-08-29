@@ -73,7 +73,7 @@ export const getToken = (): string | undefined => {
 
 export const setTempToken = () => {
   const tempToken =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2NDUzNzM0LCJpYXQiOjE3NTY0MjEzMzQsImp0aSI6ImQ5ZDgwMGU5MjY3MzQwYWViODQwZmEwZjI1YjFkYmY3IiwidXNlcl9pZCI6IjEifQ.MNQnd4AKo8yMhgJMj11-_dWJ8SqNo2hHgJHEqN42uZo';
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2NTA0OTUwLCJpYXQiOjE3NTY0NzI1NTAsImp0aSI6IjU4NTJiODZiNjQzNjQyNWFhOGI0YjNlZjZkZmU2ZjRkIiwidXNlcl9pZCI6IjEifQ.Eo9BXNqj2D8Yu-j4NFN_OSb9v0JUsTcbzlSnD8Glevo';
   setToken(tempToken);
 };
 
@@ -262,7 +262,6 @@ export const enviarAlertas = async (payload: {
       alertas_enviadas: payload.alertas.length,
     };
 
-    console.log('✅ Alertas enviadas:', mockResponse);
     return mockResponse;
   } catch (error) {
     console.error('❌ Error enviando alertas:', error);

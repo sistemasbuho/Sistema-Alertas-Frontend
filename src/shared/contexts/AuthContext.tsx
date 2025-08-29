@@ -41,14 +41,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && checkAuth();
 
-  console.log('🔍 AuthContext Debug:', {
-    hasUser: !!user,
-    hasToken: checkAuth(),
-    isAuthenticated,
-    isLoading,
-    user: user?.name,
-  });
-
   const login = async (): Promise<void> => {
     try {
       setIsLoading(true);
