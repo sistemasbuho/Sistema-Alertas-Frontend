@@ -4,12 +4,12 @@ import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
 import Input from '@shared/components/ui/Input';
 import SlideOver from '@shared/components/ui/SlideOver';
+import CamposFormatoModal from '@shared/components/ui/CamposFormatoModal';
 import { useToast } from '@shared/contexts/ToastContext';
 import {
   getProyectos,
   createProyecto,
   updateProyecto,
-  setTempToken,
   type Proyecto,
 } from '@shared/services/api';
 import {
@@ -18,6 +18,7 @@ import {
   TrashIcon,
   EyeIcon,
   MagnifyingGlassIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 
 const ProyectoPage: React.FC = () => {
@@ -31,6 +32,10 @@ const ProyectoPage: React.FC = () => {
   const [isEditSlideOverOpen, setIsEditSlideOverOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [editingProyecto, setEditingProyecto] = useState<Proyecto | null>(null);
+
+  const [isFormatoModalOpen, setIsFormatoModalOpen] = useState(false);
+  const [selectedProyectoFormato, setSelectedProyectoFormato] =
+    useState<Proyecto | null>(null);
   const [formData, setFormData] = useState<{
     nombre: string;
     proveedor: string;
@@ -56,8 +61,6 @@ const ProyectoPage: React.FC = () => {
       try {
         setLoading(true);
         setError('');
-
-        setTempToken();
 
         const data = await getProyectos();
         setProyectos(data);
@@ -112,6 +115,16 @@ const ProyectoPage: React.FC = () => {
     setIsEditSlideOverOpen(false);
     setIsUpdating(false);
     setEditingProyecto(null);
+  };
+
+  const handleOpenFormatoModal = (proyecto: Proyecto) => {
+    setSelectedProyectoFormato(proyecto);
+    setIsFormatoModalOpen(true);
+  };
+
+  const handleCloseFormatoModal = () => {
+    setIsFormatoModalOpen(false);
+    setSelectedProyectoFormato(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -526,6 +539,13 @@ const ProyectoPage: React.FC = () => {
                               <EyeIcon className="h-4 w-4" />
                             </button>
                             <button
+                              onClick={() => handleOpenFormatoModal(proyecto)}
+                              className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1"
+                              title="Formato de Campos"
+                            >
+                              <Cog6ToothIcon className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => handleOpenEditSlideOver(proyecto)}
                               className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 p-1"
                               title="Editar"
@@ -876,6 +896,13 @@ const ProyectoPage: React.FC = () => {
             </div>
           </form>
         </SlideOver>
+
+        <CamposFormatoModal
+          isOpen={isFormatoModalOpen}
+          onClose={handleCloseFormatoModal}
+          proyectoId={selectedProyectoFormato?.id || ''}
+          proyectoNombre={selectedProyectoFormato?.nombre || ''}
+        />
       </div>
     </DashboardLayout>
   );

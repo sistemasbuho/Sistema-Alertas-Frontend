@@ -3,8 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
+import AlertModal, { AlertaData } from '@/pages/Alertas/components/AlertModal';
 import { useToast } from '@shared/contexts/ToastContext';
-import { enviarAlertas } from '@shared/services/api';
+import {
+  enviarAlertas,
+  createAlerta,
+  updateAlerta,
+} from '@shared/services/api';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import {
   ArrowLeftIcon,
@@ -12,6 +17,7 @@ import {
   XMarkIcon,
   PlusIcon,
   EyeIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline';
 
 interface AlertaItem {
@@ -22,7 +28,6 @@ interface AlertaItem {
   titulo?: string;
   autor?: string;
   reach?: number;
-  engagement?: number;
   emojis?: string[];
 }
 
@@ -38,6 +43,7 @@ const AlertasPreview: React.FC = () => {
   const { showSuccess, showError } = useToast();
 
   const state = location.state as LocationState;
+
   const [alertas, setAlertas] = useState<AlertaItem[]>(
     state?.selectedItems || []
   );
@@ -48,6 +54,25 @@ const AlertasPreview: React.FC = () => {
   const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>(
     'all'
   );
+  const [selectedAlertIds, setSelectedAlertIds] = useState<string[]>([]);
+
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [editingAlert, setEditingAlert] = useState<AlertaItem | null>(null);
+  const [isAlertLoading, setIsAlertLoading] = useState(false);
+
+  const handleSelectAlert = (id: string) => {
+    setSelectedAlertIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedAlertIds.length === filteredAlertas.length) {
+      setSelectedAlertIds([]);
+    } else {
+      setSelectedAlertIds(filteredAlertas.map((item) => item.id));
+    }
+  };
 
   if (!state || !state.selectedItems.length) {
     return (
@@ -75,6 +100,10 @@ const AlertasPreview: React.FC = () => {
       );
     });
     setFilteredAlertas(filtered);
+
+    setSelectedAlertIds((prev) =>
+      prev.filter((id) => filtered.some((item) => item.id === id))
+    );
   }, [alertas, searchTerm]);
 
   const handleRemoveAlerta = (id: string) => {
@@ -132,13 +161,25 @@ const AlertasPreview: React.FC = () => {
   };
 
   const handleEnviarAlertas = async () => {
+    if (selectedAlertIds.length === 0) {
+      showError(
+        'Sin selección',
+        'Debes seleccionar al menos una alerta para enviar'
+      );
+      return;
+    }
+
     try {
       setIsEnviando(true);
+
+      const selectedAlertas = alertas.filter((item) =>
+        selectedAlertIds.includes(item.id)
+      );
 
       const payload = {
         proyecto_id: state.proyectoId,
         enviar: true,
-        alertas: alertas.map((item) => ({
+        alertas: selectedAlertas.map((item) => ({
           url: item.url,
           contenido:
             item.emojis && item.emojis.length > 0
@@ -153,7 +194,7 @@ const AlertasPreview: React.FC = () => {
 
       showSuccess(
         'Alertas enviadas',
-        `Se han enviado ${alertas.length} alertas correctamente`
+        `Se han enviado ${selectedAlertas.length} alertas correctamente`
       );
 
       navigate('/consulta-datos');
@@ -162,6 +203,92 @@ const AlertasPreview: React.FC = () => {
       showError('Error al enviar', 'No se pudieron enviar las alertas');
     } finally {
       setIsEnviando(false);
+    }
+  };
+
+  const handleOpenAddAlert = () => {
+    setEditingAlert(null);
+    setIsAlertModalOpen(true);
+  };
+
+  const handleEditAlert = (alert: AlertaItem) => {
+    setEditingAlert(alert);
+    setIsAlertModalOpen(true);
+  };
+
+  const handleCloseAlertModal = () => {
+    setIsAlertModalOpen(false);
+    setEditingAlert(null);
+  };
+
+  const handleSaveAlert = async (alertData: AlertaData) => {
+    setIsAlertLoading(true);
+
+    try {
+      if (editingAlert) {
+        await updateAlerta(
+          editingAlert.id,
+          {
+            url: alertData.url,
+            contenido: alertData.contenido,
+            fecha: alertData.fecha,
+            titulo: alertData.titulo,
+            autor: alertData.autor,
+            reach: alertData.reach || 0,
+          },
+          state.tipo,
+          state.proyectoId
+        );
+
+        setAlertas((prev) =>
+          prev.map((alert) =>
+            alert.id === editingAlert.id ? { ...alert, ...alertData } : alert
+          )
+        );
+
+        showSuccess(
+          'Alerta actualizada',
+          'La alerta se ha actualizada correctamente'
+        );
+      } else {
+        const newAlert = await createAlerta(
+          {
+            url: alertData.url,
+            contenido: alertData.contenido,
+            fecha: alertData.fecha,
+            titulo: alertData.titulo,
+            autor: alertData.autor,
+            reach: alertData.reach || 0,
+            proyecto_id: state?.proyectoId,
+          },
+          state.tipo
+        );
+
+        const alertaItem: AlertaItem = {
+          id: newAlert.id,
+          url: newAlert.url,
+          contenido: newAlert.contenido,
+          fecha: newAlert.fecha,
+          titulo: newAlert.titulo,
+          autor: newAlert.autor,
+          reach: newAlert.reach,
+          emojis: [],
+        };
+
+        setAlertas((prev) => [...prev, alertaItem]);
+        showSuccess(
+          'Alerta creada',
+          'La nueva alerta se ha creado correctamente'
+        );
+      }
+    } catch (error: any) {
+      showError(
+        'Error al guardar',
+        error.message || 'No se pudo guardar la alerta'
+      );
+      throw error;
+    } finally {
+      setIsAlertLoading(false);
     }
   };
 
@@ -297,7 +424,7 @@ const AlertasPreview: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => {}}
+              onClick={handleOpenAddAlert}
               variant="outline"
               className="inline-flex items-center gap-2"
             >
@@ -380,6 +507,17 @@ const AlertasPreview: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
+                  <th className="px-3 py-3 text-left w-12">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedAlertIds.length === filteredAlertas.length &&
+                        filteredAlertas.length > 0
+                      }
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Mensaje
                   </th>
@@ -389,11 +527,6 @@ const AlertasPreview: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Reach
                   </th>
-                  {state?.tipo === 'redes' && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Engagement
-                    </th>
-                  )}
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Acciones
                   </th>
@@ -403,8 +536,20 @@ const AlertasPreview: React.FC = () => {
                 {filteredAlertas.map((item) => (
                   <tr
                     key={item.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                      selectedAlertIds.includes(item.id)
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : ''
+                    }`}
                   >
+                    <td className="px-3 py-4 w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedAlertIds.includes(item.id)}
+                        onChange={() => handleSelectAlert(item.id)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-1">
@@ -475,12 +620,6 @@ const AlertasPreview: React.FC = () => {
                                 Reach{' '}
                                 {item.reach ? item.reach.toLocaleString() : '0'}
                               </span>
-                              <span>
-                                Eng.{' '}
-                                {item.engagement
-                                  ? item.engagement.toLocaleString()
-                                  : '0'}
-                              </span>
                             </div>
                           )}
                         </div>
@@ -492,13 +631,6 @@ const AlertasPreview: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {item.reach ? item.reach.toLocaleString() : '0'}
                     </td>
-                    {state?.tipo === 'redes' && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {item.engagement
-                          ? item.engagement.toLocaleString()
-                          : '0'}
-                      </td>
-                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
                         <Button
@@ -509,6 +641,15 @@ const AlertasPreview: React.FC = () => {
                           title="Ver enlace"
                         >
                           <EyeIcon className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          onClick={() => handleEditAlert(item)}
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-green-800 hover:border-green-300"
+                          title="Editar alerta"
+                        >
+                          <PencilIcon className="h-3 w-3" />
                         </Button>
                         <Button
                           onClick={() => handleOpenEmojiPicker(item.id)}
@@ -549,20 +690,30 @@ const AlertasPreview: React.FC = () => {
 
         {alertas.length > 0 && (
           <div className="flex items-center justify-between pt-4">
-            <Button
-              onClick={() => navigate('/consulta-datos')}
-              variant="outline"
-              disabled={isEnviando}
-            >
-              Cancelar
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => navigate('/consulta-datos')}
+                variant="outline"
+                disabled={isEnviando}
+              >
+                Cancelar
+              </Button>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {selectedAlertIds.length} de {filteredAlertas.length}{' '}
+                seleccionadas
+              </div>
+            </div>
             <Button
               onClick={handleEnviarAlertas}
-              disabled={isEnviando}
+              disabled={isEnviando || selectedAlertIds.length === 0}
               isLoading={isEnviando}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
             >
-              {isEnviando ? 'Enviando...' : 'Enviar Alerta'}
+              {isEnviando
+                ? 'Enviando...'
+                : `Enviar ${
+                    selectedAlertIds.length > 0 ? selectedAlertIds.length : ''
+                  } Alerta${selectedAlertIds.length !== 1 ? 's' : ''}`}
             </Button>
           </div>
         )}
@@ -615,6 +766,14 @@ const AlertasPreview: React.FC = () => {
           </div>
         )}
       </div>
+
+      <AlertModal
+        isOpen={isAlertModalOpen}
+        onClose={handleCloseAlertModal}
+        onSave={handleSaveAlert}
+        editingAlert={editingAlert}
+        isLoading={isAlertLoading}
+      />
     </DashboardLayout>
   );
 };

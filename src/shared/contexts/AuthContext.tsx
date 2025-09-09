@@ -1,8 +1,15 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import {
   loginWithGoogle,
   logout as apiLogout,
   isAuthenticated as checkAuth,
+  setTempToken,
   type AuthResponse,
 } from '@shared/services/api';
 
@@ -17,7 +24,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: () => Promise<void>;
+  login: (googleCredential: any) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -41,10 +48,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && checkAuth();
 
-  const login = async (): Promise<void> => {
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        setTempToken();
+      } catch (error) {
+        console.error('Error inicializando auth:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  const login = async (googleCredential: any): Promise<void> => {
     try {
       setIsLoading(true);
-      const authResponse: AuthResponse = await loginWithGoogle();
+      const authResponse: AuthResponse = await loginWithGoogle(
+        googleCredential
+      );
       setUser(authResponse.user);
     } catch (error) {
       console.error('Error durante el login:', error);

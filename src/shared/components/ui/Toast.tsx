@@ -52,13 +52,13 @@ const Toast: React.FC<ToastProps> = ({
   const getStyles = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        return 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-800';
       case 'error':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+        return 'bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-800';
       case 'warning':
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+        return 'bg-yellow-50 dark:bg-yellow-900 border-yellow-200 dark:border-yellow-800';
       case 'info':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        return 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-800';
     }
   };
 

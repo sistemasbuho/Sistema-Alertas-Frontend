@@ -16,15 +16,11 @@ const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const goToProyecto = () => {
-    navigate('/proyecto');
-  };
-
-  const handleGoogleSuccess = async () => {
+  const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
       setError('');
 
-      await login();
+      await login(credentialResponse);
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión con Google');
     }
@@ -71,28 +67,20 @@ const LoginPage: React.FC = () => {
               </div>
             )}
 
-            <div className="space-y-4">
-              <div className="w-full">
+            <div className="space-y-6">
+              <div className="w-full flex justify-center">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
-                  useOneTap
+                  useOneTap={false}
+                  size="large"
+                  width="350"
                 />
               </div>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <button
-                  onClick={goToProyecto}
-                  className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  🔧 Ir directamente a Proyecto (Debug)
-                </button>
+              <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+                Inicia sesión con tu cuenta de Google para acceder a la
+                aplicación
               </div>
             </div>
           </Card.Content>

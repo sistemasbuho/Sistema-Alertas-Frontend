@@ -13,7 +13,7 @@ function App() {
     <GoogleOAuthProvider
       clientId={
         import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-        '993224816491-s1isabfloqv9alkrkcadhei5d1n3vq8h.apps.googleusercontent.com'
+        '976472882522-jfcok79uuii12i78tv4nkvs52g2ismuc.apps.googleusercontent.com'
       }
     >
       <ThemeProvider>

@@ -5,3 +5,6 @@ export { default as Select } from './Select';
 export { default as ThemeToggle } from './ThemeToggle';
 export { default as Toast } from './Toast';
 export { default as SlideOver } from './SlideOver';
+export { default as Modal } from './Modal';
+export { default as AlertModal } from '../../../pages/Alertas/components/AlertModal';
+export { default as CamposFormatoModal } from './CamposFormatoModal';

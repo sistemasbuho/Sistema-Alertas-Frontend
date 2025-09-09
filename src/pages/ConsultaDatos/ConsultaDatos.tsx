@@ -4,7 +4,7 @@ import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
 import { useToast } from '@shared/contexts/ToastContext';
-import { getMedios, getRedes, setTempToken } from '@shared/services/api';
+import { getMedios, getRedes, capturaAlertaMedios } from '@shared/services/api';
 import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
   MagnifyingGlassIcon,
@@ -22,18 +22,26 @@ const ConsultaDatos: React.FC = () => {
   const [medios, setMedios] = useState<any[]>([]);
   const [redes, setRedes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [captureLoading, setCaptureLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [captureResult, setCaptureResult] = useState<{
+    procesadas: any[];
+    duplicadas: any[];
+    mensaje: string;
+  } | null>(null);
 
   const mediosFilters = useUrlFilters({
-    proyecto: '',
+    proyecto_nombre: '',
     nombre: '',
     tipo: '',
   });
 
   const redesFilters = useUrlFilters({
-    proyecto: '',
+    proyecto_nombre: '',
     autor: '',
     url: '',
   });
@@ -42,32 +50,64 @@ const ConsultaDatos: React.FC = () => {
     return activeTab === 'medios' ? mediosFilters : redesFilters;
   };
 
+  const getProjectName = () => {
+    const currentData = activeTab === 'medios' ? medios : redes;
+    const item = currentData.find(
+      (item) => item.proyecto === selectedProjectId
+    );
+    return item?.proyecto_nombre || selectedProjectId;
+  };
+
   useEffect(() => {
     loadData();
   }, [activeTab, mediosFilters.filters, redesFilters.filters]);
+
+  useEffect(() => {
+    setSelectedItems([]);
+    setSelectedProjectId('');
+  }, [activeTab]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setSelectedItems([]);
-      setTempToken();
 
       if (activeTab === 'medios') {
-        const activeFilters = Object.fromEntries(
+        const rawFilters = Object.fromEntries(
           Object.entries(mediosFilters.filters).filter(
             ([_, value]) => value && value.trim() !== ''
           )
         );
+
+        const activeFilters: any = {};
+        Object.entries(rawFilters).forEach(([key, value]) => {
+          if (key === 'proyecto_nombre') {
+            activeFilters.proyecto = value;
+          } else {
+            activeFilters[key] = value;
+          }
+        });
+
         const data = await getMedios(
           Object.keys(activeFilters).length > 0 ? activeFilters : undefined
         );
         setMedios(data);
       } else {
-        const activeFilters = Object.fromEntries(
+        const rawFilters = Object.fromEntries(
           Object.entries(redesFilters.filters).filter(
             ([_, value]) => value && value.trim() !== ''
           )
         );
+
+        const activeFilters: any = {};
+        Object.entries(rawFilters).forEach(([key, value]) => {
+          if (key === 'proyecto_nombre') {
+            activeFilters.proyecto = value;
+          } else {
+            activeFilters[key] = value;
+          }
+        });
+
         const data = await getRedes(
           Object.keys(activeFilters).length > 0 ? activeFilters : undefined
         );
@@ -95,32 +135,74 @@ const ConsultaDatos: React.FC = () => {
         item.titulo?.toLowerCase().includes(searchLower) ||
         item.contenido?.toLowerCase().includes(searchLower) ||
         item.url?.toLowerCase().includes(searchLower) ||
-        item.autor?.toLowerCase().includes(searchLower)
+        item.autor?.toLowerCase().includes(searchLower) ||
+        item.proyecto_nombre?.toLowerCase().includes(searchLower) ||
+        item.proyecto?.toLowerCase().includes(searchLower)
       );
     } else {
       return (
         item.contenido?.toLowerCase().includes(searchLower) ||
         item.autor?.toLowerCase().includes(searchLower) ||
-        item.url?.toLowerCase().includes(searchLower)
+        item.url?.toLowerCase().includes(searchLower) ||
+        item.proyecto_nombre?.toLowerCase().includes(searchLower) ||
+        item.proyecto?.toLowerCase().includes(searchLower)
       );
     }
   });
 
   const handleSelectItem = (id: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    const currentData = activeTab === 'medios' ? medios : redes;
+    const item = currentData.find((item) => item.id === id);
+
+    if (!item) return;
+
+    if (!selectedProjectId && selectedItems.length === 0) {
+      setSelectedProjectId(item.proyecto);
+    }
+
+    if (selectedProjectId && item.proyecto !== selectedProjectId) {
+      showError(
+        `Solo puedes seleccionar elementos del proyecto: ${getProjectName()}`
+      );
+      return;
+    }
+
+    setSelectedItems((prev) => {
+      const newSelection = prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id];
+
+      if (newSelection.length === 0) {
+        setSelectedProjectId('');
+      }
+
+      return newSelection;
+    });
   };
 
   const handleSelectAll = () => {
-    if (selectedItems.length === filteredData.length) {
+    if (selectedItems.length === filteredData.length && selectedProjectId) {
       setSelectedItems([]);
+      setSelectedProjectId('');
     } else {
-      setSelectedItems(filteredData.map((item) => item.id));
+      if (!selectedProjectId && filteredData.length > 0) {
+        const firstProject = filteredData[0].proyecto;
+        setSelectedProjectId(firstProject);
+
+        const sameProjectItems = filteredData
+          .filter((item) => item.proyecto === firstProject)
+          .map((item) => item.id);
+        setSelectedItems(sameProjectItems);
+      } else {
+        const sameProjectItems = filteredData
+          .filter((item) => item.proyecto === selectedProjectId)
+          .map((item) => item.id);
+        setSelectedItems(sameProjectItems);
+      }
     }
   };
 
-  const handleSendToAlertas = () => {
+  const handleSendToAlertas = async () => {
     const selectedData = filteredData.filter((item) =>
       selectedItems.includes(item.id)
     );
@@ -130,23 +212,55 @@ const ConsultaDatos: React.FC = () => {
       return;
     }
 
-    navigate('/alertas-preview', {
-      state: {
-        selectedItems: selectedData.map((item) => ({
-          id: item.id,
-          url: item.url,
-          contenido: activeTab === 'medios' ? item.contenido : item.contenido,
-          fecha: activeTab === 'medios' ? item.fecha_publicacion : item.fecha,
-          titulo: activeTab === 'medios' ? item.titulo : undefined,
-          autor: item.autor,
-          reach: item.reach,
-          engagement: item.engagement,
-        })),
-        tipo: activeTab,
-        proyectoId:
-          selectedData[0]?.proyecto || '2bd78e76-73d8-4561-9b91-42cac463366e', // Usar proyecto del primer item o default
-      },
-    });
+    if (activeTab === 'medios') {
+      try {
+        setCaptureLoading(true);
+
+        const capturePayload = {
+          proyecto_id: selectedData[0]?.proyecto,
+          enviar: true,
+          alertas: selectedData.map((item) => ({
+            id: item.id,
+            url: item.url,
+            contenido: item.contenido,
+            fecha: item.fecha_publicacion,
+            titulo: item.titulo,
+            autor: item.autor,
+            reach: item.reach,
+          })),
+        };
+
+        const response = await capturaAlertaMedios(capturePayload);
+
+        setCaptureResult(response);
+        setShowResultModal(true);
+      } catch (error: any) {
+        console.error('Error en captura de medios:', error);
+        showError(
+          'Error en captura',
+          error.message || 'Error al capturar alerta de medios'
+        );
+        return;
+      } finally {
+        setCaptureLoading(false);
+      }
+    } else {
+      navigate('/alertas-preview', {
+        state: {
+          selectedItems: selectedData.map((item) => ({
+            id: item.id,
+            url: item.url,
+            contenido: item.contenido,
+            fecha: item.fecha,
+            titulo: undefined,
+            autor: item.autor,
+            reach: item.reach,
+          })),
+          tipo: activeTab,
+          proyectoId: selectedData[0]?.proyecto || '',
+        },
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -159,6 +273,34 @@ const ConsultaDatos: React.FC = () => {
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('es-ES').format(num);
+  };
+
+  const handleModalContinue = () => {
+    if (captureResult && captureResult.procesadas.length > 0) {
+      setShowResultModal(false);
+      navigate('/alertas-preview', {
+        state: {
+          selectedItems: captureResult.procesadas.map((item: any) => ({
+            id: item.id,
+            url: item.url,
+            contenido: item.mensaje || item.contenido,
+            fecha: item.fecha,
+            titulo: item.titulo,
+            autor: item.autor,
+            reach: item.reach,
+            emojis: [],
+          })),
+          tipo: activeTab,
+          proyectoId: selectedProjectId || '',
+          fromBackend: true,
+        },
+      });
+    }
+  };
+
+  const handleModalClose = () => {
+    setShowResultModal(false);
+    setCaptureResult(null);
   };
 
   return (
@@ -233,16 +375,35 @@ const ConsultaDatos: React.FC = () => {
                       </span>
                     )}
                   </Button>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {selectedItems.length} seleccionados
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedItems.length} seleccionados
+                    </span>
+                    {selectedProjectId && selectedItems.length > 0 && (
+                      <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                        📂 {getProjectName()}
+                      </span>
+                    )}
+                  </div>
                   {selectedItems.length > 0 && (
                     <Button
                       onClick={handleSendToAlertas}
+                      disabled={captureLoading}
                       className="inline-flex items-center gap-2"
                     >
-                      <PaperAirplaneIcon className="h-4 w-4" />
-                      Enviar a Alertas
+                      {captureLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          {activeTab === 'medios'
+                            ? 'Capturando...'
+                            : 'Enviando...'}
+                        </>
+                      ) : (
+                        <>
+                          <PaperAirplaneIcon className="h-4 w-4" />
+                          Enviar a Alertas
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -277,13 +438,13 @@ const ConsultaDatos: React.FC = () => {
                           </label>
                           <input
                             type="text"
-                            value={mediosFilters.filters.proyecto || ''}
+                            value={mediosFilters.filters.proyecto_nombre || ''}
                             onChange={(e) =>
                               mediosFilters.updateFilters({
-                                proyecto: e.target.value,
+                                proyecto_nombre: e.target.value,
                               })
                             }
-                            placeholder="ID del proyecto"
+                            placeholder="Nombre del proyecto"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         </div>
@@ -328,13 +489,13 @@ const ConsultaDatos: React.FC = () => {
                           </label>
                           <input
                             type="text"
-                            value={redesFilters.filters.proyecto || ''}
+                            value={redesFilters.filters.proyecto_nombre || ''}
                             onChange={(e) =>
                               redesFilters.updateFilters({
-                                proyecto: e.target.value,
+                                proyecto_nombre: e.target.value,
                               })
                             }
-                            placeholder="ID del proyecto"
+                            placeholder="Nombre del proyecto"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         </div>
@@ -398,10 +559,10 @@ const ConsultaDatos: React.FC = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <table className="min-w-full table-auto divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-6 py-3 text-left">
+                      <th className="px-2 py-3 text-left w-12">
                         <input
                           type="checkbox"
                           checked={
@@ -414,49 +575,55 @@ const ConsultaDatos: React.FC = () => {
                       </th>
                       {activeTab === 'medios' ? (
                         <>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
+                            Proyecto
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-64">
                             Título
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-80">
                             Contenido
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                             URL
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                             Autor
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
                             Reach
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Fecha Publicación
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+                            Fecha Pub.
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                             Fecha Creación
                           </th>
                         </>
                       ) : (
                         <>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
+                            Proyecto
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-80">
                             Contenido
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                             URL
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                             Autor
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
                             Reach
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
                             Engagement
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Fecha Publicación
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+                            Fecha Pub.
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                             Fecha Creación
                           </th>
                         </>
@@ -473,7 +640,7 @@ const ConsultaDatos: React.FC = () => {
                             : ''
                         }`}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-2 py-4 w-12">
                           <input
                             type="checkbox"
                             checked={selectedItems.includes(item.id)}
@@ -483,45 +650,58 @@ const ConsultaDatos: React.FC = () => {
                         </td>
                         {activeTab === 'medios' ? (
                           <>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            <td className="px-4 py-4 w-40">
+                              <div
+                                className="text-sm text-gray-900 dark:text-white truncate"
+                                title={item.proyecto_nombre || item.proyecto}
+                              >
+                                {item.proyecto_nombre ||
+                                  item.proyecto ||
+                                  'Sin proyecto'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 w-64">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
                                 {item.titulo}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-4 w-80">
                               <div
-                                className="text-sm text-gray-900 dark:text-white max-w-xs truncate"
+                                className="text-sm text-gray-900 dark:text-white line-clamp-3 leading-tight"
                                 title={item.contenido}
                               >
                                 {item.contenido}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-4 w-32">
                               <a
                                 href={item.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate max-w-xs block"
+                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
+                                title={item.url}
                               >
-                                {item.url}
+                                {item.url?.length > 20
+                                  ? `${item.url.substring(0, 20)}...`
+                                  : item.url}
                               </a>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900 dark:text-white">
+                            <td className="px-4 py-4 w-32">
+                              <div className="text-sm text-gray-900 dark:text-white truncate">
                                 {item.autor || 'Sin autor'}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                                {formatNumber(item.reach)}
+                            <td className="px-4 py-4 w-24">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                                {formatNumber(item.reach || 0)}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-4 w-32">
                               <div className="text-sm text-gray-900 dark:text-white">
                                 {formatDate(item.fecha_publicacion)}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-4 w-32">
                               <div className="text-sm text-gray-900 dark:text-white">
                                 {formatDate(item.created_at)}
                               </div>
@@ -529,45 +709,58 @@ const ConsultaDatos: React.FC = () => {
                           </>
                         ) : (
                           <>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-4 w-40">
                               <div
-                                className="text-sm text-gray-900 dark:text-white max-w-xs truncate"
+                                className="text-sm text-gray-900 dark:text-white truncate"
+                                title={item.proyecto_nombre || item.proyecto}
+                              >
+                                {item.proyecto_nombre ||
+                                  item.proyecto ||
+                                  'Sin proyecto'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 w-80">
+                              <div
+                                className="text-sm text-gray-900 dark:text-white line-clamp-3 leading-tight"
                                 title={item.contenido}
                               >
                                 {item.contenido}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-4 w-32">
                               <a
                                 href={item.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate max-w-xs block"
+                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
+                                title={item.url}
                               >
-                                {item.url}
+                                {item.url?.length > 20
+                                  ? `${item.url.substring(0, 20)}...`
+                                  : item.url}
                               </a>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900 dark:text-white">
+                            <td className="px-4 py-4 w-32">
+                              <div className="text-sm text-gray-900 dark:text-white truncate">
                                 {item.autor || 'Sin autor'}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                                {formatNumber(item.reach)}
+                            <td className="px-4 py-4 w-24">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                                {formatNumber(item.reach || 0)}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                                {formatNumber(item.engagement)}
+                            <td className="px-4 py-4 w-24">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                                {formatNumber(item.engagement || 0)}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-4 w-32">
                               <div className="text-sm text-gray-900 dark:text-white">
                                 {formatDate(item.fecha)}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-4 w-32">
                               <div className="text-sm text-gray-900 dark:text-white">
                                 {formatDate(item.created_at)}
                               </div>
@@ -583,6 +776,196 @@ const ConsultaDatos: React.FC = () => {
           </Card.Content>
         </Card>
       </div>
+
+      {showResultModal && captureResult && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    {activeTab === 'medios' ? (
+                      <svg
+                        className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M2 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H4a2 2 0 01-2-2V5zm3 1h6v4H5V6zm6 6H5v2h6v-2z"
+                          clipRule="evenodd"
+                        />
+                        <path d="M15 7h1a2 2 0 012 2v5.5a1.5 1.5 0 01-3 0V9a1 1 0 00-1-1h-1V7z" />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {activeTab === 'medios'
+                        ? 'Captura de Medios'
+                        : 'Procesamiento de Redes'}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Resultados del procesamiento
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleModalClose}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Estado del procesamiento
+                      </p>
+                      <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                        {captureResult.mensaje}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Alertas Duplicadas */}
+              {captureResult.duplicadas &&
+                captureResult.duplicadas.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-3 h-3 text-yellow-600 dark:text-yellow-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white">
+                        Alertas Duplicadas ({captureResult.duplicadas.length})
+                      </h4>
+                    </div>
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 max-h-32 overflow-y-auto">
+                      <div className="space-y-2">
+                        {captureResult.duplicadas.map(
+                          (item: any, index: number) => (
+                            <div
+                              key={index}
+                              className="flex items-start gap-2 text-sm"
+                            >
+                              <div className="w-1 h-1 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-yellow-800 dark:text-yellow-200">
+                                {item.titulo ||
+                                  item.contenido?.substring(0, 80) + '...'}
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-3 h-3 text-green-600 dark:text-green-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white">
+                    Alertas Procesadas ({captureResult.procesadas.length})
+                  </h4>
+                </div>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 max-h-40 overflow-y-auto">
+                  <div className="space-y-2">
+                    {captureResult.procesadas.map(
+                      (item: any, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-2 text-sm"
+                        >
+                          <div className="w-1 h-1 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="text-green-800 dark:text-green-200">
+                            {item.titulo ||
+                              item.contenido?.substring(0, 80) + '...'}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+              <div className="flex justify-end space-x-3">
+                <Button
+                  onClick={handleModalClose}
+                  variant="outline"
+                  className="px-6 py-2 text-sm font-medium"
+                >
+                  Cerrar
+                </Button>
+                {captureResult.procesadas.length > 0 && (
+                  <Button
+                    onClick={handleModalContinue}
+                    className="px-6 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <PaperAirplaneIcon className="w-4 h-4 mr-2" />
+                    Continuar a Vista Previa
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

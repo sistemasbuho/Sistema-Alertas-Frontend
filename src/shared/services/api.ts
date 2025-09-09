@@ -73,7 +73,7 @@ export const getToken = (): string | undefined => {
 
 export const setTempToken = () => {
   const tempToken =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2NTA0OTUwLCJpYXQiOjE3NTY0NzI1NTAsImp0aSI6IjU4NTJiODZiNjQzNjQyNWFhOGI0YjNlZjZkZmU2ZjRkIiwidXNlcl9pZCI6IjEifQ.Eo9BXNqj2D8Yu-j4NFN_OSb9v0JUsTcbzlSnD8Glevo';
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3NjI5OTYzLCJpYXQiOjE3NTcwMjUxNjMsImp0aSI6IjYzNDEwMDQ3MjEwYzRjYjc4ODNkZmY1ZTBiYzliOTRhIiwidXNlcl9pZCI6IjMifQ.I97tLupuf58bH07erfGkcMABuhSHhx1SVSJNTeBbMCI';
   setToken(tempToken);
 };
 
@@ -119,9 +119,13 @@ export const del = async <T = unknown>(
   return response.data;
 };
 
-export const loginWithGoogle = async (): Promise<AuthResponse> => {
+export const loginWithGoogle = async (
+  googleCredential: any
+): Promise<AuthResponse> => {
   try {
-    const response = await post<AuthResponse>('/api/auth/google/');
+    const response = await post<AuthResponse>('/api/auth/google/', {
+      credential: googleCredential.credential,
+    });
 
     if (response.success && response.data.token) {
       setToken(response.data.token);
@@ -130,8 +134,8 @@ export const loginWithGoogle = async (): Promise<AuthResponse> => {
 
     throw new Error('Respuesta inválida del servidor');
   } catch (error) {
-    console.error('❌ Error en login:', error);
-    throw error;
+    console.error('❌ Error procesando login de Google:', error);
+    throw new Error('Error al procesar la información de Google');
   }
 };
 
@@ -243,6 +247,32 @@ export const getRedes = async (filters?: {
   }
 };
 
+export const capturaAlertaMedios = async (payload: {
+  proyecto_id: string;
+  enviar: boolean;
+  alertas: Array<{
+    id: string;
+    url: string;
+    contenido: string;
+    fecha: string;
+    titulo?: string;
+    autor?: string;
+    reach?: number;
+    engagement?: number;
+  }>;
+}) => {
+  try {
+    const response = await apiClient.post(
+      '/api/whatsapp/captura_alerta_medios/',
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error capturando alerta de medios:', error);
+    throw error;
+  }
+};
+
 export const enviarAlertas = async (payload: {
   proyecto_id: string;
   enviar: boolean;
@@ -269,11 +299,147 @@ export const enviarAlertas = async (payload: {
   }
 };
 
+export const createAlerta = async (
+  alerta: {
+    url: string;
+    contenido: string;
+    fecha: string;
+    titulo?: string;
+    autor?: string;
+    reach?: number;
+    proyecto_id?: string;
+  },
+  tipo: 'medios' | 'redes' = 'medios'
+) => {
+  try {
+    const endpoint = tipo === 'medios' ? '/api/medios/' : '/api/redes/';
+
+    const payload = {
+      proyecto: alerta.proyecto_id,
+      titulo: alerta.titulo || '',
+      contenido: alerta.contenido,
+      url: alerta.url,
+      fecha_publicacion: alerta.fecha,
+      autor: alerta.autor || '',
+      reach: alerta.reach || 0,
+    };
+
+    const response = await apiClient.post(endpoint, payload);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error creando alerta:', error);
+    throw error;
+  }
+};
+
+export const updateAlerta = async (
+  alertaId: string,
+  alerta: {
+    url: string;
+    contenido: string;
+    fecha: string;
+    titulo?: string;
+    autor?: string;
+    reach?: number;
+  },
+  tipo: 'medios' | 'redes',
+  proyectoId: string
+) => {
+  try {
+    const endpoint =
+      tipo === 'medios'
+        ? `/api/medios/${alertaId}/`
+        : `/api/redes/${alertaId}/`;
+
+    const payload = {
+      proyecto: proyectoId,
+      titulo: alerta.titulo || '',
+      contenido: alerta.contenido,
+      url: alerta.url,
+      fecha_publicacion: alerta.fecha,
+      autor: alerta.autor || '',
+      reach: alerta.reach || 0,
+    };
+
+    const response = await apiClient.patch(endpoint, payload);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error actualizando alerta:', error);
+    throw error;
+  }
+};
+
+export interface Campo {
+  id?: string | null;
+  campo: string;
+  orden: number;
+  estilo: Record<string, any>;
+}
+
+export interface Plantilla {
+  id: string;
+  nombre: string;
+  app_label: string;
+  model_name: string;
+  proyecto: string;
+  campos: Campo[];
+  config_campos?: {
+    [fieldName: string]: {
+      orden?: number;
+      estilo?: {
+        [key: string]: any;
+      };
+    };
+  };
+}
+
+export const getPlantillaCampos = async (
+  proyectoId: string
+): Promise<Plantilla[]> => {
+  try {
+    const response = await apiClient.get(
+      `/api/plantillas/?proyecto_id=${proyectoId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error obteniendo campos de plantilla:', error);
+    throw error;
+  }
+};
+
+export const guardarCamposPlantilla = async (
+  plantillaId: string,
+  campos: Campo[]
+) => {
+  try {
+    console.log('💾 Guardando campos de plantilla:', plantillaId, campos);
+
+    const payload = {
+      campos: campos.map((campo) => ({
+        campo: campo.campo,
+        orden: campo.orden,
+        estilo: campo.estilo,
+      })),
+    };
+
+    console.log('📤 Payload enviado:', payload);
+
+    const response = await apiClient.put(
+      `/api/plantillas/${plantillaId}/campos/`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error guardando campos de plantilla:', error);
+    throw error;
+  }
+};
+
 export const apiService = {
   setToken,
   getToken,
   removeToken,
-  setTempToken,
+  // setTempToken,
   isAuthenticated,
   get,
   post,
@@ -287,7 +453,12 @@ export const apiService = {
   deleteProyecto,
   getMedios,
   getRedes,
+  capturaAlertaMedios,
   enviarAlertas,
+  createAlerta,
+  updateAlerta,
+  getPlantillaCampos,
+  guardarCamposPlantilla,
 };
 
 export default apiService;
