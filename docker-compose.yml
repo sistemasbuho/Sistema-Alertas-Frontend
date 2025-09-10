@@ -1,0 +1,23 @@
+services:
+  frontend-sistema-alertas:
+    image: buho/frontend-sistema-alertas
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend-sistema-alertas
+    environment:
+      VIRTUAL_HOST: 'sistema.alertas.buho.media'
+      VIRTUAL_PORT: '86'
+      LETSENCRYPT_HOST: 'sistema.alertas.buho.media'
+      LETSENCRYPT_EMAIL: 'sistemasbuho@gnilat.com'
+    volumes:
+      - ./frontend/my_custom_config/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist:/usr/share/nginx/html
+    networks:
+      - default
+      - nginx_proxy
+
+networks:
+  default:
+  nginx_proxy:
+    external: true
