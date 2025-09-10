@@ -7,6 +7,7 @@ import ConsultaDatos from '@/pages/ConsultaDatos/ConsultaDatos';
 import Historial from '@/pages/Historial/Historial';
 import Proyecto from './pages/Proyecto/Proyecto';
 import AlertasPreview from './pages/Alertas/AlertasPreview';
+import LoginPage from './pages/auth/LoginPage';
 
 function App() {
   return (
@@ -21,7 +22,7 @@ function App() {
           <AuthProvider>
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
               <Routes>
-                {/* <Route path="/login" element={<LoginPage />} /> */}
+                <Route path="/login" element={<LoginPage />} />
                 <Route path="/consulta-datos" element={<ConsultaDatos />} />
                 <Route path="/proyecto" element={<Proyecto />} />
                 <Route path="/historial" element={<Historial />} />

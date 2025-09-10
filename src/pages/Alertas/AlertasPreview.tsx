@@ -31,10 +31,23 @@ interface AlertaItem {
   emojis?: string[];
 }
 
+interface PlantillaMensaje {
+  [campo: string]: {
+    orden: number;
+    estilo: {
+      negrita?: boolean;
+      inclinado?: boolean;
+      [key: string]: any;
+    };
+  };
+}
+
 interface LocationState {
   selectedItems: AlertaItem[];
   tipo: 'medios' | 'redes';
   proyectoId: string;
+  fromBackend?: boolean;
+  plantillaMensaje?: PlantillaMensaje;
 }
 
 const AlertasPreview: React.FC = () => {
@@ -59,6 +72,9 @@ const AlertasPreview: React.FC = () => {
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [editingAlert, setEditingAlert] = useState<AlertaItem | null>(null);
   const [isAlertLoading, setIsAlertLoading] = useState(false);
+
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewAlert, setPreviewAlert] = useState<AlertaItem | null>(null);
 
   const handleSelectAlert = (id: string) => {
     setSelectedAlertIds((prev) =>
@@ -400,6 +416,122 @@ const AlertasPreview: React.FC = () => {
     );
   };
 
+  const formatMessageWithTemplate = (
+    alert: AlertaItem
+  ): React.ReactElement[] => {
+    const plantilla = state?.plantillaMensaje;
+    if (!plantilla) {
+      // Si no hay plantilla, mostrar formato simple
+      return [
+        <div key="simple" className="space-y-2">
+          {alert.titulo && (
+            <div>
+              <strong>Título:</strong> {alert.titulo}
+            </div>
+          )}
+          {alert.autor && (
+            <div>
+              <strong>Autor:</strong> {alert.autor}
+            </div>
+          )}
+          <div>
+            <strong>Contenido:</strong> {alert.contenido}
+          </div>
+          {alert.reach && (
+            <div>
+              <strong>Reach:</strong> {alert.reach.toLocaleString()}
+            </div>
+          )}
+          <div>
+            <strong>Fecha:</strong> {formatDate(alert.fecha)}
+          </div>
+          <div>
+            <strong>URL:</strong>{' '}
+            <a
+              href={alert.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              {alert.url}
+            </a>
+          </div>
+        </div>,
+      ];
+    }
+
+    const campos = Object.entries(plantilla)
+      .sort(([, a], [, b]) => a.orden - b.orden)
+      .map(([campo, config]) => {
+        let valor = '';
+
+        switch (campo) {
+          case 'id':
+            valor = alert.id;
+            break;
+          case 'titulo':
+            valor = alert.titulo || '';
+            break;
+          case 'autor':
+            valor = alert.autor || '';
+            break;
+          case 'contenido':
+            valor = alert.contenido || '';
+            break;
+          case 'reach':
+            valor = alert.reach ? alert.reach.toLocaleString() : '';
+            break;
+          case 'fecha_publicacion':
+            valor = formatDate(alert.fecha);
+            break;
+          case 'url':
+            valor = alert.url;
+            break;
+          case 'proyecto':
+            valor = state?.proyectoId || '';
+            break;
+          default:
+            valor = '';
+        }
+
+        if (!valor) return null;
+
+        let estilos = '';
+        if (config.estilo.negrita) estilos += 'font-bold ';
+        if (config.estilo.inclinado) estilos += 'italic ';
+
+        return (
+          <div key={campo} className="mb-1">
+            {campo === 'url' ? (
+              <a
+                href={valor}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-blue-600 hover:underline ${estilos}`}
+              >
+                {valor}
+              </a>
+            ) : (
+              <span className={estilos}>{valor}</span>
+            )}
+          </div>
+        );
+      })
+      .filter(Boolean);
+
+    return campos as React.ReactElement[];
+  };
+
+  const handlePreviewAlert = (alert: AlertaItem) => {
+    setPreviewAlert(alert);
+    setShowPreviewModal(true);
+  };
+
+  const handleClosePreview = () => {
+    setShowPreviewModal(false);
+    setPreviewAlert(null);
+  };
+
   return (
     <DashboardLayout title="Vista Previa de Alertas">
       <div className="space-y-6">
@@ -634,11 +766,11 @@ const AlertasPreview: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
                         <Button
-                          onClick={() => window.open(item.url, '_blank')}
+                          onClick={() => handlePreviewAlert(item)}
                           variant="outline"
                           size="sm"
                           className="inline-flex items-center gap-1"
-                          title="Ver enlace"
+                          title="Vista previa del mensaje"
                         >
                           <EyeIcon className="h-3 w-3" />
                         </Button>
@@ -766,6 +898,56 @@ const AlertasPreview: React.FC = () => {
           </div>
         )}
       </div>
+
+      {showPreviewModal && previewAlert && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 transition-opacity"
+            onClick={handleClosePreview}
+          >
+            <div className="absolute inset-0 bg-gray-500 opacity-75 dark:bg-gray-900"></div>
+          </div>
+
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg px-6 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                Vista Previa del Mensaje
+              </h3>
+              <button
+                onClick={handleClosePreview}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {state?.plantillaMensaje
+                  ? 'Mensaje formateado según la plantilla configurada:'
+                  : 'Vista previa del mensaje (sin plantilla configurada):'}
+              </p>
+
+              <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 min-h-[200px]">
+                <div className="text-sm text-gray-900 dark:text-white">
+                  {formatMessageWithTemplate(previewAlert)}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end pt-0">
+              <div className="flex items-center justify-end gap-3">
+                <Button
+                  onClick={handleClosePreview}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AlertModal
         isOpen={isAlertModalOpen}

@@ -4,7 +4,12 @@ import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
 import { useToast } from '@shared/contexts/ToastContext';
-import { getMedios, getRedes, capturaAlertaMedios } from '@shared/services/api';
+import {
+  getMedios,
+  getRedes,
+  capturaAlertaMedios,
+  capturaAlertaRedes,
+} from '@shared/services/api';
 import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
   MagnifyingGlassIcon,
@@ -32,6 +37,7 @@ const ConsultaDatos: React.FC = () => {
     procesadas: any[];
     duplicadas: any[];
     mensaje: string;
+    plantilla_mensaje?: any;
   } | null>(null);
 
   const mediosFilters = useUrlFilters({
@@ -245,21 +251,37 @@ const ConsultaDatos: React.FC = () => {
         setCaptureLoading(false);
       }
     } else {
-      navigate('/alertas-preview', {
-        state: {
-          selectedItems: selectedData.map((item) => ({
+      try {
+        setCaptureLoading(true);
+
+        const capturePayload = {
+          proyecto_id: selectedData[0]?.proyecto,
+          enviar: true,
+          alertas: selectedData.map((item) => ({
             id: item.id,
+            titulo: item.titulo || '',
             url: item.url,
             contenido: item.contenido,
-            fecha: item.fecha,
-            titulo: undefined,
-            autor: item.autor,
-            reach: item.reach,
+            fecha: item.fecha_publicacion,
+            autor: item.autor || '',
+            reach: item.reach?.toString() || '0',
           })),
-          tipo: activeTab,
-          proyectoId: selectedData[0]?.proyecto || '',
-        },
-      });
+        };
+
+        const response = await capturaAlertaRedes(capturePayload);
+
+        setCaptureResult(response);
+        setShowResultModal(true);
+      } catch (error: any) {
+        console.error('Error en captura de redes:', error);
+        showError(
+          'Error en captura',
+          error.message || 'Error al capturar alerta de redes'
+        );
+        return;
+      } finally {
+        setCaptureLoading(false);
+      }
     }
   };
 
@@ -293,6 +315,7 @@ const ConsultaDatos: React.FC = () => {
           tipo: activeTab,
           proyectoId: selectedProjectId || '',
           fromBackend: true,
+          plantillaMensaje: captureResult.plantilla_mensaje,
         },
       });
     }
@@ -860,38 +883,80 @@ const ConsultaDatos: React.FC = () => {
                 </div>
               </div>
 
-              {/* Alertas Duplicadas */}
-              {captureResult.duplicadas &&
-                captureResult.duplicadas.length > 0 && (
+              {captureResult.procesadas.length > 0 && (
+                <>
+                  {captureResult.duplicadas &&
+                    captureResult.duplicadas.length > 0 && (
+                      <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-3 h-3 text-yellow-600 dark:text-yellow-400"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <h4 className="text-md font-semibold text-gray-900 dark:text-white">
+                            Alertas Duplicadas (
+                            {captureResult.duplicadas.length})
+                          </h4>
+                        </div>
+                        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 max-h-32 overflow-y-auto">
+                          <div className="space-y-2">
+                            {captureResult.duplicadas.map(
+                              (item: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="flex items-start gap-2 text-sm"
+                                >
+                                  <div className="w-1 h-1 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                                  <span className="text-yellow-800 dark:text-yellow-200">
+                                    {item.titulo ||
+                                      item.contenido?.substring(0, 80) + '...'}
+                                  </span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-6 h-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                         <svg
-                          className="w-3 h-3 text-yellow-600 dark:text-yellow-400"
+                          className="w-3 h-3 text-green-600 dark:text-green-400"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
                           <path
                             fillRule="evenodd"
-                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                             clipRule="evenodd"
                           />
                         </svg>
                       </div>
                       <h4 className="text-md font-semibold text-gray-900 dark:text-white">
-                        Alertas Duplicadas ({captureResult.duplicadas.length})
+                        Alertas Procesadas ({captureResult.procesadas.length})
                       </h4>
                     </div>
-                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 max-h-32 overflow-y-auto">
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 max-h-40 overflow-y-auto">
                       <div className="space-y-2">
-                        {captureResult.duplicadas.map(
+                        {captureResult.procesadas.map(
                           (item: any, index: number) => (
                             <div
                               key={index}
                               className="flex items-start gap-2 text-sm"
                             >
-                              <div className="w-1 h-1 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
-                              <span className="text-yellow-800 dark:text-yellow-200">
+                              <div className="w-1 h-1 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-green-800 dark:text-green-200">
                                 {item.titulo ||
                                   item.contenido?.substring(0, 80) + '...'}
                               </span>
@@ -901,46 +966,8 @@ const ConsultaDatos: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                )}
-
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-3 h-3 text-green-600 dark:text-green-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <h4 className="text-md font-semibold text-gray-900 dark:text-white">
-                    Alertas Procesadas ({captureResult.procesadas.length})
-                  </h4>
-                </div>
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 max-h-40 overflow-y-auto">
-                  <div className="space-y-2">
-                    {captureResult.procesadas.map(
-                      (item: any, index: number) => (
-                        <div
-                          key={index}
-                          className="flex items-start gap-2 text-sm"
-                        >
-                          <div className="w-1 h-1 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                          <span className="text-green-800 dark:text-green-200">
-                            {item.titulo ||
-                              item.contenido?.substring(0, 80) + '...'}
-                          </span>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">

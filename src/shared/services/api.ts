@@ -273,6 +273,31 @@ export const capturaAlertaMedios = async (payload: {
   }
 };
 
+export const capturaAlertaRedes = async (payload: {
+  proyecto_id: string;
+  enviar: boolean;
+  alertas: Array<{
+    id: string;
+    titulo: string;
+    url: string;
+    contenido: string;
+    fecha: string;
+    autor: string;
+    reach: string;
+  }>;
+}) => {
+  try {
+    const response = await apiClient.post(
+      '/api/whatsapp/captura_alerta_redes/',
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error capturando alerta de redes:', error);
+    throw error;
+  }
+};
+
 export const enviarAlertas = async (payload: {
   proyecto_id: string;
   enviar: boolean;
@@ -454,6 +479,7 @@ export const apiService = {
   getMedios,
   getRedes,
   capturaAlertaMedios,
+  capturaAlertaRedes,
   enviarAlertas,
   createAlerta,
   updateAlerta,
