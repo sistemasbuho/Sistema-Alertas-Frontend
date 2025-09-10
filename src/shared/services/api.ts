@@ -10,8 +10,15 @@ export interface ApiResponse<T = unknown> {
   success: boolean;
 }
 
+export interface AuthTokens {
+  access: string;
+  refresh: string;
+  expires_at?: number;
+}
+
 export interface AuthResponse {
-  token: string;
+  access: string;
+  refresh: string;
   user: {
     id: string;
     email: string;
@@ -41,9 +48,25 @@ const apiClient = axios.create({
   },
 });
 
+// Interceptor de request: inyectar token y renovar si es necesario
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = getToken();
+  async (config) => {
+    let token = getAccessToken();
+
+    if (token && isTokenExpired()) {
+      try {
+        await refreshTokens();
+        token = getAccessToken();
+      } catch (error) {
+        console.error('Failed to refresh token:', error);
+        clearTokens();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -54,35 +77,174 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        await refreshTokens();
+        const newToken = getAccessToken();
+
+        if (newToken) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return apiClient(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        clearTokens();
+
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
+      }
+    }
+
     return Promise.reject(error);
   }
 );
 
-export const setToken = (token: string): void => {
-  Cookies.set('auth_token', token, {
+const AUTH_KEYS = {
+  ACCESS_TOKEN: 'auth_access_token',
+  REFRESH_TOKEN: 'auth_refresh_token',
+  USER_DATA: 'auth_user_data',
+  EXPIRES_AT: 'auth_expires_at',
+} as const;
+
+export const setTokens = (tokens: AuthTokens): void => {
+  const expiresAt = tokens.expires_at || Date.now() + 60 * 60 * 1000;
+
+  localStorage.setItem(AUTH_KEYS.ACCESS_TOKEN, tokens.access);
+  localStorage.setItem(AUTH_KEYS.REFRESH_TOKEN, tokens.refresh);
+  localStorage.setItem(AUTH_KEYS.EXPIRES_AT, expiresAt.toString());
+
+  Cookies.set(AUTH_KEYS.ACCESS_TOKEN, tokens.access, {
     expires: 7,
+    secure: import.meta.env.PROD,
+    sameSite: 'strict',
+  });
+  Cookies.set(AUTH_KEYS.REFRESH_TOKEN, tokens.refresh, {
+    expires: 30,
     secure: import.meta.env.PROD,
     sameSite: 'strict',
   });
 };
 
-export const getToken = (): string | undefined => {
-  return Cookies.get('auth_token');
+export const getAccessToken = (): string | null => {
+  return (
+    localStorage.getItem(AUTH_KEYS.ACCESS_TOKEN) ||
+    Cookies.get(AUTH_KEYS.ACCESS_TOKEN) ||
+    null
+  );
 };
 
-export const setTempToken = () => {
-  const tempToken =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3NjI5OTYzLCJpYXQiOjE3NTcwMjUxNjMsImp0aSI6IjYzNDEwMDQ3MjEwYzRjYjc4ODNkZmY1ZTBiYzliOTRhIiwidXNlcl9pZCI6IjMifQ.I97tLupuf58bH07erfGkcMABuhSHhx1SVSJNTeBbMCI';
-  setToken(tempToken);
+export const getRefreshToken = (): string | null => {
+  return (
+    localStorage.getItem(AUTH_KEYS.REFRESH_TOKEN) ||
+    Cookies.get(AUTH_KEYS.REFRESH_TOKEN) ||
+    null
+  );
 };
 
-export const removeToken = (): void => {
-  Cookies.remove('auth_token');
+export const getTokenExpirationTime = (): number | null => {
+  const expiresAt = localStorage.getItem(AUTH_KEYS.EXPIRES_AT);
+  return expiresAt ? parseInt(expiresAt, 10) : null;
+};
+
+export const isTokenExpired = (): boolean => {
+  const expiresAt = getTokenExpirationTime();
+  if (!expiresAt) return true;
+  return Date.now() >= expiresAt - 5 * 60 * 1000;
+};
+
+export const clearTokens = (): void => {
+  Object.values(AUTH_KEYS).forEach((key) => {
+    localStorage.removeItem(key);
+  });
+
+  Object.values(AUTH_KEYS).forEach((key) => {
+    Cookies.remove(key);
+  });
+};
+
+export const setUserData = (user: AuthResponse['user']): void => {
+  localStorage.setItem(AUTH_KEYS.USER_DATA, JSON.stringify(user));
+};
+
+export const getUserData = (): AuthResponse['user'] | null => {
+  const userData = localStorage.getItem(AUTH_KEYS.USER_DATA);
+  return userData ? JSON.parse(userData) : null;
 };
 
 export const isAuthenticated = (): boolean => {
-  return !!getToken();
+  const accessToken = getAccessToken();
+  return !!accessToken && !isTokenExpired();
+};
+
+export const setToken = (token: string): void => {
+  setTokens({ access: token, refresh: token });
+};
+
+export const getToken = (): string | undefined => {
+  return getAccessToken() || undefined;
+};
+
+export const removeToken = (): void => {
+  clearTokens();
+};
+
+let refreshPromise: Promise<void> | null = null;
+
+export const refreshTokens = async (): Promise<void> => {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/api/auth/refresh/`, {
+        refresh: refreshToken,
+      });
+
+      if (response.data.access) {
+        const newTokens: AuthTokens = {
+          access: response.data.access,
+          refresh: response.data.refresh || refreshToken,
+          expires_at: Date.now() + 60 * 60 * 1000,
+        };
+
+        setTokens(newTokens);
+      } else {
+        throw new Error('Invalid refresh response');
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      throw error;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
+export const fetchUserProfile = async (): Promise<AuthResponse['user']> => {
+  try {
+    const response = await get<AuthResponse['user']>('/api/auth/me/');
+    const user = response.data;
+    setUserData(user);
+    return user;
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error);
+    throw error;
+  }
 };
 
 export const get = async <T = unknown>(
@@ -128,17 +290,51 @@ export const loginWithGoogle = async (
     );
     const email = decodedToken.email;
 
-    const response = await post<AuthResponse>('/api/auth/google/', {
+    const response = await post<any>('/api/auth/google/', {
       jwt_google: googleCredential.credential,
       email: email,
     });
 
-    if (response.success && response.data.token) {
-      setToken(response.data.token);
-      return response.data;
+    let authData;
+    if (response.success && response.data) {
+      authData = response.data;
+    } else if ((response as any).access) {
+      authData = response;
+    } else {
+      throw new Error('Respuesta inválida del servidor');
     }
 
-    throw new Error('Respuesta inválida del servidor');
+    const token = authData.access || authData.token || authData.access_token;
+    if (!token) {
+      throw new Error('No se recibió token de autenticación');
+    }
+
+    const tokens: AuthTokens = {
+      access: authData.access || token,
+      refresh: authData.refresh || token,
+      expires_at: Date.now() + 60 * 60 * 1000,
+    };
+
+    setTokens(tokens);
+
+    const user: AuthResponse['user'] = {
+      id: authData.id || authData.user_id || String(authData.user?.id || ''),
+      email: authData.email || email,
+      name: authData.first_name
+        ? `${authData.first_name} ${authData.last_name || ''}`.trim()
+        : authData.name || email,
+      picture: authData.picture,
+    };
+
+    setUserData(user);
+
+    const authResponse: AuthResponse = {
+      access: tokens.access,
+      refresh: tokens.refresh,
+      user: user,
+    };
+
+    return authResponse;
   } catch (error) {
     console.error('❌ Error procesando login de Google:', error);
     throw new Error('Error al procesar la información de Google');
@@ -147,11 +343,14 @@ export const loginWithGoogle = async (
 
 export const logout = async (): Promise<void> => {
   try {
-    await post('/api/auth/logout/');
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      await post('/api/auth/logout/', { refresh: refreshToken });
+    }
   } catch (error) {
     console.error('Error en logout:', error);
   } finally {
-    removeToken();
+    clearTokens();
   }
 };
 
@@ -443,8 +642,6 @@ export const guardarCamposPlantilla = async (
   campos: Campo[]
 ) => {
   try {
-    console.log('💾 Guardando campos de plantilla:', plantillaId, campos);
-
     const payload = {
       campos: campos.map((campo) => ({
         campo: campo.campo,
@@ -452,8 +649,6 @@ export const guardarCamposPlantilla = async (
         estilo: campo.estilo,
       })),
     };
-
-    console.log('📤 Payload enviado:', payload);
 
     const response = await apiClient.put(
       `/api/plantillas/${plantillaId}/campos/`,
@@ -470,14 +665,26 @@ export const apiService = {
   setToken,
   getToken,
   removeToken,
-  // setTempToken,
   isAuthenticated,
+
+  setTokens,
+  getAccessToken,
+  getRefreshToken,
+  clearTokens,
+  setUserData,
+  getUserData,
+  isTokenExpired,
+  refreshTokens,
+  fetchUserProfile,
+
   get,
   post,
   put,
   delete: del,
+
   loginWithGoogle,
   logout,
+
   getProyectos,
   createProyecto,
   updateProyecto,

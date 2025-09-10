@@ -3,13 +3,17 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from 'react';
 import {
   loginWithGoogle,
   logout as apiLogout,
   isAuthenticated as checkAuth,
-  setTempToken,
+  getUserData,
+  fetchUserProfile,
+  clearTokens,
+  isTokenExpired,
   type AuthResponse,
 } from '@shared/services/api';
 
@@ -48,12 +52,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && checkAuth();
 
+  const handleTokenExpiration = useCallback(async () => {
+    console.log('⏰ Token expirado, realizando logout automático...');
+    clearTokens();
+    setUser(null);
+
+    if (typeof window !== 'undefined') {
+      alert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+      window.location.href = '/login';
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const checkTokenExpiration = () => {
+      if (isTokenExpired()) {
+        handleTokenExpiration();
+      }
+    };
+
+    const interval = setInterval(checkTokenExpiration, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user, handleTokenExpiration]);
+
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        setTempToken();
+        if (checkAuth()) {
+          const savedUser = getUserData();
+          if (savedUser) {
+            setUser(savedUser);
+          } else {
+            try {
+              const userProfile = await fetchUserProfile();
+              setUser(userProfile);
+              console.log('✅ Perfil de usuario obtenido exitosamente');
+            } catch (profileError) {
+              console.error(
+                '❌ Error obteniendo perfil, limpiando sesión:',
+                profileError
+              );
+              clearTokens();
+            }
+          }
+        } else {
+        }
       } catch (error) {
-        console.error('Error inicializando auth:', error);
+        console.error('❌ Error inicializando auth:', error);
+        clearTokens();
       } finally {
         setIsLoading(false);
       }
@@ -80,10 +128,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
+      console.log('🚪 Iniciando logout...');
       await apiLogout();
       setUser(null);
+      console.log('✅ Logout completado exitosamente');
     } catch (error) {
-      console.error('Error durante el logout:', error);
+      console.error('❌ Error durante el logout:', error);
+      // Aún así limpiar el estado local
+      clearTokens();
       setUser(null);
     } finally {
       setIsLoading(false);
