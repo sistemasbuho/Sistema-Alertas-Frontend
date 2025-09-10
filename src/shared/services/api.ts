@@ -125,6 +125,7 @@ export const loginWithGoogle = async (
   try {
     const response = await post<AuthResponse>('/api/auth/google/', {
       jwt_google: googleCredential.credential,
+      email: googleCredential.email,
     });
 
     if (response.success && response.data.token) {
