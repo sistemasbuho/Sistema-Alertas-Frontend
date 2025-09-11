@@ -33,12 +33,26 @@ export interface Proyecto {
   proveedor: string;
   codigo_acceso: string;
   estado: 'activo' | 'inactivo' | 'completado';
-  tipo_envio: 'manual' | 'automatico';
+  tipo_envio: 'manual' | 'automatico' | 'medios';
   tipo_alerta: string;
   formato_mensaje: string;
-  keywords: string;
+  keywords: string | null;
   created_at: string;
   modified_at: string;
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export interface PaginationParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  ordering?: string;
 }
 
 const apiClient = axios.create({
@@ -354,14 +368,41 @@ export const logout = async (): Promise<void> => {
   }
 };
 
-export const getProyectos = async (): Promise<Proyecto[]> => {
+export const getProyectos = async (
+  params?: PaginationParams
+): Promise<PaginatedResponse<Proyecto>> => {
   try {
-    const response = await apiClient.get('/api/proyectos/');
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) {
+      queryParams.append('page', params.page.toString());
+    }
+    if (params?.page_size) {
+      queryParams.append('page_size', params.page_size.toString());
+    }
+    if (params?.search) {
+      queryParams.append('search', params.search);
+    }
+    if (params?.ordering) {
+      queryParams.append('ordering', params.ordering);
+    }
+
+    const url = `/api/proyectos/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+    const response = await apiClient.get(url);
     return response.data;
   } catch (error) {
     console.error('❌ Error obteniendo proyectos:', error);
     throw error;
   }
+};
+
+export const getProyectosList = async (
+  params?: PaginationParams
+): Promise<Proyecto[]> => {
+  const response = await getProyectos(params);
+  return response.results;
 };
 
 export const createProyecto = async (
@@ -686,6 +727,7 @@ export const apiService = {
   logout,
 
   getProyectos,
+  getProyectosList,
   createProyecto,
   updateProyecto,
   deleteProyecto,

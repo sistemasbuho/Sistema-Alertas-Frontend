@@ -3,4 +3,4 @@ export interface LoginCredentials {
   password: string;
 }
 
-export type { ApiResponse, AuthResponse, Proyecto } from '../services/api';
+export type { ApiResponse, AuthResponse, Proyecto, PaginatedResponse, PaginationParams } from '../services/api';

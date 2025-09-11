@@ -11,6 +11,7 @@ import {
   createProyecto,
   updateProyecto,
   type Proyecto,
+  type PaginationParams,
 } from '@shared/services/api';
 import {
   PlusIcon,
@@ -21,12 +22,28 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 
-const ProyectoPage: React.FC = () => {
+const ProyectoPage = () => {
   const { showSuccess, showError, showWarning } = useToast();
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  // Estados para paginación
+  const [pagination, setPagination] = useState<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+    currentPage: number;
+    pageSize: number;
+  }>({
+    count: 0,
+    next: null,
+    previous: null,
+    currentPage: 1,
+    pageSize: 10,
+  });
   const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditSlideOverOpen, setIsEditSlideOverOpen] = useState(false);
@@ -41,7 +58,7 @@ const ProyectoPage: React.FC = () => {
     proveedor: string;
     codigo_acceso: string;
     estado: 'activo' | 'inactivo' | 'completado';
-    tipo_envio: 'automatico' | 'manual';
+    tipo_envio: 'automatico' | 'manual' | 'medios';
     tipo_alerta: string;
     formato_mensaje: string;
     keywords: string;
@@ -56,26 +73,55 @@ const ProyectoPage: React.FC = () => {
     keywords: '',
   });
 
+  const loadData = async (params?: PaginationParams) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await getProyectos({
+        page: params?.page || pagination.currentPage,
+        page_size: params?.page_size || pagination.pageSize,
+        search: params?.search || searchTerm,
+        ...params,
+      });
+
+      setProyectos(response.results);
+      setPagination((prev) => ({
+        ...prev,
+        count: response.count,
+        next: response.next,
+        previous: response.previous,
+        currentPage: params?.page || prev.currentPage,
+      }));
+    } catch (err: any) {
+      console.error('❌ Error cargando proyectos:', err);
+      const errorMessage = err.message || 'Error al cargar los proyectos';
+      setError(errorMessage);
+      showError('Error al cargar', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError('');
-
-        const data = await getProyectos();
-        setProyectos(data);
-      } catch (err: any) {
-        console.error('❌ Error cargando proyectos:', err);
-        const errorMessage = err.message || 'Error al cargar los proyectos';
-        setError(errorMessage);
-        showError('Error al cargar', errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, [showError]);
+
+  useEffect(() => {
+    if (isFirstLoad) {
+      setIsFirstLoad(false);
+      return;
+    }
+
+    const delayedSearch = setTimeout(() => {
+      loadData({
+        search: searchTerm,
+        page: 1, // Resetear a la primera página al buscar
+      });
+    }, 500);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm]);
 
   const handleOpenSlideOver = () => {
     setFormData({
@@ -106,7 +152,7 @@ const ProyectoPage: React.FC = () => {
       tipo_envio: proyecto.tipo_envio,
       tipo_alerta: proyecto.tipo_alerta,
       formato_mensaje: proyecto.formato_mensaje,
-      keywords: proyecto.keywords,
+      keywords: proyecto.keywords || '',
     });
     setIsEditSlideOverOpen(true);
   };
@@ -152,8 +198,7 @@ const ProyectoPage: React.FC = () => {
 
       handleCloseSlideOver();
 
-      const data = await getProyectos();
-      setProyectos(data);
+      await loadData();
     } catch (err: any) {
       console.error('Error creando proyecto:', err);
 
@@ -238,8 +283,7 @@ const ProyectoPage: React.FC = () => {
 
       handleCloseEditSlideOver();
 
-      const data = await getProyectos();
-      setProyectos(data);
+      await loadData();
     } catch (err: any) {
       console.error('Error actualizando proyecto:', err);
 
@@ -303,19 +347,26 @@ const ProyectoPage: React.FC = () => {
     }
   };
 
-  const filteredProyectos = proyectos?.filter(
-    (proyecto) =>
-      proyecto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proyecto.proveedor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proyecto.codigo_acceso.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proyecto.keywords.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proyecto.tipo_alerta.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proyecto.formato_mensaje
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      proyecto.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proyecto.tipo_envio.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Funciones de paginación
+  const handlePageChange = async (page: number) => {
+    await loadData({ page });
+  };
+
+  const handleNextPage = () => {
+    if (pagination.next) {
+      handlePageChange(pagination.currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (pagination.previous) {
+      handlePageChange(pagination.currentPage - 1);
+    }
+  };
+
+  const totalPages = Math.ceil(pagination.count / pagination.pageSize);
+
+  const filteredProyectos = proyectos;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -405,9 +456,6 @@ const ProyectoPage: React.FC = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 />
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-                {filteredProyectos?.length} de {proyectos?.length} proyectos
               </div>
             </div>
           </Card.Content>
@@ -515,9 +563,9 @@ const ProyectoPage: React.FC = () => {
                         <td className="px-6 py-4">
                           <div
                             className="text-sm text-gray-900 dark:text-white max-w-xs truncate"
-                            title={proyecto.keywords}
+                            title={proyecto.keywords || 'Sin keywords'}
                           >
-                            {proyecto.keywords}
+                            {proyecto.keywords || 'Sin keywords'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -568,6 +616,88 @@ const ProyectoPage: React.FC = () => {
             )}
           </Card.Content>
         </Card>
+
+        {/* Controles de Paginación */}
+        {pagination.count > pagination.pageSize && (
+          <Card>
+            <Card.Content className="p-4">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Mostrando página {pagination.currentPage} de {totalPages} (
+                  {pagination.count} proyectos total
+                  {pagination.count !== 1 ? 's' : ''})
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={!pagination.previous || loading}
+                  >
+                    Anterior
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const page = i + 1;
+                      const isCurrentPage = page === pagination.currentPage;
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          disabled={loading}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            isCurrentPage
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          } ${
+                            loading
+                              ? 'opacity-50 cursor-not-allowed'
+                              : 'cursor-pointer'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+
+                    {totalPages > 5 && (
+                      <>
+                        <span className="text-gray-500">...</span>
+                        <button
+                          onClick={() => handlePageChange(totalPages)}
+                          disabled={loading}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            totalPages === pagination.currentPage
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          } ${
+                            loading
+                              ? 'opacity-50 cursor-not-allowed'
+                              : 'cursor-pointer'
+                          }`}
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={!pagination.next || loading}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            </Card.Content>
+          </Card>
+        )}
 
         <SlideOver
           isOpen={isSlideOverOpen}
