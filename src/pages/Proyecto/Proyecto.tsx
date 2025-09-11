@@ -13,13 +13,15 @@ import {
   type Proyecto,
   type PaginationParams,
 } from '@shared/services/api';
+import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon,
   MagnifyingGlassIcon,
   Cog6ToothIcon,
+  FunnelIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 const ProyectoPage = () => {
@@ -28,7 +30,12 @@ const ProyectoPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  const filters = useUrlFilters({
+    nombre: '',
+  });
 
   // Estados para paginación
   const [pagination, setPagination] = useState<{
@@ -78,12 +85,21 @@ const ProyectoPage = () => {
       setLoading(true);
       setError('');
 
-      const response = await getProyectos({
+      const combinedParams = {
         page: params?.page || pagination.currentPage,
         page_size: params?.page_size || pagination.pageSize,
         search: params?.search || searchTerm,
+        ...filters.filters,
         ...params,
-      });
+      };
+
+      const cleanedParams = Object.fromEntries(
+        Object.entries(combinedParams).filter(
+          ([_, value]) => value !== null && value !== undefined && value !== ''
+        )
+      );
+
+      const response = await getProyectos(cleanedParams);
 
       setProyectos(response.results);
       setPagination((prev) => ({
@@ -105,7 +121,7 @@ const ProyectoPage = () => {
 
   useEffect(() => {
     loadData();
-  }, [showError]);
+  }, [showError, filters.filters]);
 
   useEffect(() => {
     if (isFirstLoad) {
@@ -347,7 +363,6 @@ const ProyectoPage = () => {
     }
   };
 
-  // Funciones de paginación
   const handlePageChange = async (page: number) => {
     await loadData({ page });
   };
@@ -457,7 +472,60 @@ const ProyectoPage = () => {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
+
+              <Button
+                onClick={() => setShowFilters(!showFilters)}
+                variant="outline"
+                className="inline-flex items-center gap-2"
+              >
+                <FunnelIcon className="h-4 w-4" />
+                Filtros
+                {filters.hasActiveFilters() && (
+                  <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                    {
+                      Object.values(filters.filters).filter(
+                        (v) => v && v.trim() !== ''
+                      ).length
+                    }
+                  </span>
+                )}
+              </Button>
             </div>
+
+            {showFilters && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="flex items-center justify-between">
+                  {filters.hasActiveFilters() && (
+                    <Button
+                      onClick={filters.clearFilters}
+                      variant="outline"
+                      size="sm"
+                      className="inline-flex items-center gap-2"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                      Limpiar
+                    </Button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nombre del Proyecto
+                    </label>
+                    <input
+                      type="text"
+                      value={filters.filters.nombre || ''}
+                      onChange={(e) =>
+                        filters.updateFilters({ nombre: e.target.value })
+                      }
+                      placeholder="Ej: Mi Proyecto"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </Card.Content>
         </Card>
 
@@ -580,12 +648,6 @@ const ProyectoPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end gap-2">
-                            <button
-                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
-                              title="Ver detalles"
-                            >
-                              <EyeIcon className="h-4 w-4" />
-                            </button>
                             <button
                               onClick={() => handleOpenFormatoModal(proyecto)}
                               className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1"

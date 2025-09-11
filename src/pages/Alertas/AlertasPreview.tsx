@@ -25,6 +25,7 @@ interface AlertaItem {
   url: string;
   contenido: string;
   fecha: string;
+  fecha_publicacion?: string;
   titulo?: string;
   autor?: string;
   reach?: number;
@@ -309,13 +310,25 @@ const AlertasPreview: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    if (!dateString) return 'Fecha no disponible';
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Fecha inválida';
+      }
+
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error('Error formateando fecha:', dateString, error);
+      return 'Error en fecha';
+    }
   };
 
   const getIconForUrl = (url: string) => {
@@ -443,7 +456,8 @@ const AlertasPreview: React.FC = () => {
             </div>
           )}
           <div>
-            <strong>Fecha:</strong> {formatDate(alert.fecha)}
+            <strong>Fecha:</strong>{' '}
+            {formatDate(alert.fecha_publicacion || alert.fecha)}
           </div>
           <div>
             <strong>URL:</strong>{' '}
@@ -466,9 +480,6 @@ const AlertasPreview: React.FC = () => {
         let valor = '';
 
         switch (campo) {
-          case 'id':
-            valor = alert.id;
-            break;
           case 'titulo':
             valor = alert.titulo || '';
             break;
@@ -482,7 +493,7 @@ const AlertasPreview: React.FC = () => {
             valor = alert.reach ? alert.reach.toLocaleString() : '';
             break;
           case 'fecha_publicacion':
-            valor = formatDate(alert.fecha);
+            valor = formatDate(alert.fecha_publicacion || alert.fecha);
             break;
           case 'url':
             valor = alert.url;
@@ -758,7 +769,7 @@ const AlertasPreview: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(item.fecha)}
+                      {formatDate(item.fecha_publicacion || item.fecha)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {item.reach ? item.reach.toLocaleString() : '0'}

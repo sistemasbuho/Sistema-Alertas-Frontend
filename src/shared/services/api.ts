@@ -53,6 +53,7 @@ export interface PaginationParams {
   page_size?: number;
   search?: string;
   ordering?: string;
+  nombre?: string;
 }
 
 const apiClient = axios.create({
@@ -385,6 +386,9 @@ export const getProyectos = async (
     }
     if (params?.ordering) {
       queryParams.append('ordering', params.ordering);
+    }
+    if (params?.nombre) {
+      queryParams.append('nombre', params.nombre);
     }
 
     const url = `/api/proyectos/${

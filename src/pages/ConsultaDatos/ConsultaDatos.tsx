@@ -286,11 +286,23 @@ const ConsultaDatos: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    if (!dateString) return 'Fecha no disponible';
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Fecha inválida';
+      }
+
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (error) {
+      console.error('Error formateando fecha:', dateString, error);
+      return 'Error en fecha';
+    }
   };
 
   const formatNumber = (num: number) => {
@@ -306,7 +318,8 @@ const ConsultaDatos: React.FC = () => {
             id: item.id,
             url: item.url,
             contenido: item.mensaje || item.contenido,
-            fecha: item.fecha,
+            fecha: item.fecha || item.fecha_publicacion,
+            fecha_publicacion: item.fecha_publicacion,
             titulo: item.titulo,
             autor: item.autor,
             reach: item.reach,
@@ -351,7 +364,7 @@ const ConsultaDatos: React.FC = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              Medios ({medios.length})
+              Medios
             </button>
             <button
               onClick={() => setActiveTab('redes')}
@@ -361,7 +374,7 @@ const ConsultaDatos: React.FC = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              Redes ({redes.length})
+              Redes
             </button>
           </nav>
         </div>
@@ -780,7 +793,9 @@ const ConsultaDatos: React.FC = () => {
                             </td>
                             <td className="px-4 py-4 w-32">
                               <div className="text-sm text-gray-900 dark:text-white">
-                                {formatDate(item.fecha)}
+                                {formatDate(
+                                  item.fecha_publicacion || item.fecha
+                                )}
                               </div>
                             </td>
                             <td className="px-4 py-4 w-32">
@@ -918,7 +933,12 @@ const ConsultaDatos: React.FC = () => {
                                   <div className="w-1 h-1 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
                                   <span className="text-yellow-800 dark:text-yellow-200">
                                     {item.titulo ||
-                                      item.contenido?.substring(0, 80) + '...'}
+                                      (item.contenido
+                                        ? item.contenido.substring(0, 80) +
+                                          '...'
+                                        : '') ||
+                                      item.url ||
+                                      `Duplicado #${index + 1}`}
                                   </span>
                                 </div>
                               )
@@ -958,7 +978,11 @@ const ConsultaDatos: React.FC = () => {
                               <div className="w-1 h-1 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                               <span className="text-green-800 dark:text-green-200">
                                 {item.titulo ||
-                                  item.contenido?.substring(0, 80) + '...'}
+                                  (item.contenido
+                                    ? item.contenido.substring(0, 80) + '...'
+                                    : '') ||
+                                  item.url ||
+                                  `Alerta #${index + 1}`}
                               </span>
                             </div>
                           )
