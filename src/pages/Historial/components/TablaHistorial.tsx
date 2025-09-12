@@ -2,11 +2,11 @@ import { HistorialEnvio } from '@/shared/services/api';
 import { Card } from '@/shared/components/ui';
 import {
   ClockIcon,
-  GlobeAltIcon,
-  CheckCircleIcon,
-  XCircleIcon,
+  // GlobeAltIcon,
+  // CheckCircleIcon,
+  // XCircleIcon,
 } from '@heroicons/react/24/outline';
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
+// import { DocumentTextIcon } from '@heroicons/react/24/outline';
 
 export const TablaHistorial = ({
   historial,
@@ -34,58 +34,58 @@ export const TablaHistorial = ({
     hasActiveFilters: () => boolean;
   };
 }) => {
-  const getTipoIcon = (item: HistorialEnvio) => {
-    if (item.red_social) {
-      return <GlobeAltIcon className="h-5 w-5 text-purple-500" />;
-    }
-    return <DocumentTextIcon className="h-5 w-5 text-green-500" />;
-  };
+  // const getTipoIcon = (item: HistorialEnvio) => {
+  //   if (item.red_social) {
+  //     return <GlobeAltIcon className="h-5 w-5 text-purple-500" />;
+  //   }
+  //   return <DocumentTextIcon className="h-5 w-5 text-green-500" />;
+  // };
 
-  const getTipoText = (item: HistorialEnvio) => {
-    if (item.red_social) {
-      return 'Redes Sociales';
-    }
-    return 'WhatsApp';
-  };
+  // const getTipoText = (item: HistorialEnvio) => {
+  //   if (item.red_social) {
+  //     return 'Redes Sociales';
+  //   }
+  //   return 'WhatsApp';
+  // };
 
-  const getEstadoIcon = (estadoEnviado: boolean) => {
-    return estadoEnviado ? (
-      <CheckCircleIcon className="h-5 w-5 text-green-500" />
-    ) : (
-      <XCircleIcon className="h-5 w-5 text-red-500" />
-    );
-  };
+  // const getEstadoIcon = (estadoEnviado: boolean) => {
+  //   return estadoEnviado ? (
+  //     <CheckCircleIcon className="h-5 w-5 text-green-500" />
+  //   ) : (
+  //     <XCircleIcon className="h-5 w-5 text-red-500" />
+  //   );
+  // };
 
-  const getEstadoText = (estadoEnviado: boolean) => {
-    return estadoEnviado ? 'Enviado' : 'Fallido';
-  };
+  // const getEstadoText = (estadoEnviado: boolean) => {
+  //   return estadoEnviado ? 'Enviado' : 'Fallido';
+  // };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Fecha no disponible';
+  // const formatDate = (dateString: string | null) => {
+  //   if (!dateString) return 'Fecha no disponible';
 
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return 'Fecha inválida';
-      }
+  //   try {
+  //     const date = new Date(dateString);
+  //     if (isNaN(date.getTime())) {
+  //       return 'Fecha inválida';
+  //     }
 
-      return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch (error) {
-      return 'Error en fecha';
-    }
-  };
+  //     return date.toLocaleDateString('es-ES', {
+  //       year: 'numeric',
+  //       month: 'short',
+  //       day: 'numeric',
+  //       hour: '2-digit',
+  //       minute: '2-digit',
+  //     });
+  //   } catch (error) {
+  //     return 'Error en fecha';
+  //   }
+  // };
 
-  const formatTiempoEnvio = (tiempo: number | null) => {
-    if (tiempo === null) return 'N/A';
-    if (tiempo < 0) return 'Error en tiempo';
-    return `${tiempo.toFixed(2)}s`;
-  };
+  // const formatTiempoEnvio = (tiempo: number | null) => {
+  //   if (tiempo === null) return 'N/A';
+  //   if (tiempo < 0) return 'Error en tiempo';
+  //   return `${tiempo.toFixed(2)}s`;
+  // };
 
   return (
     <Card className="mt-6">
