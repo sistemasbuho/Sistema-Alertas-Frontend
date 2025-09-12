@@ -73,8 +73,8 @@ const ProyectoPage = () => {
     codigo_acceso: '',
     estado: 'activo',
     tipo_envio: 'automatico',
-    tipo_alerta: 'medios',
-    formato_mensaje: 'uno a uno',
+    tipo_alerta: 'Redes',
+    formato_mensaje: 'Uno por Uno',
     keywords: '',
   });
 
@@ -127,8 +127,8 @@ const ProyectoPage = () => {
       codigo_acceso: '',
       estado: 'activo',
       tipo_envio: 'automatico',
-      tipo_alerta: 'medios',
-      formato_mensaje: 'uno a uno',
+      tipo_alerta: 'Redes',
+      formato_mensaje: 'Uno por Uno',
       keywords: '',
     });
     setIsSlideOverOpen(true);
@@ -835,32 +835,43 @@ const ProyectoPage = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Alerta
-              </label>
-              <Input
-                value={formData.tipo_alerta}
-                onChange={(e) =>
-                  setFormData({ ...formData, tipo_alerta: e.target.value })
-                }
-                placeholder="Ej: medios"
-                disabled={isCreating}
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo de Alerta
+                </label>
+                <select
+                  value={formData.tipo_alerta}
+                  onChange={(e) =>
+                    setFormData({ ...formData, tipo_alerta: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  disabled={isCreating}
+                >
+                  <option value="Redes">Redes</option>
+                  <option value="Medios">Medios</option>
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Formato de Mensaje
-              </label>
-              <Input
-                value={formData.formato_mensaje}
-                onChange={(e) =>
-                  setFormData({ ...formData, formato_mensaje: e.target.value })
-                }
-                placeholder="Ej: uno a uno"
-                disabled={isCreating}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Formato de Mensaje
+                </label>
+                <select
+                  value={formData.formato_mensaje}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      formato_mensaje: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  disabled={isCreating}
+                >
+                  <option value="Uno por Uno">Uno por Uno</option>
+                  <option value="Muchos en Uno">Muchos en Uno</option>
+                </select>
+              </div>
             </div>
 
             <div>
@@ -999,32 +1010,43 @@ const ProyectoPage = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Alerta
-              </label>
-              <Input
-                value={formData.tipo_alerta}
-                onChange={(e) =>
-                  setFormData({ ...formData, tipo_alerta: e.target.value })
-                }
-                placeholder="Ej: medios"
-                disabled={isUpdating}
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo de Alerta
+                </label>
+                <select
+                  value={formData.tipo_alerta}
+                  onChange={(e) =>
+                    setFormData({ ...formData, tipo_alerta: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  disabled={isUpdating}
+                >
+                  <option value="Redes">Redes</option>
+                  <option value="Medios">Medios</option>
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Formato de Mensaje
-              </label>
-              <Input
-                value={formData.formato_mensaje}
-                onChange={(e) =>
-                  setFormData({ ...formData, formato_mensaje: e.target.value })
-                }
-                placeholder="Ej: uno a uno"
-                disabled={isUpdating}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Formato de Mensaje
+                </label>
+                <select
+                  value={formData.formato_mensaje}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      formato_mensaje: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  disabled={isUpdating}
+                >
+                  <option value="Uno por Uno">Uno por Uno</option>
+                  <option value="Muchos en Uno">Muchos en Uno</option>
+                </select>
+              </div>
             </div>
 
             <div>
