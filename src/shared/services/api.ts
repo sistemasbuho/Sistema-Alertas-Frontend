@@ -466,11 +466,43 @@ export const deleteProyecto = async (id: string): Promise<void> => {
   }
 };
 
-export const getMedios = async (filters?: {
+export interface MediosPaginationParams {
+  page?: number;
+  page_size?: number;
   proyecto?: string;
   nombre?: string;
   tipo?: string;
-}) => {
+}
+
+export const getMedios = async (
+  params?: MediosPaginationParams
+): Promise<PaginatedResponse<any>> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.page_size)
+      queryParams.append('page_size', params.page_size.toString());
+    if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
+    if (params?.nombre) queryParams.append('nombre', params.nombre);
+    if (params?.tipo) queryParams.append('tipo', params.tipo);
+
+    const url = `/api/medios/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo medios:', error);
+    throw error;
+  }
+};
+
+export const getMediosList = async (filters?: {
+  proyecto?: string;
+  nombre?: string;
+  tipo?: string;
+}): Promise<any[]> => {
   try {
     const params = new URLSearchParams();
     if (filters?.proyecto) params.append('proyecto', filters.proyecto);
@@ -493,11 +525,43 @@ export const getMedios = async (filters?: {
   }
 };
 
-export const getRedes = async (filters?: {
+export interface RedesPaginationParams {
+  page?: number;
+  page_size?: number;
   proyecto?: string;
   autor?: string;
   url?: string;
-}) => {
+}
+
+export const getRedes = async (
+  params?: RedesPaginationParams
+): Promise<PaginatedResponse<any>> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.page_size)
+      queryParams.append('page_size', params.page_size.toString());
+    if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
+    if (params?.autor) queryParams.append('autor', params.autor);
+    if (params?.url) queryParams.append('url', params.url);
+
+    const url = `/api/redes/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo redes:', error);
+    throw error;
+  }
+};
+
+export const getRedesList = async (filters?: {
+  proyecto?: string;
+  autor?: string;
+  url?: string;
+}): Promise<any[]> => {
   try {
     const params = new URLSearchParams();
     if (filters?.proyecto) params.append('proyecto', filters.proyecto);

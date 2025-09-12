@@ -869,18 +869,6 @@ const AlertasPreview: React.FC = () => {
                 seleccionadas
               </div>
             </div>
-            <Button
-              onClick={handleEnviarAlertas}
-              disabled={isEnviando || selectedAlertIds.length === 0}
-              isLoading={isEnviando}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isEnviando
-                ? 'Enviando...'
-                : `Enviar ${
-                    selectedAlertIds.length > 0 ? selectedAlertIds.length : ''
-                  } Alerta${selectedAlertIds.length !== 1 ? 's' : ''}`}
-            </Button>
           </div>
         )}
 

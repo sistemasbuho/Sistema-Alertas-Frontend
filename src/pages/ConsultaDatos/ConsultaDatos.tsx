@@ -9,6 +9,8 @@ import {
   getRedes,
   capturaAlertaMedios,
   capturaAlertaRedes,
+  type MediosPaginationParams,
+  type RedesPaginationParams,
 } from '@shared/services/api';
 import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
@@ -16,6 +18,8 @@ import {
   PaperAirplaneIcon,
   FunnelIcon,
   XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 
 type TabType = 'medios' | 'redes';
@@ -40,6 +44,22 @@ const ConsultaDatos: React.FC = () => {
     plantilla_mensaje?: any;
     codigo_acceso?: string;
   } | null>(null);
+
+  const [mediosPagination, setMediosPagination] = useState({
+    count: 0,
+    next: null as string | null,
+    previous: null as string | null,
+    currentPage: 1,
+    pageSize: 20,
+  });
+
+  const [redesPagination, setRedesPagination] = useState({
+    count: 0,
+    next: null as string | null,
+    previous: null as string | null,
+    currentPage: 1,
+    pageSize: 15,
+  });
 
   const mediosFilters = useUrlFilters({
     proyecto_nombre: '',
@@ -66,15 +86,25 @@ const ConsultaDatos: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
+    if (activeTab === 'medios') {
+      setMediosPagination((prev) => ({ ...prev, currentPage: 1 }));
+    } else {
+      setRedesPagination((prev) => ({ ...prev, currentPage: 1 }));
+    }
+    loadData({ page: 1 });
   }, [activeTab, mediosFilters.filters, redesFilters.filters]);
 
   useEffect(() => {
     setSelectedItems([]);
     setSelectedProjectId('');
+    if (activeTab === 'medios') {
+      setMediosPagination((prev) => ({ ...prev, currentPage: 1 }));
+    } else {
+      setRedesPagination((prev) => ({ ...prev, currentPage: 1 }));
+    }
   }, [activeTab]);
 
-  const loadData = async () => {
+  const loadData = async (params?: { page?: number }) => {
     try {
       setLoading(true);
       setSelectedItems([]);
@@ -86,19 +116,28 @@ const ConsultaDatos: React.FC = () => {
           )
         );
 
-        const activeFilters: any = {};
+        const activeFilters: MediosPaginationParams = {
+          page: params?.page || mediosPagination.currentPage,
+          page_size: mediosPagination.pageSize,
+        };
+
         Object.entries(rawFilters).forEach(([key, value]) => {
           if (key === 'proyecto_nombre') {
             activeFilters.proyecto = value;
           } else {
-            activeFilters[key] = value;
+            (activeFilters as any)[key] = value;
           }
         });
 
-        const data = await getMedios(
-          Object.keys(activeFilters).length > 0 ? activeFilters : undefined
-        );
-        setMedios(data);
+        const response = await getMedios(activeFilters);
+        setMedios(response.results);
+        setMediosPagination({
+          count: response.count,
+          next: response.next,
+          previous: response.previous,
+          currentPage: params?.page || mediosPagination.currentPage,
+          pageSize: mediosPagination.pageSize,
+        });
       } else {
         const rawFilters = Object.fromEntries(
           Object.entries(redesFilters.filters).filter(
@@ -106,19 +145,28 @@ const ConsultaDatos: React.FC = () => {
           )
         );
 
-        const activeFilters: any = {};
+        const activeFilters: RedesPaginationParams = {
+          page: params?.page || redesPagination.currentPage,
+          page_size: redesPagination.pageSize,
+        };
+
         Object.entries(rawFilters).forEach(([key, value]) => {
           if (key === 'proyecto_nombre') {
             activeFilters.proyecto = value;
           } else {
-            activeFilters[key] = value;
+            (activeFilters as any)[key] = value;
           }
         });
 
-        const data = await getRedes(
-          Object.keys(activeFilters).length > 0 ? activeFilters : undefined
-        );
-        setRedes(data);
+        const response = await getRedes(activeFilters);
+        setRedes(response.results);
+        setRedesPagination({
+          count: response.count,
+          next: response.next,
+          previous: response.previous,
+          currentPage: params?.page || redesPagination.currentPage,
+          pageSize: redesPagination.pageSize,
+        });
       }
     } catch (err: any) {
       console.error(`Error cargando ${activeTab}:`, err);
@@ -133,6 +181,30 @@ const ConsultaDatos: React.FC = () => {
 
   const getCurrentData = () => {
     return activeTab === 'medios' ? medios : redes;
+  };
+
+  const getCurrentPagination = () => {
+    return activeTab === 'medios' ? mediosPagination : redesPagination;
+  };
+
+  const handlePageChange = (newPage: number) => {
+    loadData({ page: newPage });
+  };
+
+  const handleNextPage = () => {
+    const currentPagination = getCurrentPagination();
+    if (currentPagination.next) {
+      const nextPage = currentPagination.currentPage + 1;
+      handlePageChange(nextPage);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    const currentPagination = getCurrentPagination();
+    if (currentPagination.previous) {
+      const prevPage = currentPagination.currentPage - 1;
+      handlePageChange(prevPage);
+    }
   };
 
   const filteredData = getCurrentData().filter((item) => {
@@ -811,6 +883,56 @@ const ConsultaDatos: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {getCurrentData().length > 0 && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      Mostrando{' '}
+                      {(getCurrentPagination().currentPage - 1) *
+                        getCurrentPagination().pageSize +
+                        1}{' '}
+                      -{' '}
+                      {Math.min(
+                        getCurrentPagination().currentPage *
+                          getCurrentPagination().pageSize,
+                        getCurrentPagination().count
+                      )}{' '}
+                      de {getCurrentPagination().count} {activeTab}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={handlePreviousPage}
+                      disabled={!getCurrentPagination().previous}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <ChevronLeftIcon className="h-4 w-4" />
+                      Anterior
+                    </Button>
+
+                    <span className="text-sm text-gray-700 dark:text-gray-300 px-3">
+                      Página {getCurrentPagination().currentPage}
+                    </span>
+
+                    <Button
+                      onClick={handleNextPage}
+                      disabled={!getCurrentPagination().next}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      Siguiente
+                      <ChevronRightIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </Card.Content>
