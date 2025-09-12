@@ -19,12 +19,12 @@ export interface AuthTokens {
 export interface AuthResponse {
   access: string;
   refresh: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    picture?: string;
-  };
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_superuser: boolean;
+  is_staff: boolean;
 }
 
 export interface Proyecto {
@@ -41,6 +41,19 @@ export interface Proyecto {
   modified_at: string;
 }
 
+export interface HistorialEnvio {
+  id: string;
+  usuario?: string;
+  proyecto: string;
+  mensaje: string | null;
+  created_at: string;
+  inicio_envio: string | null;
+  fin_envio: string | null;
+  tiempo_envio: number | null;
+  estado_enviado: boolean;
+  red_social: any | null;
+}
+
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -51,9 +64,25 @@ export interface PaginatedResponse<T> {
 export interface PaginationParams {
   page?: number;
   page_size?: number;
-  search?: string;
   ordering?: string;
   nombre?: string;
+}
+
+export interface HistorialPaginationParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  ordering?: string;
+  usuario?: string;
+  proyecto?: string;
+  estado_enviado?: boolean;
+  medio__url?: string;
+  medio__url__icontains?: string;
+  red_social__red_social__nombre__icontains?: string;
+  created_at__gte?: string;
+  created_at__lte?: string;
+  inicio_envio__gte?: string;
+  fin_envio__lte?: string;
 }
 
 const apiClient = axios.create({
@@ -63,7 +92,6 @@ const apiClient = axios.create({
   },
 });
 
-// Interceptor de request: inyectar token y renovar si es necesario
 apiClient.interceptors.request.use(
   async (config) => {
     let token = getAccessToken();
@@ -184,11 +212,16 @@ export const clearTokens = (): void => {
   });
 };
 
-export const setUserData = (user: AuthResponse['user']): void => {
+export const setUserData = (
+  user: Omit<AuthResponse, 'access' | 'refresh'>
+): void => {
   localStorage.setItem(AUTH_KEYS.USER_DATA, JSON.stringify(user));
 };
 
-export const getUserData = (): AuthResponse['user'] | null => {
+export const getUserData = (): Omit<
+  AuthResponse,
+  'access' | 'refresh'
+> | null => {
   const userData = localStorage.getItem(AUTH_KEYS.USER_DATA);
   return userData ? JSON.parse(userData) : null;
 };
@@ -248,18 +281,6 @@ export const refreshTokens = async (): Promise<void> => {
   })();
 
   return refreshPromise;
-};
-
-export const fetchUserProfile = async (): Promise<AuthResponse['user']> => {
-  try {
-    const response = await get<AuthResponse['user']>('/api/auth/me/');
-    const user = response.data;
-    setUserData(user);
-    return user;
-  } catch (error) {
-    console.error('Failed to fetch user profile:', error);
-    throw error;
-  }
 };
 
 export const get = async <T = unknown>(
@@ -332,26 +353,31 @@ export const loginWithGoogle = async (
 
     setTokens(tokens);
 
-    const user: AuthResponse['user'] = {
-      id: authData.id || authData.user_id || String(authData.user?.id || ''),
-      email: authData.email || email,
-      name: authData.first_name
-        ? `${authData.first_name} ${authData.last_name || ''}`.trim()
-        : authData.name || email,
-      picture: authData.picture,
+    const userData = {
+      id: authData.id,
+      email: authData.email,
+      first_name: authData.first_name,
+      last_name: authData.last_name,
+      is_superuser: authData.is_superuser,
+      is_staff: authData.is_staff,
     };
 
-    setUserData(user);
+    setUserData(userData);
 
     const authResponse: AuthResponse = {
-      access: tokens.access,
-      refresh: tokens.refresh,
-      user: user,
+      access: authData.access,
+      refresh: authData.refresh,
+      id: authData.id,
+      email: authData.email,
+      first_name: authData.first_name,
+      last_name: authData.last_name,
+      is_superuser: authData.is_superuser,
+      is_staff: authData.is_staff,
     };
 
     return authResponse;
   } catch (error) {
-    console.error('❌ Error procesando login de Google:', error);
+    console.error('Error procesando login de Google:', error);
     throw new Error('Error al procesar la información de Google');
   }
 };
@@ -381,9 +407,6 @@ export const getProyectos = async (
     if (params?.page_size) {
       queryParams.append('page_size', params.page_size.toString());
     }
-    if (params?.search) {
-      queryParams.append('search', params.search);
-    }
     if (params?.ordering) {
       queryParams.append('ordering', params.ordering);
     }
@@ -397,7 +420,7 @@ export const getProyectos = async (
     const response = await apiClient.get(url);
     return response.data;
   } catch (error) {
-    console.error('❌ Error obteniendo proyectos:', error);
+    console.error('Error obteniendo proyectos:', error);
     throw error;
   }
 };
@@ -416,7 +439,7 @@ export const createProyecto = async (
     const response = await apiClient.post('/api/proyectos/crear/', proyecto);
     return response.data.data || response.data;
   } catch (error) {
-    console.error('❌ Error creando proyecto:', error);
+    console.error('Error creando proyecto:', error);
     throw error;
   }
 };
@@ -429,7 +452,7 @@ export const updateProyecto = async (
     const response = await apiClient.patch(`/api/proyectos/${id}/`, proyecto);
     return response.data.data || response.data;
   } catch (error) {
-    console.error('❌ Error actualizando proyecto:', error);
+    console.error('Error actualizando proyecto:', error);
     throw error;
   }
 };
@@ -438,7 +461,7 @@ export const deleteProyecto = async (id: string): Promise<void> => {
   try {
     await apiClient.delete(`/api/proyectos/${id}/`);
   } catch (error) {
-    console.error('❌ Error eliminando proyecto:', error);
+    console.error('Error eliminando proyecto:', error);
     throw error;
   }
 };
@@ -465,7 +488,7 @@ export const getMedios = async (filters?: {
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('❌ Error obteniendo medios:', error);
+    console.error('Error obteniendo medios:', error);
     throw error;
   }
 };
@@ -492,7 +515,7 @@ export const getRedes = async (filters?: {
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('❌ Error obteniendo redes:', error);
+    console.error('Error obteniendo redes:', error);
     throw error;
   }
 };
@@ -518,7 +541,7 @@ export const capturaAlertaMedios = async (payload: {
     );
     return response.data;
   } catch (error) {
-    console.error('❌ Error capturando alerta de medios:', error);
+    console.error('Error capturando alerta de medios:', error);
     throw error;
   }
 };
@@ -543,7 +566,7 @@ export const capturaAlertaRedes = async (payload: {
     );
     return response.data;
   } catch (error) {
-    console.error('❌ Error capturando alerta de redes:', error);
+    console.error('Error capturando alerta de redes:', error);
     throw error;
   }
 };
@@ -569,7 +592,7 @@ export const enviarAlertas = async (payload: {
 
     return mockResponse;
   } catch (error) {
-    console.error('❌ Error enviando alertas:', error);
+    console.error('Error enviando alertas:', error);
     throw error;
   }
 };
@@ -602,7 +625,7 @@ export const createAlerta = async (
     const response = await apiClient.post(endpoint, payload);
     return response.data;
   } catch (error) {
-    console.error('❌ Error creando alerta:', error);
+    console.error('Error creando alerta:', error);
     throw error;
   }
 };
@@ -639,7 +662,7 @@ export const updateAlerta = async (
     const response = await apiClient.patch(endpoint, payload);
     return response.data;
   } catch (error) {
-    console.error('❌ Error actualizando alerta:', error);
+    console.error('Error actualizando alerta:', error);
     throw error;
   }
 };
@@ -677,7 +700,7 @@ export const getPlantillaCampos = async (
     );
     return response.data;
   } catch (error) {
-    console.error('❌ Error obteniendo campos de plantilla:', error);
+    console.error('Error obteniendo campos de plantilla:', error);
     throw error;
   }
 };
@@ -701,7 +724,7 @@ export const guardarCamposPlantilla = async (
     );
     return response.data;
   } catch (error) {
-    console.error('❌ Error guardando campos de plantilla:', error);
+    console.error('Error guardando campos de plantilla:', error);
     throw error;
   }
 };
@@ -720,7 +743,6 @@ export const apiService = {
   getUserData,
   isTokenExpired,
   refreshTokens,
-  fetchUserProfile,
 
   get,
   post,
@@ -744,6 +766,102 @@ export const apiService = {
   updateAlerta,
   getPlantillaCampos,
   guardarCamposPlantilla,
+};
+
+export const getHistorialEnvios = async (
+  params?: HistorialPaginationParams
+): Promise<PaginatedResponse<HistorialEnvio>> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) {
+      queryParams.append('page', params.page.toString());
+    }
+    if (params?.page_size) {
+      queryParams.append('page_size', params.page_size.toString());
+    }
+    if (params?.search) {
+      queryParams.append('search', params.search);
+    }
+    if (params?.ordering) {
+      queryParams.append('ordering', params.ordering);
+    }
+    if (params?.usuario) {
+      queryParams.append('usuario', params.usuario);
+    }
+    if (params?.proyecto) {
+      queryParams.append('proyecto', params.proyecto);
+    }
+    if (params?.estado_enviado !== undefined) {
+      queryParams.append('estado_enviado', params.estado_enviado.toString());
+    }
+    if (params?.medio__url) {
+      queryParams.append('medio__url', params.medio__url);
+    }
+    if (params?.medio__url__icontains) {
+      queryParams.append('medio__url__icontains', params.medio__url__icontains);
+    }
+    if (params?.red_social__red_social__nombre__icontains) {
+      queryParams.append(
+        'red_social__red_social__nombre__icontains',
+        params.red_social__red_social__nombre__icontains
+      );
+    }
+    if (params?.created_at__gte) {
+      queryParams.append('created_at__gte', params.created_at__gte);
+    }
+    if (params?.created_at__lte) {
+      queryParams.append('created_at__lte', params.created_at__lte);
+    }
+    if (params?.inicio_envio__gte) {
+      queryParams.append('inicio_envio__gte', params.inicio_envio__gte);
+    }
+    if (params?.fin_envio__lte) {
+      queryParams.append('fin_envio__lte', params.fin_envio__lte);
+    }
+
+    const url = `/api/historial-envios/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo historial de envíos:', error);
+    throw error;
+  }
+};
+export interface WhatsAppAlerta {
+  publicacion_id: string;
+  mensaje: string;
+}
+
+export interface WhatsAppEnvioRequest {
+  proyecto_id: string;
+  grupo_id: string;
+  tipo_alerta: 'medio' | 'redes';
+  alertas: WhatsAppAlerta[];
+}
+
+export interface WhatsAppEnvioResponse {
+  success: string;
+  enviados: string[];
+  no_enviados: string[];
+}
+
+export const enviarAlertasWhatsApp = async (
+  data: WhatsAppEnvioRequest
+): Promise<WhatsAppEnvioResponse> => {
+  try {
+    console.log('📤 Enviando alertas a WhatsApp API:', data);
+
+    const response = await apiClient.post('/api/whatsapp/envio_alerta/', data);
+
+    console.log('Respuesta del servidor WhatsApp:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error enviando alertas a WhatsApp:', error);
+    throw error;
+  }
 };
 
 export default apiService;

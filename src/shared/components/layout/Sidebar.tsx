@@ -4,7 +4,7 @@ import Button from '@shared/components/ui/Button';
 import ThemeToggle from '@shared/components/ui/ThemeToggle';
 
 interface SidebarProps {
-  onLogout: () => Promise<void> | void;
+  onLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {

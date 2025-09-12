@@ -38,6 +38,7 @@ const ConsultaDatos: React.FC = () => {
     duplicadas: any[];
     mensaje: string;
     plantilla_mensaje?: any;
+    codigo_acceso?: string;
   } | null>(null);
 
   const mediosFilters = useUrlFilters({
@@ -329,6 +330,7 @@ const ConsultaDatos: React.FC = () => {
           proyectoId: selectedProjectId || '',
           fromBackend: true,
           plantillaMensaje: captureResult.plantilla_mensaje,
+          codigo_acceso: captureResult.codigo_acceso,
         },
       });
     }

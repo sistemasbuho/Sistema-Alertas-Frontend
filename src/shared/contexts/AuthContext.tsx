@@ -8,20 +8,20 @@ import React, {
 } from 'react';
 import {
   loginWithGoogle,
-  logout as apiLogout,
   isAuthenticated as checkAuth,
   getUserData,
-  fetchUserProfile,
   clearTokens,
   isTokenExpired,
   type AuthResponse,
 } from '@shared/services/api';
 
 interface User {
-  id: string;
+  id: number;
   email: string;
-  name: string;
-  picture?: string;
+  first_name: string;
+  last_name: string;
+  is_superuser: boolean;
+  is_staff: boolean;
 }
 
 interface AuthContextType {
@@ -29,7 +29,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (googleCredential: any) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,10 +50,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAuthenticated = !!user && checkAuth();
+  const isAuthenticated = !!user;
 
   const handleTokenExpiration = useCallback(async () => {
-    console.log('⏰ Token expirado, realizando logout automático...');
     clearTokens();
     setUser(null);
 
@@ -83,24 +82,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (checkAuth()) {
           const savedUser = getUserData();
           if (savedUser) {
-            setUser(savedUser);
+            setUser(savedUser as User);
           } else {
-            try {
-              const userProfile = await fetchUserProfile();
-              setUser(userProfile);
-              console.log('✅ Perfil de usuario obtenido exitosamente');
-            } catch (profileError) {
-              console.error(
-                '❌ Error obteniendo perfil, limpiando sesión:',
-                profileError
-              );
-              clearTokens();
-            }
+            console.log(
+              'Tokens válidos pero sin datos de usuario, limpiando sesión'
+            );
+            clearTokens();
           }
-        } else {
         }
       } catch (error) {
-        console.error('❌ Error inicializando auth:', error);
+        console.error('Error inicializando auth:', error);
         clearTokens();
       } finally {
         setIsLoading(false);
@@ -116,7 +107,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const authResponse: AuthResponse = await loginWithGoogle(
         googleCredential
       );
-      setUser(authResponse.user);
+
+      const user: User = {
+        id: authResponse.id,
+        email: authResponse.email,
+        first_name: authResponse.first_name,
+        last_name: authResponse.last_name,
+        is_superuser: authResponse.is_superuser,
+        is_staff: authResponse.is_staff,
+      };
+
+      setUser(user);
     } catch (error) {
       console.error('Error durante el login:', error);
       throw new Error('Error al iniciar sesión. Por favor, intenta de nuevo.');
@@ -125,20 +126,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      console.log('🚪 Iniciando logout...');
-      await apiLogout();
-      setUser(null);
-      console.log('✅ Logout completado exitosamente');
-    } catch (error) {
-      console.error('❌ Error durante el logout:', error);
-      // Aún así limpiar el estado local
-      clearTokens();
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+  const logout = (): void => {
+    clearTokens();
+    setUser(null);
+    setIsLoading(false);
+
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+      sessionStorage.clear();
     }
   };
 

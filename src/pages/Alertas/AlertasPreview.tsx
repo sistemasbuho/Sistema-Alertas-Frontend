@@ -6,9 +6,10 @@ import Button from '@shared/components/ui/Button';
 import AlertModal, { AlertaData } from '@/pages/Alertas/components/AlertModal';
 import { useToast } from '@shared/contexts/ToastContext';
 import {
-  enviarAlertas,
   createAlerta,
   updateAlerta,
+  enviarAlertasWhatsApp,
+  type WhatsAppEnvioRequest,
 } from '@shared/services/api';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import {
@@ -49,6 +50,7 @@ interface LocationState {
   proyectoId: string;
   fromBackend?: boolean;
   plantillaMensaje?: PlantillaMensaje;
+  codigo_acceso?: string;
 }
 
 const AlertasPreview: React.FC = () => {
@@ -186,6 +188,14 @@ const AlertasPreview: React.FC = () => {
       return;
     }
 
+    if (!state.codigo_acceso) {
+      showError(
+        'Error de configuración',
+        'No se encontró el código de acceso del grupo de WhatsApp'
+      );
+      return;
+    }
+
     try {
       setIsEnviando(true);
 
@@ -193,31 +203,44 @@ const AlertasPreview: React.FC = () => {
         selectedAlertIds.includes(item.id)
       );
 
-      const payload = {
+      const payload: WhatsAppEnvioRequest = {
         proyecto_id: state.proyectoId,
-        enviar: true,
-        alertas: selectedAlertas.map((item) => ({
-          url: item.url,
-          contenido:
+        grupo_id: state.codigo_acceso,
+        tipo_alerta: state.tipo === 'medios' ? 'medio' : 'redes',
+        alertas: selectedAlertas.map((item) => {
+          const mensaje =
             item.emojis && item.emojis.length > 0
               ? `${item.emojis.join(' ')} ${item.contenido}`
-              : item.contenido,
-          fecha: item.fecha,
-          emojis: item.emojis || [],
-        })),
+              : item.contenido;
+
+          return {
+            publicacion_id: item.id,
+            mensaje: mensaje,
+          };
+        }),
       };
 
-      await enviarAlertas(payload);
+      const result = await enviarAlertasWhatsApp(payload);
 
-      showSuccess(
-        'Alertas enviadas',
-        `Se han enviado ${selectedAlertas.length} alertas correctamente`
-      );
+      const totalEnviadas = result.enviados.length;
+      const totalNoEnviadas = result.no_enviados.length;
+
+      if (totalEnviadas > 0) {
+        showSuccess(
+          'Alertas enviadas',
+          `${result.success}. Enviadas: ${totalEnviadas}, No enviadas: ${totalNoEnviadas}`
+        );
+      } else {
+        showError('Error al enviar', 'No se pudo enviar ninguna alerta');
+      }
 
       navigate('/consulta-datos');
     } catch (error: any) {
-      console.error('Error enviando alertas:', error);
-      showError('Error al enviar', 'No se pudieron enviar las alertas');
+      console.error('Error enviando alertas a WhatsApp:', error);
+      showError(
+        'Error al enviar',
+        error.message || 'No se pudieron enviar las alertas a WhatsApp'
+      );
     } finally {
       setIsEnviando(false);
     }

@@ -29,9 +29,7 @@ const ProyectoPage = () => {
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const filters = useUrlFilters({
     nombre: '',
@@ -88,7 +86,6 @@ const ProyectoPage = () => {
       const combinedParams = {
         page: params?.page || pagination.currentPage,
         page_size: params?.page_size || pagination.pageSize,
-        search: params?.search || searchTerm,
         ...filters.filters,
         ...params,
       };
@@ -122,22 +119,6 @@ const ProyectoPage = () => {
   useEffect(() => {
     loadData();
   }, [showError, filters.filters]);
-
-  useEffect(() => {
-    if (isFirstLoad) {
-      setIsFirstLoad(false);
-      return;
-    }
-
-    const delayedSearch = setTimeout(() => {
-      loadData({
-        search: searchTerm,
-        page: 1, // Resetear a la primera página al buscar
-      });
-    }, 500);
-
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm]);
 
   const handleOpenSlideOver = () => {
     setFormData({
@@ -467,8 +448,10 @@ const ProyectoPage = () => {
                 <input
                   type="text"
                   placeholder="Buscar proyectos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={filters.filters.nombre || ''}
+                  onChange={(e) =>
+                    filters.updateFilters({ nombre: e.target.value })
+                  }
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -541,7 +524,7 @@ const ProyectoPage = () => {
             ) : filteredProyectos?.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400">
-                  {searchTerm
+                  {filters.filters.nombre
                     ? 'No se encontraron proyectos que coincidan con tu búsqueda.'
                     : 'No hay proyectos disponibles.'}
                 </p>

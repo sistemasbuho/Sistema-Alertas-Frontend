@@ -3,4 +3,15 @@ export interface LoginCredentials {
   password: string;
 }
 
-export type { ApiResponse, AuthResponse, Proyecto, PaginatedResponse, PaginationParams } from '../services/api';
+export type {
+  ApiResponse,
+  AuthResponse,
+  Proyecto,
+  PaginatedResponse,
+  PaginationParams,
+  HistorialEnvio,
+  HistorialPaginationParams,
+  WhatsAppAlerta,
+  WhatsAppEnvioRequest,
+  WhatsAppEnvioResponse,
+} from '../services/api';
