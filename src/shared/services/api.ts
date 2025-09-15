@@ -32,6 +32,7 @@ export interface Proyecto {
   nombre: string;
   proveedor: string;
   codigo_acceso: string;
+  grupo_nombre?: string;
   estado: 'activo' | 'inactivo' | 'completado';
   tipo_envio: 'manual' | 'automatico' | 'medios';
   tipo_alerta: string;

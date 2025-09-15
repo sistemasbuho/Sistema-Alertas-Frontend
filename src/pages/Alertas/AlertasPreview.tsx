@@ -270,11 +270,6 @@ const AlertasPreview: React.FC = () => {
     }
   };
 
-  const handleOpenAddAlert = () => {
-    setEditingAlert(null);
-    setIsAlertModalOpen(true);
-  };
-
   const handleEditAlert = (alert: AlertaItem) => {
     setEditingAlert(alert);
     setIsAlertModalOpen(true);
@@ -613,14 +608,6 @@ const AlertasPreview: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              onClick={handleOpenAddAlert}
-              variant="outline"
-              className="inline-flex items-center gap-2"
-            >
-              <PlusIcon className="h-4 w-4" />
-              Agregar Alerta
-            </Button>
             <Button
               onClick={handleEnviarAlertas}
               disabled={alertas.length === 0 || isEnviando}

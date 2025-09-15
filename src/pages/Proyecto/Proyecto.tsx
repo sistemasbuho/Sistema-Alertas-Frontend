@@ -73,8 +73,8 @@ const ProyectoPage = () => {
     codigo_acceso: '',
     estado: 'activo',
     tipo_envio: 'automatico',
-    tipo_alerta: 'Redes',
-    formato_mensaje: 'Uno por Uno',
+    tipo_alerta: 'redes',
+    formato_mensaje: 'uno a uno',
     keywords: '',
   });
 
@@ -127,8 +127,8 @@ const ProyectoPage = () => {
       codigo_acceso: '',
       estado: 'activo',
       tipo_envio: 'automatico',
-      tipo_alerta: 'Redes',
-      formato_mensaje: 'Uno por Uno',
+      tipo_alerta: 'redes',
+      formato_mensaje: 'uno a uno',
       keywords: '',
     });
     setIsSlideOverOpen(true);
@@ -144,7 +144,7 @@ const ProyectoPage = () => {
     setFormData({
       nombre: proyecto.nombre,
       proveedor: proyecto.proveedor,
-      codigo_acceso: proyecto.codigo_acceso,
+      codigo_acceso: proyecto.grupo_nombre || proyecto.codigo_acceso || '',
       estado: proyecto.estado,
       tipo_envio: proyecto.tipo_envio,
       tipo_alerta: proyecto.tipo_alerta,
@@ -200,30 +200,31 @@ const ProyectoPage = () => {
       console.error('Error creando proyecto:', err);
 
       if (err.response?.status === 400) {
-        if (
-          err.response?.data?.message?.includes('nombre') ||
-          err.response?.data?.error?.includes('nombre') ||
-          err.message?.includes('nombre')
-        ) {
-          showError(
-            'Proyecto ya existe',
-            `Ya existe un proyecto con el nombre "${formData.nombre}". Por favor elige otro nombre.`
-          );
-        } else if (
-          err.response?.data?.message?.includes('codigo') ||
-          err.response?.data?.error?.includes('codigo') ||
-          err.message?.includes('codigo')
-        ) {
-          showError(
-            'Código duplicado',
-            `El código de acceso "${formData.codigo_acceso}" ya está en uso. Por favor elige otro código.`
-          );
+        const errorMessage =
+          err.response?.data?.error || err.response?.data?.message;
+
+        if (errorMessage) {
+          if (errorMessage.includes('grupo de WhatsApp')) {
+            showError('Grupo no encontrado', errorMessage);
+          } else if (
+            errorMessage.includes('nombre') &&
+            (errorMessage.includes('existe') ||
+              errorMessage.includes('duplicado'))
+          ) {
+            showError('Proyecto ya existe', errorMessage);
+          } else if (
+            (errorMessage.includes('codigo') ||
+              errorMessage.includes('código')) &&
+            errorMessage.includes('uso')
+          ) {
+            showError('Código duplicado', errorMessage);
+          } else {
+            showError('Error de validación', errorMessage);
+          }
         } else {
           showError(
             'Datos inválidos',
-            err.response?.data?.message ||
-              err.response?.data?.error ||
-              'Los datos proporcionados no son válidos'
+            'Los datos proporcionados no son válidos'
           );
         }
       } else if (err.response?.status === 401) {
@@ -285,30 +286,31 @@ const ProyectoPage = () => {
       console.error('Error actualizando proyecto:', err);
 
       if (err.response?.status === 400) {
-        if (
-          err.response?.data?.message?.includes('nombre') ||
-          err.response?.data?.error?.includes('nombre') ||
-          err.message?.includes('nombre')
-        ) {
-          showError(
-            'Proyecto ya existe',
-            `Ya existe un proyecto con el nombre "${formData.nombre}". Por favor elige otro nombre.`
-          );
-        } else if (
-          err.response?.data?.message?.includes('codigo') ||
-          err.response?.data?.error?.includes('codigo') ||
-          err.message?.includes('codigo')
-        ) {
-          showError(
-            'Código duplicado',
-            `El código de acceso "${formData.codigo_acceso}" ya está en uso. Por favor elige otro código.`
-          );
+        const errorMessage =
+          err.response?.data?.error || err.response?.data?.message;
+
+        if (errorMessage) {
+          if (errorMessage.includes('grupo de WhatsApp')) {
+            showError('Grupo no encontrado', errorMessage);
+          } else if (
+            errorMessage.includes('nombre') &&
+            (errorMessage.includes('existe') ||
+              errorMessage.includes('duplicado'))
+          ) {
+            showError('Proyecto ya existe', errorMessage);
+          } else if (
+            (errorMessage.includes('codigo') ||
+              errorMessage.includes('código')) &&
+            errorMessage.includes('uso')
+          ) {
+            showError('Código duplicado', errorMessage);
+          } else {
+            showError('Error de validación', errorMessage);
+          }
         } else {
           showError(
             'Datos inválidos',
-            err.response?.data?.message ||
-              err.response?.data?.error ||
-              'Los datos proporcionados no son válidos'
+            'Los datos proporcionados no son válidos'
           );
         }
       } else if (err.response?.status === 401) {
@@ -541,7 +543,7 @@ const ProyectoPage = () => {
                         Proveedor
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Código
+                        Nombre del Grupo
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Estado
@@ -591,8 +593,10 @@ const ProyectoPage = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                            {proyecto.codigo_acceso}
+                          <div className="text-sm text-gray-900 dark:text-white">
+                            {proyecto.grupo_nombre ||
+                              proyecto.codigo_acceso ||
+                              'Sin nombre'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -782,14 +786,14 @@ const ProyectoPage = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Código de Acceso *
+                Nombre del Grupo *
               </label>
               <Input
                 value={formData.codigo_acceso}
                 onChange={(e) =>
                   setFormData({ ...formData, codigo_acceso: e.target.value })
                 }
-                placeholder="Ej: ABC12345"
+                placeholder="Ej: Grupo de Alertas"
                 required
                 disabled={isCreating}
               />
@@ -848,8 +852,8 @@ const ProyectoPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   disabled={isCreating}
                 >
-                  <option value="Redes">Redes</option>
-                  <option value="Medios">Medios</option>
+                  <option value="redes">Redes</option>
+                  <option value="medios">Medios</option>
                 </select>
               </div>
 
@@ -868,8 +872,8 @@ const ProyectoPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   disabled={isCreating}
                 >
-                  <option value="Uno por Uno">Uno por Uno</option>
-                  <option value="Muchos en Uno">Muchos en Uno</option>
+                  <option value="uno a uno">Uno por Uno</option>
+                  <option value="muchos en uno">Muchos en Uno</option>
                 </select>
               </div>
             </div>
@@ -883,7 +887,7 @@ const ProyectoPage = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, keywords: e.target.value })
                 }
-                placeholder="Ej: noticia,prensa,medios sociales"
+                placeholder="Ej: noticia, prensa, medios sociales, etc."
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 disabled={isCreating}
@@ -957,14 +961,14 @@ const ProyectoPage = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Código de Acceso *
+                Nombre del Grupo *
               </label>
               <Input
                 value={formData.codigo_acceso}
                 onChange={(e) =>
                   setFormData({ ...formData, codigo_acceso: e.target.value })
                 }
-                placeholder="Ej: ABC12345"
+                placeholder="Ej: Grupo de Alertas"
                 required
                 disabled={isUpdating}
               />
@@ -1023,8 +1027,8 @@ const ProyectoPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   disabled={isUpdating}
                 >
-                  <option value="Redes">Redes</option>
-                  <option value="Medios">Medios</option>
+                  <option value="redes">Redes</option>
+                  <option value="medios">Medios</option>
                 </select>
               </div>
 
@@ -1043,8 +1047,8 @@ const ProyectoPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   disabled={isUpdating}
                 >
-                  <option value="Uno por Uno">Uno por Uno</option>
-                  <option value="Muchos en Uno">Muchos en Uno</option>
+                  <option value="uno a uno">Uno por Uno</option>
+                  <option value="muchos en uno">Muchos en Uno</option>
                 </select>
               </div>
             </div>
