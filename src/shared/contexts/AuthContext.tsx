@@ -11,7 +11,6 @@ import {
   isAuthenticated as checkAuth,
   getUserData,
   clearTokens,
-  isTokenExpired,
   type AuthResponse,
 } from '@shared/services/api';
 
