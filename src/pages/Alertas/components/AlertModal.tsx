@@ -13,6 +13,7 @@ export interface AlertaData {
   autor?: string;
   reach?: number;
   emojis?: string[];
+  mensaje_formateado?: string;
 }
 
 interface AlertModalProps {

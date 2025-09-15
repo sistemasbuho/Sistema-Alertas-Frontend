@@ -31,6 +31,7 @@ interface AlertaItem {
   autor?: string;
   reach?: number;
   emojis?: string[];
+  mensaje_formateado?: string;
 }
 
 interface PlantillaMensaje {
@@ -131,10 +132,17 @@ const AlertasPreview: React.FC = () => {
 
   const handleAddEmojiToAll = (emoji: string) => {
     setAlertas((prev) =>
-      prev.map((item) => ({
-        ...item,
-        emojis: [...(item.emojis || []), emoji],
-      }))
+      prev.map((item) => {
+        const newEmojis = [...(item.emojis || []), emoji];
+        return {
+          ...item,
+          emojis: newEmojis,
+          mensaje_formateado:
+            newEmojis.length > 0
+              ? `${newEmojis.join(' ')} ${item.contenido}`
+              : item.contenido,
+        };
+      })
     );
     setShowEmojiPicker(false);
     showSuccess('Emoji agregado', `Se agregó ${emoji} a todas las alertas`);
@@ -142,11 +150,20 @@ const AlertasPreview: React.FC = () => {
 
   const handleAddEmojiToItem = (alertaId: string, emoji: string) => {
     setAlertas((prev) =>
-      prev.map((item) =>
-        item.id === alertaId
-          ? { ...item, emojis: [...(item.emojis || []), emoji] }
-          : item
-      )
+      prev.map((item) => {
+        if (item.id === alertaId) {
+          const newEmojis = [...(item.emojis || []), emoji];
+          return {
+            ...item,
+            emojis: newEmojis,
+            mensaje_formateado:
+              newEmojis.length > 0
+                ? `${newEmojis.join(' ')} ${item.contenido}`
+                : item.contenido,
+          };
+        }
+        return item;
+      })
     );
     setShowEmojiPicker(false);
     showSuccess('Emoji agregado', `Se agregó ${emoji} a la alerta`);
@@ -154,15 +171,21 @@ const AlertasPreview: React.FC = () => {
 
   const handleRemoveEmoji = (alertaId: string, emojiIndex: number) => {
     setAlertas((prev) =>
-      prev.map((item) =>
-        item.id === alertaId
-          ? {
-              ...item,
-              emojis:
-                item.emojis?.filter((_, index) => index !== emojiIndex) || [],
-            }
-          : item
-      )
+      prev.map((item) => {
+        if (item.id === alertaId) {
+          const newEmojis =
+            item.emojis?.filter((_, index) => index !== emojiIndex) || [];
+          return {
+            ...item,
+            emojis: newEmojis,
+            mensaje_formateado:
+              newEmojis.length > 0
+                ? `${newEmojis.join(' ')} ${item.contenido}`
+                : item.contenido,
+          };
+        }
+        return item;
+      })
     );
   };
 
@@ -208,10 +231,11 @@ const AlertasPreview: React.FC = () => {
         grupo_id: state.codigo_acceso,
         tipo_alerta: state.tipo === 'medios' ? 'medio' : 'redes',
         alertas: selectedAlertas.map((item) => {
-          const mensaje =
-            item.emojis && item.emojis.length > 0
-              ? `${item.emojis.join(' ')} ${item.contenido}`
-              : item.contenido;
+          const mensaje = item.mensaje_formateado
+            ? item.mensaje_formateado
+            : item.emojis && item.emojis.length > 0
+            ? `${item.emojis.join(' ')} ${item.contenido}`
+            : item.contenido;
 
           return {
             publicacion_id: item.id,

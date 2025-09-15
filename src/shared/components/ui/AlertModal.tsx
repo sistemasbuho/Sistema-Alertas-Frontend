@@ -14,6 +14,7 @@ export interface AlertaData {
   reach?: number;
   engagement?: number;
   emojis?: string[];
+  mensaje_formateado?: string;
 }
 
 interface AlertModalProps {

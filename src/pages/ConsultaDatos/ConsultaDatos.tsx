@@ -397,6 +397,7 @@ const ConsultaDatos: React.FC = () => {
             autor: item.autor,
             reach: item.reach,
             emojis: [],
+            mensaje_formateado: item.mensaje_formateado,
           })),
           tipo: activeTab,
           proyectoId: selectedProjectId || '',
