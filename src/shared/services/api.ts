@@ -471,8 +471,9 @@ export interface MediosPaginationParams {
   page?: number;
   page_size?: number;
   proyecto?: string;
-  nombre?: string;
-  tipo?: string;
+  autor?: string;
+  url?: string;
+  estado_enviado?: boolean;
 }
 
 export const getMedios = async (
@@ -485,8 +486,10 @@ export const getMedios = async (
     if (params?.page_size)
       queryParams.append('page_size', params.page_size.toString());
     if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
-    if (params?.nombre) queryParams.append('nombre', params.nombre);
-    if (params?.tipo) queryParams.append('tipo', params.tipo);
+    if (params?.autor) queryParams.append('autor', params.autor);
+    if (params?.url) queryParams.append('url', params.url);
+    if (params?.estado_enviado !== undefined)
+      queryParams.append('estado_enviado', params.estado_enviado.toString());
 
     const url = `/api/medios/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''
@@ -532,6 +535,7 @@ export interface RedesPaginationParams {
   proyecto?: string;
   autor?: string;
   url?: string;
+  estado_enviado?: boolean;
 }
 
 export const getRedes = async (
@@ -546,6 +550,8 @@ export const getRedes = async (
     if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
     if (params?.autor) queryParams.append('autor', params.autor);
     if (params?.url) queryParams.append('url', params.url);
+    if (params?.estado_enviado !== undefined)
+      queryParams.append('estado_enviado', params.estado_enviado.toString());
 
     const url = `/api/redes/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''

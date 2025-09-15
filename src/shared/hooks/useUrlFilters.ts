@@ -3,14 +3,16 @@ import { useSearchParams } from 'react-router-dom';
 
 interface MediosFilters {
   proyecto?: string;
-  nombre?: string;
-  tipo?: string;
+  autor?: string;
+  url?: string;
+  estado_enviado?: string;
 }
 
 interface RedesFilters {
   proyecto?: string;
   autor?: string;
   url?: string;
+  estado_enviado?: string;
 }
 
 export type Filters = MediosFilters | RedesFilters;
@@ -36,16 +38,19 @@ export const useUrlFilters = <T extends Filters>(initialFilters: T) => {
     const updatedFilters = { ...filters, ...newFilters };
 
     const cleanFilters = Object.fromEntries(
-      Object.entries(updatedFilters).filter(
-        ([_, value]) => typeof value === 'string' && value.trim() !== ''
-      )
+      Object.entries(updatedFilters).filter(([key, value]) => {
+        if (key === 'estado_enviado') {
+          return value !== undefined;
+        }
+        return typeof value === 'string' && value.trim() !== '';
+      })
     ) as unknown as T;
 
     setFilters(cleanFilters);
 
     const newSearchParams = new URLSearchParams();
     Object.entries(cleanFilters).forEach(([key, value]) => {
-      if (value && value.trim() !== '') {
+      if (key === 'estado_enviado' || (value && value.trim() !== '')) {
         newSearchParams.set(key, value);
       }
     });
@@ -59,7 +64,12 @@ export const useUrlFilters = <T extends Filters>(initialFilters: T) => {
   };
 
   const hasActiveFilters = () => {
-    return Object.values(filters).some((value) => value && value.trim() !== '');
+    return Object.entries(filters).some(([key, value]) => {
+      if (key === 'estado_enviado') {
+        return value !== 'true';
+      }
+      return value && value.trim() !== '';
+    });
   };
 
   return {

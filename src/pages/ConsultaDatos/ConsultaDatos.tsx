@@ -63,18 +63,21 @@ const ConsultaDatos: React.FC = () => {
 
   const mediosFilters = useUrlFilters({
     proyecto_nombre: '',
-    nombre: '',
-    tipo: '',
+    autor: '',
+    url: '',
+    estado_enviado: 'true',
   });
 
   const redesFilters = useUrlFilters({
     proyecto_nombre: '',
     autor: '',
     url: '',
+    estado_enviado: 'true',
   });
 
   const getCurrentFilters = () => {
-    return activeTab === 'medios' ? mediosFilters : redesFilters;
+    const filters = activeTab === 'medios' ? mediosFilters : redesFilters;
+    return filters;
   };
 
   const getProjectName = () => {
@@ -124,6 +127,8 @@ const ConsultaDatos: React.FC = () => {
         Object.entries(rawFilters).forEach(([key, value]) => {
           if (key === 'proyecto_nombre') {
             activeFilters.proyecto = value;
+          } else if (key === 'estado_enviado') {
+            activeFilters.estado_enviado = value === 'true';
           } else {
             (activeFilters as any)[key] = value;
           }
@@ -153,6 +158,8 @@ const ConsultaDatos: React.FC = () => {
         Object.entries(rawFilters).forEach(([key, value]) => {
           if (key === 'proyecto_nombre') {
             activeFilters.proyecto = value;
+          } else if (key === 'estado_enviado') {
+            activeFilters.estado_enviado = value === 'true';
           } else {
             (activeFilters as any)[key] = value;
           }
@@ -540,7 +547,7 @@ const ConsultaDatos: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {activeTab === 'medios' ? (
                       <>
                         <div>
@@ -561,35 +568,57 @@ const ConsultaDatos: React.FC = () => {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Nombre
+                            Autor
                           </label>
                           <input
                             type="text"
-                            value={mediosFilters.filters.nombre || ''}
+                            value={mediosFilters.filters.autor || ''}
                             onChange={(e) =>
                               mediosFilters.updateFilters({
-                                nombre: e.target.value,
+                                autor: e.target.value,
                               })
                             }
-                            placeholder="Ej: ElTiempo"
+                            placeholder="Ej: Juan Pérez"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Tipo
+                            URL
                           </label>
                           <input
                             type="text"
-                            value={mediosFilters.filters.tipo || ''}
+                            value={mediosFilters.filters.url || ''}
                             onChange={(e) =>
                               mediosFilters.updateFilters({
-                                tipo: e.target.value,
+                                url: e.target.value,
                               })
                             }
-                            placeholder="Ej: prensa"
+                            placeholder="Ej: https://eltiempo.com/noticia/123"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Estado de Enviado
+                          </label>
+                          <select
+                            value={
+                              mediosFilters.filters.estado_enviado !== undefined
+                                ? mediosFilters.filters.estado_enviado
+                                : 'true'
+                            }
+                            onChange={(e) => {
+                              mediosFilters.updateFilters({
+                                estado_enviado: e.target.value,
+                              });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="true">Enviado</option>
+                            <option value="false">No Enviado</option>
+                            <option value="">Todos</option>
+                          </select>
                         </div>
                       </>
                     ) : (
@@ -641,6 +670,28 @@ const ConsultaDatos: React.FC = () => {
                             placeholder="Ej: https://twitter.com/post/123"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Estado de Enviado
+                          </label>
+                          <select
+                            value={
+                              redesFilters.filters.estado_enviado !== undefined
+                                ? redesFilters.filters.estado_enviado
+                                : 'true'
+                            }
+                            onChange={(e) => {
+                              redesFilters.updateFilters({
+                                estado_enviado: e.target.value,
+                              });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="true">Enviado</option>
+                            <option value="false">No Enviado</option>
+                            <option value="">Todos</option>
+                          </select>
                         </div>
                       </>
                     )}
