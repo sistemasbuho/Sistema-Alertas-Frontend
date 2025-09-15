@@ -113,7 +113,7 @@ const AlertasPreview: React.FC = () => {
     const filtered = alertas.filter((item) => {
       const searchLower = searchTerm.toLowerCase();
       return (
-        item.contenido.toLowerCase().includes(searchLower) ||
+        item.contenido?.toLowerCase().includes(searchLower) ||
         (item.titulo && item.titulo.toLowerCase().includes(searchLower)) ||
         (item.autor && item.autor.toLowerCase().includes(searchLower)) ||
         item.url.toLowerCase().includes(searchLower)
@@ -648,24 +648,6 @@ const AlertasPreview: React.FC = () => {
                     </svg>
                   </div>
                 </div>
-
-                <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                  <option>Fecha</option>
-                  <option>Última semana</option>
-                  <option>Último mes</option>
-                </select>
-
-                {state?.tipo === 'redes' && (
-                  <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                    <option>Red social</option>
-                    <option>Twitter</option>
-                    <option>Facebook</option>
-                    <option>Instagram</option>
-                    <option>LinkedIn</option>
-                    <option>YouTube</option>
-                    <option>TikTok</option>
-                  </select>
-                )}
               </div>
 
               <Button
