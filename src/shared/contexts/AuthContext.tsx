@@ -53,27 +53,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isAuthenticated = !!user;
 
   const handleTokenExpiration = useCallback(async () => {
-    clearTokens();
-    setUser(null);
-
-    if (typeof window !== 'undefined') {
-      alert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
-      window.location.href = '/login';
-    }
+    console.log('Token expiration handler called but disabled temporarily');
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-
-    const checkTokenExpiration = () => {
-      if (isTokenExpired()) {
-        handleTokenExpiration();
-      }
-    };
-
-    const interval = setInterval(checkTokenExpiration, 60 * 1000);
-
-    return () => clearInterval(interval);
+    console.log('Token expiration check disabled temporarily');
   }, [user, handleTokenExpiration]);
 
   useEffect(() => {

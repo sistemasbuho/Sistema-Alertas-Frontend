@@ -1,6 +1,15 @@
-import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  MagnifyingGlassIcon,
+  XMarkIcon,
+  ArrowDownTrayIcon,
+} from '@heroicons/react/24/outline';
 import Button from '@shared/components/ui/Button';
 import { FunnelIcon } from '@heroicons/react/24/outline';
+import {
+  exportarHistorial,
+  type HistorialPaginationParams,
+} from '@shared/services/api';
+import { useState } from 'react';
 
 interface FiltrosHistorialProps {
   filters: {
@@ -32,6 +41,62 @@ export const FiltrosHistorial = ({
   setShowFilters,
   totalCount,
 }: FiltrosHistorialProps) => {
+  const [downloadLoading, setDownloadLoading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloadLoading(true);
+
+      const exportParams: HistorialPaginationParams = {};
+
+      if (filters.filters.search) exportParams.search = filters.filters.search;
+      if (filters.filters.usuario)
+        exportParams.usuario = filters.filters.usuario;
+      if (filters.filters.proyecto)
+        exportParams.proyecto = filters.filters.proyecto;
+      if (filters.filters.estado_enviado) {
+        exportParams.estado_enviado = filters.filters.estado_enviado === 'true';
+      }
+      if (filters.filters.medio__url)
+        exportParams.medio__url = filters.filters.medio__url;
+      if (filters.filters.medio__url__icontains)
+        exportParams.medio__url__icontains =
+          filters.filters.medio__url__icontains;
+      if (filters.filters.red_social__red_social__nombre__icontains) {
+        exportParams.red_social__red_social__nombre__icontains =
+          filters.filters.red_social__red_social__nombre__icontains;
+      }
+      if (filters.filters.created_at__gte)
+        exportParams.created_at__gte = filters.filters.created_at__gte;
+      if (filters.filters.created_at__lte)
+        exportParams.created_at__lte = filters.filters.created_at__lte;
+      if (filters.filters.inicio_envio__gte)
+        exportParams.inicio_envio__gte = filters.filters.inicio_envio__gte;
+      if (filters.filters.fin_envio__lte)
+        exportParams.fin_envio__lte = filters.filters.fin_envio__lte;
+
+      const blob = await exportarHistorial(exportParams);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      const now = new Date();
+      const timestamp = now.toISOString().split('T')[0];
+      link.download = `historial-envios-${timestamp}.xlsx`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error al descargar historial:', error);
+      alert('Error al descargar el archivo. Por favor, intenta nuevamente.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col sm:flex-row gap-4">
@@ -46,23 +111,40 @@ export const FiltrosHistorial = ({
           />
         </div>
 
-        <Button
-          onClick={() => setShowFilters(!showFilters)}
-          variant="outline"
-          className="inline-flex items-center gap-2"
-        >
-          <FunnelIcon className="h-4 w-4" />
-          Filtros
-          {filters.hasActiveFilters() && (
-            <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
-              {
-                Object.values(filters.filters).filter(
-                  (v) => v && v.trim() !== ''
-                ).length
-              }
-            </span>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
+            variant="outline"
+            className="inline-flex items-center gap-2"
+          >
+            <FunnelIcon className="h-4 w-4" />
+            Filtros
+            {filters.hasActiveFilters() && (
+              <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                {
+                  Object.values(filters.filters).filter(
+                    (v) => v && v.trim() !== ''
+                  ).length
+                }
+              </span>
+            )}
+          </Button>
+
+          <Button
+            onClick={handleDownload}
+            disabled={downloadLoading}
+            variant="outline"
+            className="inline-flex items-center gap-2"
+            title="Descargar historial (Excel)"
+          >
+            {downloadLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+            ) : (
+              <ArrowDownTrayIcon className="h-4 w-4" />
+            )}
+            {downloadLoading ? 'Descargando...' : 'Descargar'}
+          </Button>
+        </div>
 
         <div className="flex flex-col items-center justify-center gap-1">
           <span className="text-sm text-gray-600 dark:text-gray-400">

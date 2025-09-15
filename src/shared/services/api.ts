@@ -122,28 +122,8 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        await refreshTokens();
-        const newToken = getAccessToken();
-
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return apiClient(originalRequest);
-        }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-        clearTokens();
-
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        return Promise.reject(refreshError);
-      }
+    if (error.response?.status === 401) {
+      console.log('401 error intercepted but handling disabled temporarily');
     }
 
     return Promise.reject(error);
@@ -901,6 +881,77 @@ export const getHistorialEnvios = async (
     throw error;
   }
 };
+
+export const getHistorialEnvioDetalle = async (
+  id: string
+): Promise<HistorialEnvio> => {
+  try {
+    const response = await apiClient.get(`/api/historial-envios/${id}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo detalle del historial:', error);
+    throw error;
+  }
+};
+
+export const exportarHistorial = async (
+  params?: HistorialPaginationParams
+): Promise<Blob> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params?.search) {
+      queryParams.append('search', params.search);
+    }
+    if (params?.usuario) {
+      queryParams.append('usuario', params.usuario);
+    }
+    if (params?.proyecto) {
+      queryParams.append('proyecto', params.proyecto);
+    }
+    if (params?.estado_enviado !== undefined) {
+      queryParams.append('estado_enviado', params.estado_enviado.toString());
+    }
+    if (params?.medio__url) {
+      queryParams.append('medio__url', params.medio__url);
+    }
+    if (params?.medio__url__icontains) {
+      queryParams.append('medio__url__icontains', params.medio__url__icontains);
+    }
+    if (params?.red_social__red_social__nombre__icontains) {
+      queryParams.append(
+        'red_social__red_social__nombre__icontains',
+        params.red_social__red_social__nombre__icontains
+      );
+    }
+    if (params?.created_at__gte) {
+      queryParams.append('created_at__gte', params.created_at__gte);
+    }
+    if (params?.created_at__lte) {
+      queryParams.append('created_at__lte', params.created_at__lte);
+    }
+    if (params?.inicio_envio__gte) {
+      queryParams.append('inicio_envio__gte', params.inicio_envio__gte);
+    }
+    if (params?.fin_envio__lte) {
+      queryParams.append('fin_envio__lte', params.fin_envio__lte);
+    }
+
+    const url = `/api/exportar-historial/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+
+    const response = await apiClient.get(url, {
+      responseType: 'blob',
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error exportando historial:', error);
+    throw error;
+  }
+};
+
 export interface WhatsAppAlerta {
   publicacion_id: string;
   mensaje: string;

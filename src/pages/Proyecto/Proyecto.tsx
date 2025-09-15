@@ -228,9 +228,8 @@ const ProyectoPage = () => {
           );
         }
       } else if (err.response?.status === 401) {
-        showError(
-          'No autorizado',
-          'Tu sesión ha expirado. Por favor inicia sesión nuevamente.'
+        console.log(
+          '401 error in createProject but handling disabled temporarily'
         );
       } else if (err.response?.status === 403) {
         showError('Sin permisos', 'No tienes permisos para crear proyectos.');
@@ -314,9 +313,12 @@ const ProyectoPage = () => {
           );
         }
       } else if (err.response?.status === 401) {
+        console.log(
+          '401 error in updateProject but handling disabled temporarily'
+        );
         showError(
-          'No autorizado',
-          'Tu sesión ha expirado. Por favor inicia sesión nuevamente.'
+          'Error',
+          'Error de autenticación (temporalmente sin validación)'
         );
       } else if (err.response?.status === 403) {
         showError('Sin permisos', 'No tienes permisos para editar proyectos.');

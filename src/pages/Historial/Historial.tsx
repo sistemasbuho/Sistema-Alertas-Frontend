@@ -43,105 +43,109 @@ const Historial = () => {
     fin_envio__lte: '',
   });
 
-  const loadData = useCallback(async (params?: HistorialPaginationParams) => {
-    try {
-      setLoading(true);
+  const loadData = useCallback(
+    async (params?: HistorialPaginationParams) => {
+      try {
+        setLoading(true);
 
-      const apiParams: HistorialPaginationParams = {
-        page: params?.page || 1,
-        page_size: 20,
-      };
+        const apiParams: HistorialPaginationParams = {
+          page: params?.page || 1,
+          page_size: 20,
+        };
 
-      if (params?.search !== undefined) {
-        apiParams.search = params.search;
-      } else if (filters.filters.search) {
-        apiParams.search = filters.filters.search;
-      }
-
-      if (params?.usuario !== undefined) {
-        apiParams.usuario = params.usuario;
-      } else if (filters.filters.usuario) {
-        apiParams.usuario = filters.filters.usuario;
-      }
-
-      if (params?.proyecto !== undefined) {
-        apiParams.proyecto = params.proyecto;
-      } else if (filters.filters.proyecto) {
-        apiParams.proyecto = filters.filters.proyecto;
-      }
-
-      if (params?.estado_enviado !== undefined) {
-        apiParams.estado_enviado = params.estado_enviado;
-      } else if (filters.filters.estado_enviado) {
-        if (filters.filters.estado_enviado === 'true') {
-          apiParams.estado_enviado = true;
-        } else if (filters.filters.estado_enviado === 'false') {
-          apiParams.estado_enviado = false;
+        if (params?.search !== undefined) {
+          apiParams.search = params.search;
+        } else if (filters.filters.search) {
+          apiParams.search = filters.filters.search;
         }
+
+        if (params?.usuario !== undefined) {
+          apiParams.usuario = params.usuario;
+        } else if (filters.filters.usuario) {
+          apiParams.usuario = filters.filters.usuario;
+        }
+
+        if (params?.proyecto !== undefined) {
+          apiParams.proyecto = params.proyecto;
+        } else if (filters.filters.proyecto) {
+          apiParams.proyecto = filters.filters.proyecto;
+        }
+
+        if (params?.estado_enviado !== undefined) {
+          apiParams.estado_enviado = params.estado_enviado;
+        } else if (filters.filters.estado_enviado) {
+          if (filters.filters.estado_enviado === 'true') {
+            apiParams.estado_enviado = true;
+          } else if (filters.filters.estado_enviado === 'false') {
+            apiParams.estado_enviado = false;
+          }
+        }
+
+        if (params?.medio__url !== undefined) {
+          apiParams.medio__url = params.medio__url;
+        } else if (filters.filters.medio__url) {
+          apiParams.medio__url = filters.filters.medio__url;
+        }
+
+        if (params?.medio__url__icontains !== undefined) {
+          apiParams.medio__url__icontains = params.medio__url__icontains;
+        } else if (filters.filters.medio__url__icontains) {
+          apiParams.medio__url__icontains =
+            filters.filters.medio__url__icontains;
+        }
+
+        if (params?.red_social__red_social__nombre__icontains !== undefined) {
+          apiParams.red_social__red_social__nombre__icontains =
+            params.red_social__red_social__nombre__icontains;
+        } else if (filters.filters.red_social__red_social__nombre__icontains) {
+          apiParams.red_social__red_social__nombre__icontains =
+            filters.filters.red_social__red_social__nombre__icontains;
+        }
+
+        if (params?.created_at__gte !== undefined) {
+          apiParams.created_at__gte = params.created_at__gte;
+        } else if (filters.filters.created_at__gte) {
+          apiParams.created_at__gte = filters.filters.created_at__gte;
+        }
+
+        if (params?.created_at__lte !== undefined) {
+          apiParams.created_at__lte = params.created_at__lte;
+        } else if (filters.filters.created_at__lte) {
+          apiParams.created_at__lte = filters.filters.created_at__lte;
+        }
+
+        if (params?.inicio_envio__gte !== undefined) {
+          apiParams.inicio_envio__gte = params.inicio_envio__gte;
+        } else if (filters.filters.inicio_envio__gte) {
+          apiParams.inicio_envio__gte = filters.filters.inicio_envio__gte;
+        }
+
+        if (params?.fin_envio__lte !== undefined) {
+          apiParams.fin_envio__lte = params.fin_envio__lte;
+        } else if (filters.filters.fin_envio__lte) {
+          apiParams.fin_envio__lte = filters.filters.fin_envio__lte;
+        }
+
+        const response: PaginatedResponse<HistorialEnvio> =
+          await getHistorialEnvios(apiParams);
+
+        setHistorial(response.results);
+        setPagination((prev) => ({
+          ...prev,
+          count: response.count,
+          next: response.next,
+          previous: response.previous,
+          currentPage: params?.page || 1,
+        }));
+      } catch (error) {
+        console.error('Error cargando historial:', error);
+        showErrorRef.current('Error al cargar el historial de envíos');
+      } finally {
+        setLoading(false);
       }
-
-      if (params?.medio__url !== undefined) {
-        apiParams.medio__url = params.medio__url;
-      } else if (filters.filters.medio__url) {
-        apiParams.medio__url = filters.filters.medio__url;
-      }
-
-      if (params?.medio__url__icontains !== undefined) {
-        apiParams.medio__url__icontains = params.medio__url__icontains;
-      } else if (filters.filters.medio__url__icontains) {
-        apiParams.medio__url__icontains = filters.filters.medio__url__icontains;
-      }
-
-      if (params?.red_social__red_social__nombre__icontains !== undefined) {
-        apiParams.red_social__red_social__nombre__icontains =
-          params.red_social__red_social__nombre__icontains;
-      } else if (filters.filters.red_social__red_social__nombre__icontains) {
-        apiParams.red_social__red_social__nombre__icontains =
-          filters.filters.red_social__red_social__nombre__icontains;
-      }
-
-      if (params?.created_at__gte !== undefined) {
-        apiParams.created_at__gte = params.created_at__gte;
-      } else if (filters.filters.created_at__gte) {
-        apiParams.created_at__gte = filters.filters.created_at__gte;
-      }
-
-      if (params?.created_at__lte !== undefined) {
-        apiParams.created_at__lte = params.created_at__lte;
-      } else if (filters.filters.created_at__lte) {
-        apiParams.created_at__lte = filters.filters.created_at__lte;
-      }
-
-      if (params?.inicio_envio__gte !== undefined) {
-        apiParams.inicio_envio__gte = params.inicio_envio__gte;
-      } else if (filters.filters.inicio_envio__gte) {
-        apiParams.inicio_envio__gte = filters.filters.inicio_envio__gte;
-      }
-
-      if (params?.fin_envio__lte !== undefined) {
-        apiParams.fin_envio__lte = params.fin_envio__lte;
-      } else if (filters.filters.fin_envio__lte) {
-        apiParams.fin_envio__lte = filters.filters.fin_envio__lte;
-      }
-
-      const response: PaginatedResponse<HistorialEnvio> =
-        await getHistorialEnvios(apiParams);
-
-      setHistorial(response.results);
-      setPagination((prev) => ({
-        ...prev,
-        count: response.count,
-        next: response.next,
-        previous: response.previous,
-        currentPage: params?.page || 1,
-      }));
-    } catch (error) {
-      console.error('Error cargando historial:', error);
-      showErrorRef.current('Error al cargar el historial de envíos');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [filters.filters]
+  );
 
   const hasLoadedRef = useRef(false);
   const showErrorRef = useRef(showError);
@@ -155,7 +159,7 @@ const Historial = () => {
       hasLoadedRef.current = true;
       loadData();
     }
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     if (hasLoadedRef.current) {
@@ -165,7 +169,7 @@ const Historial = () => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [filters.filters]);
+  }, [filters.filters, loadData]);
 
   const handlePageChange = (newPage: number) => {
     loadData({ page: newPage });

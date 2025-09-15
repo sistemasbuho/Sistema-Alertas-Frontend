@@ -15,7 +15,11 @@ interface RedesFilters {
   estado_enviado?: string;
 }
 
-export type Filters = MediosFilters | RedesFilters;
+interface ProyectoFilters {
+  nombre?: string;
+}
+
+export type Filters = MediosFilters | RedesFilters | ProyectoFilters;
 
 export const useUrlFilters = <T extends Filters>(initialFilters: T) => {
   const [searchParams, setSearchParams] = useSearchParams();
