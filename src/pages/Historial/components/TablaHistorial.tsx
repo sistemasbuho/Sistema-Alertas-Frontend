@@ -84,16 +84,16 @@ export const TablaHistorial = ({
   };
 
   const getEstadoText = (estadoEnviado: boolean) => {
-    return estadoEnviado ? 'Enviado' : 'Fallido';
+    return estadoEnviado ? 'Enviado' : 'No enviado';
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Fecha no disponible';
+    if (!dateString) return 'Fecha no disponible de creación';
 
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        return 'Fecha inválida';
+        return 'Fecha inválida de creación';
       }
 
       return date.toLocaleDateString('es-ES', {
@@ -104,13 +104,13 @@ export const TablaHistorial = ({
         minute: '2-digit',
       });
     } catch (error) {
-      return 'Error en fecha';
+      return 'Error en fecha de creación';
     }
   };
 
   const formatTiempoEnvio = (tiempo: number | null) => {
     if (tiempo === null) return 'N/A';
-    if (tiempo < 0) return 'Error en tiempo';
+    if (tiempo < 0) return 'Error en tiempo de envío';
     return `${tiempo.toFixed(2)}s`;
   };
 
@@ -128,7 +128,7 @@ export const TablaHistorial = ({
           <div className="text-center py-12">
             <ClockIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No hay historial disponible
+              No hay historial disponible de envíos
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {filters.hasActiveFilters()
