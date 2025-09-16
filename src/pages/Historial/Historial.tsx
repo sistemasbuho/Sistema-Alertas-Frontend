@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
@@ -139,7 +139,7 @@ const Historial = () => {
         }));
       } catch (error) {
         console.error('Error cargando historial:', error);
-        showErrorRef.current('Error al cargar el historial de envíos');
+        showError('Error al cargar el historial de envíos');
       } finally {
         setLoading(false);
       }
@@ -147,29 +147,9 @@ const Historial = () => {
     [filters.filters]
   );
 
-  const hasLoadedRef = useRef(false);
-  const showErrorRef = useRef(showError);
-
   useEffect(() => {
-    showErrorRef.current = showError;
-  }, [showError]);
-
-  useEffect(() => {
-    if (!hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-      loadData();
-    }
+    loadData({ page: 1 });
   }, [loadData]);
-
-  useEffect(() => {
-    if (hasLoadedRef.current) {
-      const timeoutId = setTimeout(() => {
-        loadData({ page: 1 });
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [filters.filters, loadData]);
 
   const handlePageChange = (newPage: number) => {
     loadData({ page: newPage });

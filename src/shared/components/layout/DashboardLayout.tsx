@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/contexts/ToastContext';
+import { BellIcon } from '@heroicons/react/24/outline';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -39,9 +40,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 lg:pl-0 pl-16">
           <div className="px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {title}
-            </h1>
+            <div className="flex items-center gap-3">
+              {title.toLowerCase().includes('alert') && (
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <BellIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+              )}
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {title}
+              </h1>
+            </div>
           </div>
         </header>
 

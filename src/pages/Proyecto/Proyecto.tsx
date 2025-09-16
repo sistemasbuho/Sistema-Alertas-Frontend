@@ -118,7 +118,7 @@ const ProyectoPage = () => {
 
   useEffect(() => {
     loadData();
-  }, [showError, filters.filters]);
+  }, [filters.filters]);
 
   const handleOpenSlideOver = () => {
     setFormData({
@@ -545,9 +545,6 @@ const ProyectoPage = () => {
                         Proveedor
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Nombre del Grupo
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Estado
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -592,13 +589,6 @@ const ProyectoPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-white">
                             {proyecto.proveedor}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {proyecto.grupo_nombre ||
-                              proyecto.codigo_acceso ||
-                              'Sin nombre'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

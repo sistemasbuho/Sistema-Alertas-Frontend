@@ -15,11 +15,11 @@ import {
 import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
   MagnifyingGlassIcon,
-  PaperAirplaneIcon,
   FunnelIcon,
   XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 
 type TabType = 'medios' | 'redes';
@@ -65,15 +65,17 @@ const ConsultaDatos: React.FC = () => {
     proyecto_nombre: '',
     autor: '',
     url: '',
-    estado_enviado: 'true',
+    estado_enviado: 'false',
   });
 
   const redesFilters = useUrlFilters({
     proyecto_nombre: '',
     autor: '',
     url: '',
-    estado_enviado: 'true',
+    estado_enviado: 'false',
   });
+
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const getCurrentFilters = () => {
     const filters = activeTab === 'medios' ? mediosFilters : redesFilters;
@@ -89,23 +91,34 @@ const ConsultaDatos: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'medios') {
-      setMediosPagination((prev) => ({ ...prev, currentPage: 1 }));
-    } else {
-      setRedesPagination((prev) => ({ ...prev, currentPage: 1 }));
-    }
-    loadData({ page: 1 });
-  }, [activeTab, mediosFilters.filters, redesFilters.filters]);
-
-  useEffect(() => {
+    setIsInitializing(true);
     setSelectedItems([]);
     setSelectedProjectId('');
+
     if (activeTab === 'medios') {
       setMediosPagination((prev) => ({ ...prev, currentPage: 1 }));
     } else {
       setRedesPagination((prev) => ({ ...prev, currentPage: 1 }));
     }
+
+    loadData({ page: 1 }).finally(() => {
+      setIsInitializing(false);
+    });
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!isInitializing && activeTab === 'medios') {
+      setMediosPagination((prev) => ({ ...prev, currentPage: 1 }));
+      loadData({ page: 1 });
+    }
+  }, [mediosFilters.filters]);
+
+  useEffect(() => {
+    if (!isInitializing && activeTab === 'redes') {
+      setRedesPagination((prev) => ({ ...prev, currentPage: 1 }));
+      loadData({ page: 1 });
+    }
+  }, [redesFilters.filters]);
 
   const loadData = async (params?: { page?: number }) => {
     try {
@@ -518,7 +531,7 @@ const ConsultaDatos: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <PaperAirplaneIcon className="h-4 w-4" />
+                          <BellIcon className="h-4 w-4" />
                           Enviar a Alertas
                         </>
                       )}
@@ -606,7 +619,7 @@ const ConsultaDatos: React.FC = () => {
                             value={
                               mediosFilters.filters.estado_enviado !== undefined
                                 ? mediosFilters.filters.estado_enviado
-                                : 'true'
+                                : 'false'
                             }
                             onChange={(e) => {
                               mediosFilters.updateFilters({
@@ -615,8 +628,8 @@ const ConsultaDatos: React.FC = () => {
                             }}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           >
-                            <option value="true">Enviado</option>
                             <option value="false">No Enviado</option>
+                            <option value="true">Enviado</option>
                             <option value="">Todos</option>
                           </select>
                         </div>
@@ -679,7 +692,7 @@ const ConsultaDatos: React.FC = () => {
                             value={
                               redesFilters.filters.estado_enviado !== undefined
                                 ? redesFilters.filters.estado_enviado
-                                : 'true'
+                                : 'false'
                             }
                             onChange={(e) => {
                               redesFilters.updateFilters({
@@ -688,8 +701,8 @@ const ConsultaDatos: React.FC = () => {
                             }}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           >
-                            <option value="true">Enviado</option>
                             <option value="false">No Enviado</option>
+                            <option value="true">Enviado</option>
                             <option value="">Todos</option>
                           </select>
                         </div>
@@ -1184,7 +1197,7 @@ const ConsultaDatos: React.FC = () => {
                     onClick={handleModalContinue}
                     className="px-6 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    <PaperAirplaneIcon className="w-4 h-4 mr-2" />
+                    <BellIcon className="w-4 h-4 mr-2" />
                     Continuar a Vista Previa
                   </Button>
                 )}

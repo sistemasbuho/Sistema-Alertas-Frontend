@@ -14,11 +14,11 @@ import {
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import {
   ArrowLeftIcon,
-  PaperAirplaneIcon,
   XMarkIcon,
   PlusIcon,
   EyeIcon,
   PencilIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 
 interface AlertaItem {
@@ -614,7 +614,7 @@ const AlertasPreview: React.FC = () => {
               isLoading={isEnviando}
               className="inline-flex items-center gap-2"
             >
-              <PaperAirplaneIcon className="h-4 w-4" />
+              <BellIcon className="h-4 w-4" />
               {isEnviando ? 'Enviando...' : 'Enviar Alertas'}
             </Button>
           </div>

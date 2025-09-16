@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Button from '@shared/components/ui/Button';
 import ThemeToggle from '@shared/components/ui/ThemeToggle';
+import { BellIcon } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -119,9 +120,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         }`}
       >
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            Alertas
-          </h1>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <BellIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              Alertas
+            </h1>
+          </div>
           <div className="lg:hidden">
             <button
               onClick={() => setIsOpen(false)}

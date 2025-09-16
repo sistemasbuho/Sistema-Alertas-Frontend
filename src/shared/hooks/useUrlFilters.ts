@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface MediosFilters {
@@ -23,20 +23,15 @@ export type Filters = MediosFilters | RedesFilters | ProyectoFilters;
 
 export const useUrlFilters = <T extends Filters>(initialFilters: T) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [filters, setFilters] = useState<T>(initialFilters);
-
-  useEffect(() => {
+  const [filters, setFilters] = useState<T>(() => {
     const urlFilters = {} as T;
-
     for (const [key, value] of searchParams.entries()) {
       if (value) {
         (urlFilters as Record<string, string>)[key] = value;
       }
     }
-
-    const combinedFilters = { ...initialFilters, ...urlFilters };
-    setFilters(combinedFilters);
-  }, []);
+    return { ...initialFilters, ...urlFilters };
+  });
 
   const updateFilters = (newFilters: Partial<T>) => {
     const updatedFilters = { ...filters, ...newFilters };
@@ -76,8 +71,10 @@ export const useUrlFilters = <T extends Filters>(initialFilters: T) => {
     });
   };
 
+  const memoizedFilters = useMemo(() => filters, [filters]);
+
   return {
-    filters,
+    filters: memoizedFilters,
     updateFilters,
     clearFilters,
     hasActiveFilters,
