@@ -6,7 +6,6 @@ import { ToastProvider } from '@shared/contexts/ToastContext';
 import ConsultaDatos from '@/pages/ConsultaDatos/ConsultaDatos';
 import Historial from '@/pages/Historial/Historial';
 import Proyecto from './pages/Proyecto/Proyecto';
-import AlertasPreview from './pages/Alertas/AlertasPreview';
 import LoginPage from './pages/auth/LoginPage';
 
 function App() {
@@ -26,7 +25,6 @@ function App() {
                 <Route path="/consulta-datos" element={<ConsultaDatos />} />
                 <Route path="/proyecto" element={<Proyecto />} />
                 <Route path="/historial" element={<Historial />} />
-                <Route path="/alertas-preview" element={<AlertasPreview />} />
                 <Route
                   path="/"
                   element={<Navigate to="/consulta-datos" replace />}

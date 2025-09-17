@@ -23,16 +23,16 @@ export const TablaHistorial = ({
   filters: {
     filters: {
       search: string;
-      usuario: string;
-      proyecto: string;
+      usuario_nombre: string;
+      proyecto_nombre: string;
       estado_enviado: string;
-      medio__url: string;
-      medio__url__icontains: string;
-      red_social__red_social__nombre__icontains: string;
-      created_at__gte: string;
-      created_at__lte: string;
-      inicio_envio__gte: string;
-      fin_envio__lte: string;
+      medio_url: string;
+      medio_url_coincide: string;
+      red_social_nombre: string;
+      created_at_desde: string;
+      created_at_hasta: string;
+      inicio_envio_desde: string;
+      fin_envio_hasta: string;
     };
     updateFilters: (filters: any) => void;
     clearFilters: () => void;

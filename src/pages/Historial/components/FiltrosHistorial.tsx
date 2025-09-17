@@ -15,16 +15,16 @@ interface FiltrosHistorialProps {
   filters: {
     filters: {
       search: string;
-      usuario: string;
-      proyecto: string;
+      usuario_nombre: string;
+      proyecto_nombre: string;
       estado_enviado: string;
-      medio__url: string;
-      medio__url__icontains: string;
-      red_social__red_social__nombre__icontains: string;
-      created_at__gte: string;
-      created_at__lte: string;
-      inicio_envio__gte: string;
-      fin_envio__lte: string;
+      medio_url: string;
+      medio_url_coincide: string;
+      red_social_nombre: string;
+      created_at_desde: string;
+      created_at_hasta: string;
+      inicio_envio_desde: string;
+      fin_envio_hasta: string;
     };
     updateFilters: (filters: any) => void;
     clearFilters: () => void;
@@ -50,30 +50,28 @@ export const FiltrosHistorial = ({
       const exportParams: HistorialPaginationParams = {};
 
       if (filters.filters.search) exportParams.search = filters.filters.search;
-      if (filters.filters.usuario)
-        exportParams.usuario = filters.filters.usuario;
-      if (filters.filters.proyecto)
-        exportParams.proyecto = filters.filters.proyecto;
+      if (filters.filters.usuario_nombre)
+        exportParams.usuario_nombre = filters.filters.usuario_nombre;
+      if (filters.filters.proyecto_nombre)
+        exportParams.proyecto_nombre = filters.filters.proyecto_nombre;
       if (filters.filters.estado_enviado) {
-        exportParams.estado_enviado = filters.filters.estado_enviado === 'true';
+        exportParams.estado_enviado = filters.filters.estado_enviado;
       }
-      if (filters.filters.medio__url)
-        exportParams.medio__url = filters.filters.medio__url;
-      if (filters.filters.medio__url__icontains)
-        exportParams.medio__url__icontains =
-          filters.filters.medio__url__icontains;
-      if (filters.filters.red_social__red_social__nombre__icontains) {
-        exportParams.red_social__red_social__nombre__icontains =
-          filters.filters.red_social__red_social__nombre__icontains;
+      if (filters.filters.medio_url)
+        exportParams.medio_url = filters.filters.medio_url;
+      if (filters.filters.medio_url_coincide)
+        exportParams.medio_url_coincide = filters.filters.medio_url_coincide;
+      if (filters.filters.red_social_nombre) {
+        exportParams.red_social_nombre = filters.filters.red_social_nombre;
       }
-      if (filters.filters.created_at__gte)
-        exportParams.created_at__gte = filters.filters.created_at__gte;
-      if (filters.filters.created_at__lte)
-        exportParams.created_at__lte = filters.filters.created_at__lte;
-      if (filters.filters.inicio_envio__gte)
-        exportParams.inicio_envio__gte = filters.filters.inicio_envio__gte;
-      if (filters.filters.fin_envio__lte)
-        exportParams.fin_envio__lte = filters.filters.fin_envio__lte;
+      if (filters.filters.created_at_desde)
+        exportParams.created_at_desde = filters.filters.created_at_desde;
+      if (filters.filters.created_at_hasta)
+        exportParams.created_at_hasta = filters.filters.created_at_hasta;
+      if (filters.filters.inicio_envio_desde)
+        exportParams.inicio_envio_desde = filters.filters.inicio_envio_desde;
+      if (filters.filters.fin_envio_hasta)
+        exportParams.fin_envio_hasta = filters.filters.fin_envio_hasta;
 
       const blob = await exportarHistorial(exportParams);
 
@@ -176,26 +174,26 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="text"
-                value={filters.filters.usuario || ''}
+                value={filters.filters.usuario_nombre || ''}
                 onChange={(e) =>
-                  filters.updateFilters({ usuario: e.target.value })
+                  filters.updateFilters({ usuario_nombre: e.target.value })
                 }
-                placeholder="Ej: karen.lopez"
+                placeholder="Ej: tatiana"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Proyecto (UUID)
+                Proyecto
               </label>
               <input
                 type="text"
-                value={filters.filters.proyecto || ''}
+                value={filters.filters.proyecto_nombre || ''}
                 onChange={(e) =>
-                  filters.updateFilters({ proyecto: e.target.value })
+                  filters.updateFilters({ proyecto_nombre: e.target.value })
                 }
-                placeholder="UUID del proyecto"
+                placeholder="Ej: Marketing"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -214,8 +212,8 @@ export const FiltrosHistorial = ({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Todos los estados</option>
-                <option value="true">Enviado</option>
-                <option value="false">Fallido</option>
+                <option value="ENVIADO">Enviado</option>
+                <option value="FALLIDO">Fallido</option>
               </select>
             </div>
 
@@ -225,9 +223,9 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="text"
-                value={filters.filters.medio__url || ''}
+                value={filters.filters.medio_url || ''}
                 onChange={(e) =>
-                  filters.updateFilters({ medio__url: e.target.value })
+                  filters.updateFilters({ medio_url: e.target.value })
                 }
                 placeholder="https://ejemplo.com/articulo/123"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -240,13 +238,13 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="text"
-                value={filters.filters.medio__url__icontains || ''}
+                value={filters.filters.medio_url_coincide || ''}
                 onChange={(e) =>
                   filters.updateFilters({
-                    medio__url__icontains: e.target.value,
+                    medio_url_coincide: e.target.value,
                   })
                 }
-                placeholder="ejemplo.com"
+                placeholder="ejemplo"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -257,13 +255,10 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="text"
-                value={
-                  filters.filters.red_social__red_social__nombre__icontains ||
-                  ''
-                }
+                value={filters.filters.red_social_nombre || ''}
                 onChange={(e) =>
                   filters.updateFilters({
-                    red_social__red_social__nombre__icontains: e.target.value,
+                    red_social_nombre: e.target.value,
                   })
                 }
                 placeholder="twitter, facebook, instagram"
@@ -276,11 +271,11 @@ export const FiltrosHistorial = ({
                 Fecha Creación (desde)
               </label>
               <input
-                type="date"
-                value={filters.filters.created_at__gte || ''}
+                type="datetime-local"
+                value={filters.filters.created_at_desde || ''}
                 onChange={(e) =>
                   filters.updateFilters({
-                    created_at__gte: e.target.value,
+                    created_at_desde: e.target.value,
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -292,11 +287,11 @@ export const FiltrosHistorial = ({
                 Fecha Creación (hasta)
               </label>
               <input
-                type="date"
-                value={filters.filters.created_at__lte || ''}
+                type="datetime-local"
+                value={filters.filters.created_at_hasta || ''}
                 onChange={(e) =>
                   filters.updateFilters({
-                    created_at__lte: e.target.value,
+                    created_at_hasta: e.target.value,
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -309,10 +304,10 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="datetime-local"
-                value={filters.filters.inicio_envio__gte || ''}
+                value={filters.filters.inicio_envio_desde || ''}
                 onChange={(e) =>
                   filters.updateFilters({
-                    inicio_envio__gte: e.target.value,
+                    inicio_envio_desde: e.target.value,
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -325,10 +320,10 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="datetime-local"
-                value={filters.filters.fin_envio__lte || ''}
+                value={filters.filters.fin_envio_hasta || ''}
                 onChange={(e) =>
                   filters.updateFilters({
-                    fin_envio__lte: e.target.value,
+                    fin_envio_hasta: e.target.value,
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"

@@ -17,7 +17,6 @@ import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
   PlusIcon,
   PencilIcon,
-  TrashIcon,
   MagnifyingGlassIcon,
   Cog6ToothIcon,
   FunnelIcon,
@@ -640,12 +639,6 @@ const ProyectoPage = () => {
                               title="Editar"
                             >
                               <PencilIcon className="h-4 w-4" />
-                            </button>
-                            <button
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1"
-                              title="Eliminar"
-                            >
-                              <TrashIcon className="h-4 w-4" />
                             </button>
                           </div>
                         </td>

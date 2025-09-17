@@ -31,16 +31,16 @@ const Historial = () => {
 
   const filters = useUrlFilters({
     search: '',
-    usuario: '',
-    proyecto: '',
+    usuario_nombre: '',
+    proyecto_nombre: '',
     estado_enviado: '',
-    medio__url: '',
-    medio__url__icontains: '',
-    red_social__red_social__nombre__icontains: '',
-    created_at__gte: '',
-    created_at__lte: '',
-    inicio_envio__gte: '',
-    fin_envio__lte: '',
+    medio_url: '',
+    medio_url_coincide: '',
+    red_social_nombre: '',
+    created_at_desde: '',
+    created_at_hasta: '',
+    inicio_envio_desde: '',
+    fin_envio_hasta: '',
   });
 
   const loadData = useCallback(
@@ -59,71 +59,64 @@ const Historial = () => {
           apiParams.search = filters.filters.search;
         }
 
-        if (params?.usuario !== undefined) {
-          apiParams.usuario = params.usuario;
-        } else if (filters.filters.usuario) {
-          apiParams.usuario = filters.filters.usuario;
+        if (params?.usuario_nombre !== undefined) {
+          apiParams.usuario_nombre = params.usuario_nombre;
+        } else if (filters.filters.usuario_nombre) {
+          apiParams.usuario_nombre = filters.filters.usuario_nombre;
         }
 
-        if (params?.proyecto !== undefined) {
-          apiParams.proyecto = params.proyecto;
-        } else if (filters.filters.proyecto) {
-          apiParams.proyecto = filters.filters.proyecto;
+        if (params?.proyecto_nombre !== undefined) {
+          apiParams.proyecto_nombre = params.proyecto_nombre;
+        } else if (filters.filters.proyecto_nombre) {
+          apiParams.proyecto_nombre = filters.filters.proyecto_nombre;
         }
 
         if (params?.estado_enviado !== undefined) {
           apiParams.estado_enviado = params.estado_enviado;
         } else if (filters.filters.estado_enviado) {
-          if (filters.filters.estado_enviado === 'true') {
-            apiParams.estado_enviado = true;
-          } else if (filters.filters.estado_enviado === 'false') {
-            apiParams.estado_enviado = false;
-          }
+          apiParams.estado_enviado = filters.filters.estado_enviado;
         }
 
-        if (params?.medio__url !== undefined) {
-          apiParams.medio__url = params.medio__url;
-        } else if (filters.filters.medio__url) {
-          apiParams.medio__url = filters.filters.medio__url;
+        if (params?.medio_url !== undefined) {
+          apiParams.medio_url = params.medio_url;
+        } else if (filters.filters.medio_url) {
+          apiParams.medio_url = filters.filters.medio_url;
         }
 
-        if (params?.medio__url__icontains !== undefined) {
-          apiParams.medio__url__icontains = params.medio__url__icontains;
-        } else if (filters.filters.medio__url__icontains) {
-          apiParams.medio__url__icontains =
-            filters.filters.medio__url__icontains;
+        if (params?.medio_url_coincide !== undefined) {
+          apiParams.medio_url_coincide = params.medio_url_coincide;
+        } else if (filters.filters.medio_url_coincide) {
+          apiParams.medio_url_coincide = filters.filters.medio_url_coincide;
         }
 
-        if (params?.red_social__red_social__nombre__icontains !== undefined) {
-          apiParams.red_social__red_social__nombre__icontains =
-            params.red_social__red_social__nombre__icontains;
-        } else if (filters.filters.red_social__red_social__nombre__icontains) {
-          apiParams.red_social__red_social__nombre__icontains =
-            filters.filters.red_social__red_social__nombre__icontains;
+        if (params?.red_social_nombre !== undefined) {
+          apiParams.red_social_nombre = params.red_social_nombre;
+        } else if (filters.filters.red_social_nombre) {
+          apiParams.red_social_nombre = filters.filters.red_social_nombre;
         }
 
-        if (params?.created_at__gte !== undefined) {
-          apiParams.created_at__gte = params.created_at__gte;
-        } else if (filters.filters.created_at__gte) {
-          apiParams.created_at__gte = filters.filters.created_at__gte;
+        if (params?.created_at_desde !== undefined) {
+          apiParams.created_at_desde = params.created_at_desde;
+        } else if (filters.filters.created_at_desde) {
+          apiParams.created_at_desde = filters.filters.created_at_desde;
         }
 
-        if (params?.created_at__lte !== undefined) {
-          apiParams.created_at__lte = params.created_at__lte;
-        } else if (filters.filters.created_at__lte) {
-          apiParams.created_at__lte = filters.filters.created_at__lte;
+        if (params?.created_at_hasta !== undefined) {
+          apiParams.created_at_hasta = params.created_at_hasta;
+        } else if (filters.filters.created_at_hasta) {
+          apiParams.created_at_hasta = filters.filters.created_at_hasta;
         }
 
-        if (params?.inicio_envio__gte !== undefined) {
-          apiParams.inicio_envio__gte = params.inicio_envio__gte;
-        } else if (filters.filters.inicio_envio__gte) {
-          apiParams.inicio_envio__gte = filters.filters.inicio_envio__gte;
+        if (params?.inicio_envio_desde !== undefined) {
+          apiParams.inicio_envio_desde = params.inicio_envio_desde;
+        } else if (filters.filters.inicio_envio_desde) {
+          apiParams.inicio_envio_desde = filters.filters.inicio_envio_desde;
         }
 
-        if (params?.fin_envio__lte !== undefined) {
-          apiParams.fin_envio__lte = params.fin_envio__lte;
-        } else if (filters.filters.fin_envio__lte) {
-          apiParams.fin_envio__lte = filters.filters.fin_envio__lte;
+        if (params?.fin_envio_hasta !== undefined) {
+          apiParams.fin_envio_hasta = params.fin_envio_hasta;
+        } else if (filters.filters.fin_envio_hasta) {
+          apiParams.fin_envio_hasta = filters.filters.fin_envio_hasta;
         }
 
         const response: PaginatedResponse<HistorialEnvio> =

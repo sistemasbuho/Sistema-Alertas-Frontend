@@ -74,16 +74,16 @@ export interface HistorialPaginationParams {
   page_size?: number;
   search?: string;
   ordering?: string;
-  usuario?: string;
-  proyecto?: string;
-  estado_enviado?: boolean;
-  medio__url?: string;
-  medio__url__icontains?: string;
-  red_social__red_social__nombre__icontains?: string;
-  created_at__gte?: string;
-  created_at__lte?: string;
-  inicio_envio__gte?: string;
-  fin_envio__lte?: string;
+  usuario_nombre?: string;
+  proyecto_nombre?: string;
+  estado_enviado?: string;
+  medio_url?: string;
+  medio_url_coincide?: string;
+  red_social_nombre?: string;
+  created_at_desde?: string;
+  created_at_hasta?: string;
+  inicio_envio_desde?: string;
+  fin_envio_hasta?: string;
 }
 
 const apiClient = axios.create({
@@ -837,38 +837,35 @@ export const getHistorialEnvios = async (
     if (params?.ordering) {
       queryParams.append('ordering', params.ordering);
     }
-    if (params?.usuario) {
-      queryParams.append('usuario', params.usuario);
+    if (params?.usuario_nombre) {
+      queryParams.append('usuario_nombre', params.usuario_nombre);
     }
-    if (params?.proyecto) {
-      queryParams.append('proyecto', params.proyecto);
+    if (params?.proyecto_nombre) {
+      queryParams.append('proyecto_nombre', params.proyecto_nombre);
     }
-    if (params?.estado_enviado !== undefined) {
-      queryParams.append('estado_enviado', params.estado_enviado.toString());
+    if (params?.estado_enviado) {
+      queryParams.append('estado_enviado', params.estado_enviado);
     }
-    if (params?.medio__url) {
-      queryParams.append('medio__url', params.medio__url);
+    if (params?.medio_url) {
+      queryParams.append('medio_url', params.medio_url);
     }
-    if (params?.medio__url__icontains) {
-      queryParams.append('medio__url__icontains', params.medio__url__icontains);
+    if (params?.medio_url_coincide) {
+      queryParams.append('medio_url_coincide', params.medio_url_coincide);
     }
-    if (params?.red_social__red_social__nombre__icontains) {
-      queryParams.append(
-        'red_social__red_social__nombre__icontains',
-        params.red_social__red_social__nombre__icontains
-      );
+    if (params?.red_social_nombre) {
+      queryParams.append('red_social_nombre', params.red_social_nombre);
     }
-    if (params?.created_at__gte) {
-      queryParams.append('created_at__gte', params.created_at__gte);
+    if (params?.created_at_desde) {
+      queryParams.append('created_at_desde', params.created_at_desde);
     }
-    if (params?.created_at__lte) {
-      queryParams.append('created_at__lte', params.created_at__lte);
+    if (params?.created_at_hasta) {
+      queryParams.append('created_at_hasta', params.created_at_hasta);
     }
-    if (params?.inicio_envio__gte) {
-      queryParams.append('inicio_envio__gte', params.inicio_envio__gte);
+    if (params?.inicio_envio_desde) {
+      queryParams.append('inicio_envio_desde', params.inicio_envio_desde);
     }
-    if (params?.fin_envio__lte) {
-      queryParams.append('fin_envio__lte', params.fin_envio__lte);
+    if (params?.fin_envio_hasta) {
+      queryParams.append('fin_envio_hasta', params.fin_envio_hasta);
     }
 
     const url = `/api/historial-envios/${
@@ -903,41 +900,38 @@ export const exportarHistorial = async (
     if (params?.search) {
       queryParams.append('search', params.search);
     }
-    if (params?.usuario) {
-      queryParams.append('usuario', params.usuario);
+    if (params?.usuario_nombre) {
+      queryParams.append('usuario_nombre', params.usuario_nombre);
     }
-    if (params?.proyecto) {
-      queryParams.append('proyecto', params.proyecto);
+    if (params?.proyecto_nombre) {
+      queryParams.append('proyecto_nombre', params.proyecto_nombre);
     }
-    if (params?.estado_enviado !== undefined) {
-      queryParams.append('estado_enviado', params.estado_enviado.toString());
+    if (params?.estado_enviado) {
+      queryParams.append('estado_enviado', params.estado_enviado);
     }
-    if (params?.medio__url) {
-      queryParams.append('medio__url', params.medio__url);
+    if (params?.medio_url) {
+      queryParams.append('medio_url', params.medio_url);
     }
-    if (params?.medio__url__icontains) {
-      queryParams.append('medio__url__icontains', params.medio__url__icontains);
+    if (params?.medio_url_coincide) {
+      queryParams.append('medio_url_coincide', params.medio_url_coincide);
     }
-    if (params?.red_social__red_social__nombre__icontains) {
-      queryParams.append(
-        'red_social__red_social__nombre__icontains',
-        params.red_social__red_social__nombre__icontains
-      );
+    if (params?.red_social_nombre) {
+      queryParams.append('red_social_nombre', params.red_social_nombre);
     }
-    if (params?.created_at__gte) {
-      queryParams.append('created_at__gte', params.created_at__gte);
+    if (params?.created_at_desde) {
+      queryParams.append('created_at_desde', params.created_at_desde);
     }
-    if (params?.created_at__lte) {
-      queryParams.append('created_at__lte', params.created_at__lte);
+    if (params?.created_at_hasta) {
+      queryParams.append('created_at_hasta', params.created_at_hasta);
     }
-    if (params?.inicio_envio__gte) {
-      queryParams.append('inicio_envio__gte', params.inicio_envio__gte);
+    if (params?.inicio_envio_desde) {
+      queryParams.append('inicio_envio_desde', params.inicio_envio_desde);
     }
-    if (params?.fin_envio__lte) {
-      queryParams.append('fin_envio__lte', params.fin_envio__lte);
+    if (params?.fin_envio_hasta) {
+      queryParams.append('fin_envio_hasta', params.fin_envio_hasta);
     }
 
-    const url = `/api/exportar-historial/${
+    const url = `/api/exportar_historial/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''
     }`;
 
@@ -982,6 +976,44 @@ export const enviarAlertasWhatsApp = async (
     return response.data;
   } catch (error) {
     console.error('Error enviando alertas a WhatsApp:', error);
+    throw error;
+  }
+};
+
+export interface EnvioAlertaRequest {
+  proyecto_id: string;
+  tipo_alerta: 'medios' | 'redes';
+  enviar: boolean;
+  alertas: Array<{
+    id: string;
+    url: string;
+    contenido: string;
+    fecha: string;
+    titulo?: string;
+    autor?: string;
+    reach?: number | null;
+  }>;
+}
+
+export interface EnvioAlertaResponse {
+  success: boolean;
+  message: string;
+  procesadas: any[];
+  duplicadas: any[];
+}
+
+export const enviarAlertasAPI = async (
+  data: EnvioAlertaRequest
+): Promise<EnvioAlertaResponse> => {
+  try {
+    console.log('📤 Enviando alertas a API de envío:', data);
+
+    const response = await apiClient.post('/api/whatsapp/envio_alerta/', data);
+
+    console.log('Respuesta del servidor:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error enviando alertas:', error);
     throw error;
   }
 };

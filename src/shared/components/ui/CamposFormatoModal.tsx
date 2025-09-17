@@ -19,6 +19,8 @@ interface CamposFormatoModalProps {
 }
 
 const CAMPOS_EXCLUIDOS = [
+  'id',
+  'proyecto',
   'created_at',
   'modified_at',
   'created_by',
@@ -60,19 +62,23 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
         const camposBase: Campo[] = [];
 
         Object.entries(configCampos).forEach(([nombreCampo, config]) => {
-          const configData = config as {
-            orden?: number;
-            estilo?: Record<string, any>;
-          };
-          camposConfigurados.push({
-            id: `config-${nombreCampo}`,
-            campo: nombreCampo,
-            orden: configData.orden || 1,
-            estilo: configData.estilo || {},
-          });
+          if (!CAMPOS_EXCLUIDOS.includes(nombreCampo)) {
+            const configData = config as {
+              orden?: number;
+              estilo?: Record<string, any>;
+            };
+            camposConfigurados.push({
+              id: `config-${nombreCampo}`,
+              campo: nombreCampo,
+              orden: configData.orden || 1,
+              estilo: configData.estilo || {},
+            });
+          }
         });
 
-        const camposYaConfigurados = Object.keys(configCampos);
+        const camposYaConfigurados = Object.keys(configCampos).filter(
+          (nombreCampo) => !CAMPOS_EXCLUIDOS.includes(nombreCampo)
+        );
         plantilla.campos
           .filter((campo) => !CAMPOS_EXCLUIDOS.includes(campo.campo))
           .filter((campo) => !camposYaConfigurados.includes(campo.campo))
@@ -133,31 +139,11 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
       return;
     }
 
-    const camposVacios = campos.filter((campo) => !campo.campo.trim());
-    if (camposVacios.length > 0) {
-      showError(
-        'Error de validación',
-        'Todos los campos deben tener un nombre'
-      );
-      return;
-    }
-
-    const nombresUnicos = new Set(campos.map((campo) => campo.campo.trim()));
-    if (nombresUnicos.size !== campos.length) {
-      showError(
-        'Error de validación',
-        'No puede haber campos con nombres duplicados'
-      );
-      return;
-    }
-
     try {
       setSaving(true);
 
       const camposParaEnviar = campos
         .filter((campo) => {
-          if (!campo.campo.trim()) return false;
-
           if (campo.id?.startsWith('config-')) return true;
 
           if (campo.id?.startsWith('base-')) {
@@ -165,19 +151,18 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
               (c) => c.campo === campo.campo
             );
 
-            const nombreCambio = campoOriginal?.campo !== campo.campo;
             const ordenCambio = campoOriginal?.orden !== campo.orden;
             const estiloCambio =
               JSON.stringify(campoOriginal?.estilo || {}) !==
               JSON.stringify(campo.estilo || {});
 
-            return nombreCambio || ordenCambio || estiloCambio;
+            return ordenCambio || estiloCambio;
           }
 
           return false;
         })
         .map((campo) => ({
-          campo: campo.campo.trim(),
+          campo: campo.campo,
           orden: campo.orden,
           estilo: campo.estilo,
         }));
@@ -242,7 +227,8 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
               Configuración de Campos
             </h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Configura el nombre, orden y estilo de cada campo.
+              Configura el orden y estilo de cada campo. Los nombres de los
+              campos no pueden modificarse.
             </p>
 
             {campos.length === 0 ? (
@@ -280,17 +266,12 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Nombre del Campo *
+                                Nombre del Campo
                               </label>
                               <Input
                                 value={campo.campo}
-                                onChange={(e) =>
-                                  handleCampoChange(
-                                    index,
-                                    'campo',
-                                    e.target.value
-                                  )
-                                }
+                                readOnly
+                                className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
                                 placeholder="Ej: titulo, autor, contenido..."
                               />
                             </div>
