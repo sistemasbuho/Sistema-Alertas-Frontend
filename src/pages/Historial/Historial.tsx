@@ -169,7 +169,7 @@ const Historial = () => {
 
   return (
     <DashboardLayout title="Historial de Envíos">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Historial

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '@shared/contexts/AuthContext';
@@ -17,6 +17,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { showSuccess, showError } = useToast();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = () => {
     try {
@@ -33,9 +34,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   };
 
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar onLogout={handleLogout} />
+      <Sidebar
+        onLogout={handleLogout}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={handleToggleSidebar}
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 lg:pl-0 pl-16">
