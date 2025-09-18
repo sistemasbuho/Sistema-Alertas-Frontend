@@ -103,6 +103,8 @@ type PageViewPayload = {
   referrer: string | null;
   started_at: string;
   ended_at: string;
+  visible_ms: number;
+  hidden_ms: number;
   correlation_id: string;
   viewport: {
     w: number;
@@ -118,6 +120,10 @@ type MetricsState = {
   currentPage: string | null;
   startedAt: string | null;
   hiddenPingSent: boolean;
+  visibleDurationMs: number;
+  hiddenDurationMs: number;
+  lastVisibilityState: VisibilityState | null;
+  lastVisibilityChangeMs: number | null;
 };
 
 const metricsState: MetricsState = {
@@ -126,9 +132,66 @@ const metricsState: MetricsState = {
   currentPage: null,
   startedAt: null,
   hiddenPingSent: false,
+  visibleDurationMs: 0,
+  hiddenDurationMs: 0,
+  lastVisibilityState: null,
+  lastVisibilityChangeMs: null,
 };
 
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+const parseTimestampMs = (timestamp: string): number | null => {
+  const parsed = Date.parse(timestamp);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const accumulateVisibilityDuration = (targetMs: number): void => {
+  if (!Number.isFinite(targetMs)) {
+    return;
+  }
+
+  if (!metricsState.lastVisibilityState || metricsState.lastVisibilityChangeMs === null) {
+    metricsState.lastVisibilityChangeMs = targetMs;
+    return;
+  }
+
+  const delta = targetMs - metricsState.lastVisibilityChangeMs;
+  if (!Number.isFinite(delta) || delta <= 0) {
+    metricsState.lastVisibilityChangeMs = targetMs;
+    return;
+  }
+
+  if (metricsState.lastVisibilityState === 'visible') {
+    metricsState.visibleDurationMs += delta;
+  } else {
+    metricsState.hiddenDurationMs += delta;
+  }
+
+  metricsState.lastVisibilityChangeMs = targetMs;
+};
+
+const updateVisibilityTracking = (newState: VisibilityState, timestamp: string): void => {
+  const targetMs = parseTimestampMs(timestamp) ?? Date.now();
+  accumulateVisibilityDuration(targetMs);
+  metricsState.lastVisibilityState = newState;
+  metricsState.lastVisibilityChangeMs = targetMs;
+};
+
+const resetVisibilityTracking = (): void => {
+  metricsState.visibleDurationMs = 0;
+  metricsState.hiddenDurationMs = 0;
+  metricsState.lastVisibilityState = null;
+  metricsState.lastVisibilityChangeMs = null;
+};
+
+const initializeVisibilityTracking = (startTimestamp: string): void => {
+  resetVisibilityTracking();
+  const initialState: VisibilityState =
+    !isBrowser || document.visibilityState === 'visible' ? 'visible' : 'hidden';
+  const startMs = parseTimestampMs(startTimestamp) ?? Date.now();
+  metricsState.lastVisibilityState = initialState;
+  metricsState.lastVisibilityChangeMs = startMs;
+};
 
 const ensureCorrelationId = (): string => {
   if (!isBrowser) {
@@ -232,7 +295,9 @@ const sendPing = (visibility: VisibilityState): void => {
 const sendPageView = (
   page: string,
   startedAt: string,
-  endedAt: string
+  endedAt: string,
+  visibleDurationMs: number,
+  hiddenDurationMs: number
 ): void => {
   if (!isBrowser || !PAGE_VIEWS_ENDPOINT) {
     return;
@@ -245,6 +310,8 @@ const sendPageView = (
     referrer: document.referrer || null,
     started_at: startedAt,
     ended_at: endedAt,
+    visible_ms: Math.max(0, Math.round(visibleDurationMs)),
+    hidden_ms: Math.max(0, Math.round(hiddenDurationMs)),
     correlation_id: ensureCorrelationId(),
     viewport: {
       w: window.innerWidth,
@@ -269,7 +336,13 @@ const completeCurrentPageView = (endedAt: string, resetAfterSend: boolean): void
     safeEnd = safeStart;
   }
 
-  sendPageView(metricsState.currentPage, safeStart, safeEnd);
+  const endMs = parseTimestampMs(safeEnd) ?? Date.now();
+  accumulateVisibilityDuration(endMs);
+
+  const visibleDuration = metricsState.visibleDurationMs;
+  const hiddenDuration = metricsState.hiddenDurationMs;
+
+  sendPageView(metricsState.currentPage, safeStart, safeEnd, visibleDuration, hiddenDuration);
 
   if (resetAfterSend) {
     metricsState.currentPage = null;
@@ -277,20 +350,28 @@ const completeCurrentPageView = (endedAt: string, resetAfterSend: boolean): void
   } else {
     metricsState.startedAt = safeStart;
   }
+
+  resetVisibilityTracking();
 };
 
 const startPageView = (path: string, startedAt?: string): void => {
+  const safeStart = ensureTimestamp(startedAt);
   metricsState.currentPage = path;
-  metricsState.startedAt = ensureTimestamp(startedAt);
+  metricsState.startedAt = safeStart;
+  initializeVisibilityTracking(safeStart);
 };
 
-const handleHiddenEvent = (): void => {
+const handleHiddenEvent = (eventTimestamp?: string): void => {
   if (!metricsState.initialized || !isBrowser || metricsState.hiddenPingSent) {
     return;
   }
 
+  const fallbackTimestamp = createTimestamp();
+  const hiddenAt = ensureTimestamp(eventTimestamp, fallbackTimestamp);
+
+  updateVisibilityTracking('hidden', hiddenAt);
   sendPing('hidden');
-  completeCurrentPageView(createTimestamp(), true);
+  completeCurrentPageView(hiddenAt, true);
   metricsState.hiddenPingSent = true;
 };
 
@@ -299,13 +380,15 @@ const handleVisibilityChange = (): void => {
     return;
   }
 
+  const eventTimestamp = createTimestamp();
+
   if (document.visibilityState === 'hidden') {
-    handleHiddenEvent();
+    handleHiddenEvent(eventTimestamp);
     return;
   }
 
   metricsState.hiddenPingSent = false;
-  startPageView(getCurrentPath());
+  startPageView(getCurrentPath(), eventTimestamp);
   sendPing('visible');
 };
 
@@ -393,6 +476,8 @@ export const shutdownTocMetrics = (options?: { flush?: boolean }): void => {
     metricsState.currentPage = null;
     metricsState.startedAt = null;
   }
+
+  resetVisibilityTracking();
 
   metricsState.initialized = false;
   metricsState.hiddenPingSent = false;
