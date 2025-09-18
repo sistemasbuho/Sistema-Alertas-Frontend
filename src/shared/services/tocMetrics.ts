@@ -56,6 +56,32 @@ const PAGE_VIEWS_ENDPOINT = joinUrl(TOC_BASE_URL, 'metricas/page-views');
 const PLATFORM_ID = parseNumericEnv(rawPlatformId, 1);
 const PING_INTERVAL_MS = parseNumericEnv(rawPingInterval, DEFAULT_PING_INTERVAL);
 
+const createTimestamp = (): string => new Date().toISOString();
+
+const isValidTimestamp = (value: string | null | undefined): value is string => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed);
+};
+
+const ensureTimestamp = (
+  value: string | null | undefined,
+  fallback?: string
+): string => {
+  if (isValidTimestamp(value)) {
+    return value;
+  }
+
+  if (fallback && isValidTimestamp(fallback)) {
+    return fallback;
+  }
+
+  return createTimestamp();
+};
+
 type VisibilityState = 'visible' | 'hidden';
 
 type PingPayload = {
@@ -77,6 +103,8 @@ type PageViewPayload = {
   referrer: string | null;
   started_at: string;
   ended_at: string;
+  visible_ms: number;
+  hidden_ms: number;
   correlation_id: string;
   viewport: {
     w: number;
@@ -92,6 +120,10 @@ type MetricsState = {
   currentPage: string | null;
   startedAt: string | null;
   hiddenPingSent: boolean;
+  visibleDurationMs: number;
+  hiddenDurationMs: number;
+  lastVisibilityState: VisibilityState | null;
+  lastVisibilityChangeMs: number | null;
 };
 
 const metricsState: MetricsState = {
@@ -100,9 +132,66 @@ const metricsState: MetricsState = {
   currentPage: null,
   startedAt: null,
   hiddenPingSent: false,
+  visibleDurationMs: 0,
+  hiddenDurationMs: 0,
+  lastVisibilityState: null,
+  lastVisibilityChangeMs: null,
 };
 
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+const parseTimestampMs = (timestamp: string): number | null => {
+  const parsed = Date.parse(timestamp);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const accumulateVisibilityDuration = (targetMs: number): void => {
+  if (!Number.isFinite(targetMs)) {
+    return;
+  }
+
+  if (!metricsState.lastVisibilityState || metricsState.lastVisibilityChangeMs === null) {
+    metricsState.lastVisibilityChangeMs = targetMs;
+    return;
+  }
+
+  const delta = targetMs - metricsState.lastVisibilityChangeMs;
+  if (!Number.isFinite(delta) || delta <= 0) {
+    metricsState.lastVisibilityChangeMs = targetMs;
+    return;
+  }
+
+  if (metricsState.lastVisibilityState === 'visible') {
+    metricsState.visibleDurationMs += delta;
+  } else {
+    metricsState.hiddenDurationMs += delta;
+  }
+
+  metricsState.lastVisibilityChangeMs = targetMs;
+};
+
+const updateVisibilityTracking = (newState: VisibilityState, timestamp: string): void => {
+  const targetMs = parseTimestampMs(timestamp) ?? Date.now();
+  accumulateVisibilityDuration(targetMs);
+  metricsState.lastVisibilityState = newState;
+  metricsState.lastVisibilityChangeMs = targetMs;
+};
+
+const resetVisibilityTracking = (): void => {
+  metricsState.visibleDurationMs = 0;
+  metricsState.hiddenDurationMs = 0;
+  metricsState.lastVisibilityState = null;
+  metricsState.lastVisibilityChangeMs = null;
+};
+
+const initializeVisibilityTracking = (startTimestamp: string): void => {
+  resetVisibilityTracking();
+  const initialState: VisibilityState =
+    !isBrowser || document.visibilityState === 'visible' ? 'visible' : 'hidden';
+  const startMs = parseTimestampMs(startTimestamp) ?? Date.now();
+  metricsState.lastVisibilityState = initialState;
+  metricsState.lastVisibilityChangeMs = startMs;
+};
 
 const ensureCorrelationId = (): string => {
   if (!isBrowser) {
@@ -190,7 +279,7 @@ const sendPing = (visibility: VisibilityState): void => {
   const payload: PingPayload = {
     user_email: getUserEmail(),
     plataforma_id: PLATFORM_ID,
-    timestamp: new Date().toISOString(),
+    timestamp: createTimestamp(),
     visibility_state: visibility,
     activity_state: 'active',
     correlation_id: ensureCorrelationId(),
@@ -206,7 +295,9 @@ const sendPing = (visibility: VisibilityState): void => {
 const sendPageView = (
   page: string,
   startedAt: string,
-  endedAt: string
+  endedAt: string,
+  visibleDurationMs: number,
+  hiddenDurationMs: number
 ): void => {
   if (!isBrowser || !PAGE_VIEWS_ENDPOINT) {
     return;
@@ -219,6 +310,8 @@ const sendPageView = (
     referrer: document.referrer || null,
     started_at: startedAt,
     ended_at: endedAt,
+    visible_ms: Math.max(0, Math.round(visibleDurationMs)),
+    hidden_ms: Math.max(0, Math.round(hiddenDurationMs)),
     correlation_id: ensureCorrelationId(),
     viewport: {
       w: window.innerWidth,
@@ -236,26 +329,49 @@ const completeCurrentPageView = (endedAt: string, resetAfterSend: boolean): void
     return;
   }
 
-  sendPageView(metricsState.currentPage, metricsState.startedAt, endedAt);
+  const safeStart = ensureTimestamp(metricsState.startedAt);
+  let safeEnd = ensureTimestamp(endedAt, safeStart);
+
+  if (Date.parse(safeEnd) < Date.parse(safeStart)) {
+    safeEnd = safeStart;
+  }
+
+  const endMs = parseTimestampMs(safeEnd) ?? Date.now();
+  accumulateVisibilityDuration(endMs);
+
+  const visibleDuration = metricsState.visibleDurationMs;
+  const hiddenDuration = metricsState.hiddenDurationMs;
+
+  sendPageView(metricsState.currentPage, safeStart, safeEnd, visibleDuration, hiddenDuration);
 
   if (resetAfterSend) {
     metricsState.currentPage = null;
     metricsState.startedAt = null;
+  } else {
+    metricsState.startedAt = safeStart;
   }
+
+  resetVisibilityTracking();
 };
 
 const startPageView = (path: string, startedAt?: string): void => {
+  const safeStart = ensureTimestamp(startedAt);
   metricsState.currentPage = path;
-  metricsState.startedAt = startedAt ?? new Date().toISOString();
+  metricsState.startedAt = safeStart;
+  initializeVisibilityTracking(safeStart);
 };
 
-const handleHiddenEvent = (): void => {
+const handleHiddenEvent = (eventTimestamp?: string): void => {
   if (!metricsState.initialized || !isBrowser || metricsState.hiddenPingSent) {
     return;
   }
 
+  const fallbackTimestamp = createTimestamp();
+  const hiddenAt = ensureTimestamp(eventTimestamp, fallbackTimestamp);
+
+  updateVisibilityTracking('hidden', hiddenAt);
   sendPing('hidden');
-  completeCurrentPageView(new Date().toISOString(), true);
+  completeCurrentPageView(hiddenAt, true);
   metricsState.hiddenPingSent = true;
 };
 
@@ -264,13 +380,15 @@ const handleVisibilityChange = (): void => {
     return;
   }
 
+  const eventTimestamp = createTimestamp();
+
   if (document.visibilityState === 'hidden') {
-    handleHiddenEvent();
+    handleHiddenEvent(eventTimestamp);
     return;
   }
 
   metricsState.hiddenPingSent = false;
-  startPageView(getCurrentPath());
+  startPageView(getCurrentPath(), eventTimestamp);
   sendPing('visible');
 };
 
@@ -306,7 +424,7 @@ export const initializeTocMetrics = (initialPath: string): void => {
 
   ensureCorrelationId();
 
-  startPageView(initialPath, new Date().toISOString());
+  startPageView(initialPath, createTimestamp());
   metricsState.hiddenPingSent = document.visibilityState !== 'visible';
 
   window.addEventListener('visibilitychange', handleVisibilityChange);
@@ -322,12 +440,12 @@ export const trackPageNavigation = (path: string): void => {
   }
 
   if (!metricsState.initialized) {
-    startPageView(path, new Date().toISOString());
+    startPageView(path, createTimestamp());
     return;
   }
 
   if (!metricsState.currentPage) {
-    startPageView(path, new Date().toISOString());
+    startPageView(path, createTimestamp());
     return;
   }
 
@@ -335,7 +453,7 @@ export const trackPageNavigation = (path: string): void => {
     return;
   }
 
-  const now = new Date().toISOString();
+  const now = createTimestamp();
   completeCurrentPageView(now, false);
   startPageView(path, now);
 };
@@ -353,11 +471,13 @@ export const shutdownTocMetrics = (options?: { flush?: boolean }): void => {
   stopPingTimer();
 
   if (shouldFlush) {
-    completeCurrentPageView(new Date().toISOString(), true);
+    completeCurrentPageView(createTimestamp(), true);
   } else {
     metricsState.currentPage = null;
     metricsState.startedAt = null;
   }
+
+  resetVisibilityTracking();
 
   metricsState.initialized = false;
   metricsState.hiddenPingSent = false;
