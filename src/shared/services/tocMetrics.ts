@@ -56,6 +56,32 @@ const PAGE_VIEWS_ENDPOINT = joinUrl(TOC_BASE_URL, 'metricas/page-views');
 const PLATFORM_ID = parseNumericEnv(rawPlatformId, 1);
 const PING_INTERVAL_MS = parseNumericEnv(rawPingInterval, DEFAULT_PING_INTERVAL);
 
+const createTimestamp = (): string => new Date().toISOString();
+
+const isValidTimestamp = (value: string | null | undefined): value is string => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed);
+};
+
+const ensureTimestamp = (
+  value: string | null | undefined,
+  fallback?: string
+): string => {
+  if (isValidTimestamp(value)) {
+    return value;
+  }
+
+  if (fallback && isValidTimestamp(fallback)) {
+    return fallback;
+  }
+
+  return createTimestamp();
+};
+
 type VisibilityState = 'visible' | 'hidden';
 
 type PingPayload = {
@@ -190,7 +216,7 @@ const sendPing = (visibility: VisibilityState): void => {
   const payload: PingPayload = {
     user_email: getUserEmail(),
     plataforma_id: PLATFORM_ID,
-    timestamp: new Date().toISOString(),
+    timestamp: createTimestamp(),
     visibility_state: visibility,
     activity_state: 'active',
     correlation_id: ensureCorrelationId(),
@@ -236,17 +262,26 @@ const completeCurrentPageView = (endedAt: string, resetAfterSend: boolean): void
     return;
   }
 
-  sendPageView(metricsState.currentPage, metricsState.startedAt, endedAt);
+  const safeStart = ensureTimestamp(metricsState.startedAt);
+  let safeEnd = ensureTimestamp(endedAt, safeStart);
+
+  if (Date.parse(safeEnd) < Date.parse(safeStart)) {
+    safeEnd = safeStart;
+  }
+
+  sendPageView(metricsState.currentPage, safeStart, safeEnd);
 
   if (resetAfterSend) {
     metricsState.currentPage = null;
     metricsState.startedAt = null;
+  } else {
+    metricsState.startedAt = safeStart;
   }
 };
 
 const startPageView = (path: string, startedAt?: string): void => {
   metricsState.currentPage = path;
-  metricsState.startedAt = startedAt ?? new Date().toISOString();
+  metricsState.startedAt = ensureTimestamp(startedAt);
 };
 
 const handleHiddenEvent = (): void => {
@@ -255,7 +290,7 @@ const handleHiddenEvent = (): void => {
   }
 
   sendPing('hidden');
-  completeCurrentPageView(new Date().toISOString(), true);
+  completeCurrentPageView(createTimestamp(), true);
   metricsState.hiddenPingSent = true;
 };
 
@@ -306,7 +341,7 @@ export const initializeTocMetrics = (initialPath: string): void => {
 
   ensureCorrelationId();
 
-  startPageView(initialPath, new Date().toISOString());
+  startPageView(initialPath, createTimestamp());
   metricsState.hiddenPingSent = document.visibilityState !== 'visible';
 
   window.addEventListener('visibilitychange', handleVisibilityChange);
@@ -322,12 +357,12 @@ export const trackPageNavigation = (path: string): void => {
   }
 
   if (!metricsState.initialized) {
-    startPageView(path, new Date().toISOString());
+    startPageView(path, createTimestamp());
     return;
   }
 
   if (!metricsState.currentPage) {
-    startPageView(path, new Date().toISOString());
+    startPageView(path, createTimestamp());
     return;
   }
 
@@ -335,7 +370,7 @@ export const trackPageNavigation = (path: string): void => {
     return;
   }
 
-  const now = new Date().toISOString();
+  const now = createTimestamp();
   completeCurrentPageView(now, false);
   startPageView(path, now);
 };
@@ -353,7 +388,7 @@ export const shutdownTocMetrics = (options?: { flush?: boolean }): void => {
   stopPingTimer();
 
   if (shouldFlush) {
-    completeCurrentPageView(new Date().toISOString(), true);
+    completeCurrentPageView(createTimestamp(), true);
   } else {
     metricsState.currentPage = null;
     metricsState.startedAt = null;
