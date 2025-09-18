@@ -3,12 +3,15 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ThemeProvider } from '@shared/contexts/ThemeContext';
 import { AuthProvider } from '@shared/contexts/AuthContext';
 import { ToastProvider } from '@shared/contexts/ToastContext';
+import useTocMetrics from '@shared/hooks/useTocMetrics';
 import ConsultaDatos from '@/pages/ConsultaDatos/ConsultaDatos';
 import Historial from '@/pages/Historial/Historial';
 import Proyecto from './pages/Proyecto/Proyecto';
 import LoginPage from './pages/auth/LoginPage';
 
 function App() {
+  useTocMetrics();
+
   return (
     <GoogleOAuthProvider
       clientId={
