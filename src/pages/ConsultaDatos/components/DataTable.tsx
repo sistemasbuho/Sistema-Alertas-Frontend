@@ -76,9 +76,6 @@ const DataTable: React.FC<DataTableProps> = ({
               </th>
               {activeTab === 'medios' ? (
                 <>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
-                    Proyecto
-                  </th>
                   <th
                     className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                     style={{ minWidth: '320px' }}
@@ -115,9 +112,6 @@ const DataTable: React.FC<DataTableProps> = ({
                 </>
               ) : (
                 <>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
-                    Proyecto
-                  </th>
                   <th
                     className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                     style={{ minWidth: '480px' }}
@@ -172,16 +166,6 @@ const DataTable: React.FC<DataTableProps> = ({
                 </td>
                 {activeTab === 'medios' ? (
                   <>
-                    <td className="px-4 py-4 w-40">
-                      <div
-                        className="text-sm text-gray-900 dark:text-white truncate"
-                        title={item.proyecto_nombre || item.proyecto}
-                      >
-                        {item.proyecto_nombre ||
-                          item.proyecto ||
-                          'Sin proyecto'}
-                      </div>
-                    </td>
                     <td className="px-4 py-4" style={{ minWidth: '320px' }}>
                       <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
                         <span
@@ -311,16 +295,6 @@ const DataTable: React.FC<DataTableProps> = ({
                   </>
                 ) : (
                   <>
-                    <td className="px-4 py-4 w-40">
-                      <div
-                        className="text-sm text-gray-900 dark:text-white truncate"
-                        title={item.proyecto_nombre || item.proyecto}
-                      >
-                        {item.proyecto_nombre ||
-                          item.proyecto ||
-                          'Sin proyecto'}
-                      </div>
-                    </td>
                     <td className="px-4 py-4" style={{ minWidth: '480px' }}>
                       <div
                         className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
