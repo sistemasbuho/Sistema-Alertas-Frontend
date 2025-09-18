@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/contexts/ToastContext';
-import { BellIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { BellIcon } from '@heroicons/react/24/outline';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
