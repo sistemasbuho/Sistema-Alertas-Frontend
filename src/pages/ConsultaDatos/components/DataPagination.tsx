@@ -18,6 +18,7 @@ interface DataPaginationProps {
   pagination: PaginationState;
   onPreviousPage: () => void;
   onNextPage: () => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
 
 const DataPagination: React.FC<DataPaginationProps> = ({
@@ -26,6 +27,7 @@ const DataPagination: React.FC<DataPaginationProps> = ({
   pagination,
   onPreviousPage,
   onNextPage,
+  onPageSizeChange,
 }) => {
   if (currentData.length === 0) {
     return null;
@@ -45,32 +47,53 @@ const DataPagination: React.FC<DataPaginationProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={onPreviousPage}
-            disabled={!pagination.previous}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            <ChevronLeftIcon className="h-4 w-4" />
-            Anterior
-          </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Mostrar:
+            </span>
+            <select
+              value={pagination.pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              por página
+            </span>
+          </div>
 
-          <span className="text-sm text-gray-700 dark:text-gray-300 px-3">
-            Página {pagination.currentPage}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={onPreviousPage}
+              disabled={!pagination.previous}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+              Anterior
+            </Button>
 
-          <Button
-            onClick={onNextPage}
-            disabled={!pagination.next}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            Siguiente
-            <ChevronRightIcon className="h-4 w-4" />
-          </Button>
+            <span className="text-sm text-gray-700 dark:text-gray-300 px-3">
+              Página {pagination.currentPage}
+            </span>
+
+            <Button
+              onClick={onNextPage}
+              disabled={!pagination.next}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              Siguiente
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

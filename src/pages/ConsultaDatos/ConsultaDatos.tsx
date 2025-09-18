@@ -15,6 +15,8 @@ import {
   type RedesPaginationParams,
   // type WhatsAppEnvioRequest,
   type EnvioAlertaRequest,
+  MarcarRevisadoRequest,
+  marcarRevisadoAPI,
 } from '@shared/services/api';
 import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
@@ -55,7 +57,7 @@ const ConsultaDatos: React.FC = () => {
     next: null as string | null,
     previous: null as string | null,
     currentPage: 1,
-    pageSize: 20,
+    pageSize: 10,
   });
 
   const [redesPagination, setRedesPagination] = useState({
@@ -63,7 +65,7 @@ const ConsultaDatos: React.FC = () => {
     next: null as string | null,
     previous: null as string | null,
     currentPage: 1,
-    pageSize: 15,
+    pageSize: 10,
   });
 
   const mediosFilters = useUrlFilters({
@@ -94,6 +96,7 @@ const ConsultaDatos: React.FC = () => {
   const [isAlertLoading, setIsAlertLoading] = useState(false);
   // const [isEnviando, setIsEnviando] = useState(false);
   const [isEnviandoAlertas, setIsEnviandoAlertas] = useState(false);
+  const [isMarcandoRevisado, setIsMarcandoRevisado] = useState(false);
 
   const getCurrentFilters = () => {
     const filters = activeTab === 'medios' ? mediosFilters : redesFilters;
@@ -138,7 +141,7 @@ const ConsultaDatos: React.FC = () => {
     }
   }, [redesFilters.filters]);
 
-  const loadData = async (params?: { page?: number }) => {
+  const loadData = async (params?: { page?: number; pageSize?: number }) => {
     try {
       setLoading(true);
       setSelectedItems([]);
@@ -152,7 +155,7 @@ const ConsultaDatos: React.FC = () => {
 
         const activeFilters: MediosPaginationParams = {
           page: params?.page || mediosPagination.currentPage,
-          page_size: mediosPagination.pageSize,
+          page_size: params?.pageSize || mediosPagination.pageSize,
         };
 
         Object.entries(rawFilters).forEach(([key, value]) => {
@@ -172,7 +175,7 @@ const ConsultaDatos: React.FC = () => {
           next: response.next,
           previous: response.previous,
           currentPage: params?.page || mediosPagination.currentPage,
-          pageSize: mediosPagination.pageSize,
+          pageSize: params?.pageSize || mediosPagination.pageSize,
         });
       } else {
         const rawFilters = Object.fromEntries(
@@ -183,7 +186,7 @@ const ConsultaDatos: React.FC = () => {
 
         const activeFilters: RedesPaginationParams = {
           page: params?.page || redesPagination.currentPage,
-          page_size: redesPagination.pageSize,
+          page_size: params?.pageSize || redesPagination.pageSize,
         };
 
         Object.entries(rawFilters).forEach(([key, value]) => {
@@ -203,7 +206,7 @@ const ConsultaDatos: React.FC = () => {
           next: response.next,
           previous: response.previous,
           currentPage: params?.page || redesPagination.currentPage,
-          pageSize: redesPagination.pageSize,
+          pageSize: params?.pageSize || redesPagination.pageSize,
         });
       }
     } catch (err: any) {
@@ -266,6 +269,24 @@ const ConsultaDatos: React.FC = () => {
       );
     }
   });
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    if (activeTab === 'medios') {
+      setMediosPagination((prev) => ({
+        ...prev,
+        pageSize: newPageSize,
+        currentPage: 1,
+      }));
+    } else {
+      setRedesPagination((prev) => ({
+        ...prev,
+        pageSize: newPageSize,
+        currentPage: 1,
+      }));
+    }
+
+    loadData({ page: 1, pageSize: newPageSize });
+  };
 
   const handleSelectItem = (id: string) => {
     const currentData = activeTab === 'medios' ? medios : redes;
@@ -622,6 +643,48 @@ const ConsultaDatos: React.FC = () => {
     }
   };
 
+  const handleMarcarRevisado = async () => {
+    if (selectedItems.length === 0) {
+      showError(
+        'Sin selección',
+        'Debes seleccionar al menos una alerta para marcar como revisada'
+      );
+      return;
+    }
+
+    try {
+      setIsMarcandoRevisado(true);
+
+      const payload: MarcarRevisadoRequest = {
+        tipo_alerta: activeTab === 'medios' ? 'medios' : 'redes',
+        alertas: selectedItems.map((id) => ({ id })),
+      };
+
+      const result = await marcarRevisadoAPI(payload);
+
+      if (result.success) {
+        showSuccess(
+          'Alertas marcadas como revisadas',
+          `Se han marcado ${selectedItems.length} alertas como revisadas exitosamente`
+        );
+
+        setSelectedItems([]);
+        setSelectedProjectId('');
+        await loadData();
+      } else {
+        showError('Error', result.message || 'Error al marcar como revisadas');
+      }
+    } catch (error: any) {
+      console.error('Error marcando como revisado:', error);
+      showError(
+        'Error',
+        error.response?.data?.message || 'Error al marcar como revisadas'
+      );
+    } finally {
+      setIsMarcandoRevisado(false);
+    }
+  };
+
   // const handleSendToAlertas = async () => {
   //   const selectedData = filteredData.filter((item) =>
   //     selectedItems.includes(item.id)
@@ -739,6 +802,24 @@ const ConsultaDatos: React.FC = () => {
     return new Intl.NumberFormat('es-ES').format(num);
   };
 
+  const highlightKeywords = (text: string, keywords: string[] = []) => {
+    if (!keywords || keywords.length === 0) return text;
+
+    let highlightedText = text;
+
+    keywords.forEach((keyword) => {
+      if (keyword && keyword.trim()) {
+        const regex = new RegExp(`(${keyword.trim()})`, 'gi');
+        highlightedText = highlightedText.replace(
+          regex,
+          '<mark class="bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 px-1 rounded">$1</mark>'
+        );
+      }
+    });
+
+    return highlightedText;
+  };
+
   // const handleModalClose = () => {
   //   setShowResultModal(false);
   //   setCaptureResult(null);
@@ -827,6 +908,36 @@ const ConsultaDatos: React.FC = () => {
                         Agregar emoji
                       </Button>
                       <Button
+                        onClick={handleMarcarRevisado}
+                        disabled={isMarcandoRevisado}
+                        variant="outline"
+                        className="inline-flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300 dark:bg-green-900/10 dark:hover:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                      >
+                        {isMarcandoRevisado ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                            Marcando...
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                            Revisados
+                          </>
+                        )}
+                      </Button>
+                      <Button
                         onClick={handleEnviarAlertasAPI}
                         disabled={isEnviandoAlertas}
                         className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -911,6 +1022,7 @@ const ConsultaDatos: React.FC = () => {
                 onRemoveEmoji={handleRemoveEmoji}
                 onEditItem={handleEditItem}
                 onPreviewItem={handlePreviewItem}
+                highlightKeywords={highlightKeywords}
               />
             )}
 
@@ -920,6 +1032,7 @@ const ConsultaDatos: React.FC = () => {
               pagination={getCurrentPagination()}
               onPreviousPage={handlePreviousPage}
               onNextPage={handleNextPage}
+              onPageSizeChange={handlePageSizeChange}
             />
           </Card.Content>
         </Card>

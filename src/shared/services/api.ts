@@ -1002,6 +1002,18 @@ export interface EnvioAlertaResponse {
   duplicadas: any[];
 }
 
+export interface MarcarRevisadoRequest {
+  tipo_alerta: 'medios' | 'redes';
+  alertas: Array<{
+    id: string;
+  }>;
+}
+
+export interface MarcarRevisadoResponse {
+  message: string;
+  success: boolean;
+}
+
 export const enviarAlertasAPI = async (
   data: EnvioAlertaRequest
 ): Promise<EnvioAlertaResponse> => {
@@ -1014,6 +1026,18 @@ export const enviarAlertasAPI = async (
     return response.data;
   } catch (error) {
     console.error('Error enviando alertas:', error);
+    throw error;
+  }
+};
+
+export const marcarRevisadoAPI = async (
+  data: MarcarRevisadoRequest
+): Promise<MarcarRevisadoResponse> => {
+  try {
+    const response = await apiClient.post('/api/detalle-envio/revisado/', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error marcando como revisado:', error);
     throw error;
   }
 };

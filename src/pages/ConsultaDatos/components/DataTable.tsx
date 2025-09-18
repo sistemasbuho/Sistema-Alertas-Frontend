@@ -39,6 +39,7 @@ interface DataTableProps {
   onRemoveEmoji: (itemId: string, emojiIndex: number) => void;
   onEditItem: (item: any) => void;
   onPreviewItem: (item: any) => void;
+  highlightKeywords: (text: string, keywords: string[]) => string;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -53,6 +54,7 @@ const DataTable: React.FC<DataTableProps> = ({
   onRemoveEmoji,
   onEditItem,
   onPreviewItem,
+  highlightKeywords,
 }) => {
   return (
     <>
@@ -77,7 +79,10 @@ const DataTable: React.FC<DataTableProps> = ({
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
                     Proyecto
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-64">
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    style={{ minWidth: '320px' }}
+                  >
                     Título
                   </th>
                   <th
@@ -100,6 +105,9 @@ const DataTable: React.FC<DataTableProps> = ({
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Fecha Creación
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
+                    Estado
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Acciones
@@ -133,6 +141,9 @@ const DataTable: React.FC<DataTableProps> = ({
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Fecha Creación
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
+                    Estado
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Acciones
@@ -171,9 +182,16 @@ const DataTable: React.FC<DataTableProps> = ({
                           'Sin proyecto'}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-64">
+                    <td className="px-4 py-4" style={{ minWidth: '320px' }}>
                       <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
-                        {item.titulo}
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: highlightKeywords(
+                              item.titulo || '',
+                              item.proyecto_keywords || []
+                            ),
+                          }}
+                        />
                       </div>
                     </td>
                     <td className="px-4 py-4" style={{ minWidth: '480px' }}>
@@ -205,7 +223,14 @@ const DataTable: React.FC<DataTableProps> = ({
                             ))}
                           </span>
                         )}
-                        {item.contenido}
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: highlightKeywords(
+                              item.contenido,
+                              item.proyecto_keywords || []
+                            ),
+                          }}
+                        />
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
@@ -240,6 +265,17 @@ const DataTable: React.FC<DataTableProps> = ({
                       <div className="text-sm text-gray-900 dark:text-white">
                         {formatDate(item.created_at)}
                       </div>
+                    </td>
+                    <td className="px-4 py-4 w-28">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          item.estado_revisado === 'Revisado'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        }`}
+                      >
+                        {item.estado_revisado || 'Pendiente'}
+                      </span>
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="flex items-center justify-center gap-1">
@@ -314,7 +350,14 @@ const DataTable: React.FC<DataTableProps> = ({
                             ))}
                           </span>
                         )}
-                        {item.contenido}
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: highlightKeywords(
+                              item.contenido,
+                              item.proyecto_keywords || []
+                            ),
+                          }}
+                        />
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
@@ -354,6 +397,17 @@ const DataTable: React.FC<DataTableProps> = ({
                       <div className="text-sm text-gray-900 dark:text-white">
                         {formatDate(item.created_at)}
                       </div>
+                    </td>
+                    <td className="px-4 py-4 w-28">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          item.estado_revisado === 'Revisado'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        }`}
+                      >
+                        {item.estado_revisado || 'Pendiente'}
+                      </span>
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="flex items-center justify-center gap-1">

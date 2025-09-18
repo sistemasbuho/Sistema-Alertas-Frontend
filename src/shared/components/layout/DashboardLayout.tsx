@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/contexts/ToastContext';
-import { BellIcon } from '@heroicons/react/24/outline';
+import { BellIcon, Bars3Icon } from '@heroicons/react/24/outline';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { showSuccess, showError } = useToast();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const handleLogout = () => {
     try {
