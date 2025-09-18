@@ -9,10 +9,17 @@ import {
 const useTocMetrics = (): void => {
   const location = useLocation();
   const fullPath = `${location.pathname}${location.search}`;
-  const initialPathRef = useRef(fullPath);
+  const initialPathRef = useRef<string | null>(null);
 
   useEffect(() => {
-    initializeTocMetrics(initialPathRef.current);
+    const resolvedInitialPath =
+      initialPathRef.current ??
+      (typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : '/');
+
+    initialPathRef.current = resolvedInitialPath;
+    initializeTocMetrics(resolvedInitialPath);
 
     return () => {
       shutdownTocMetrics({ flush: false });
