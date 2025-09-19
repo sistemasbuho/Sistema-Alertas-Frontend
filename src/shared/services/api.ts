@@ -413,9 +413,21 @@ export const getProyectosList = async (
   return response.results;
 };
 
-export const getIngestionProjects = async (): Promise<Proyecto[]> => {
+export const getIngestionProjects = async (
+  nombre: string,
+  pageSize = 20
+): Promise<Proyecto[]> => {
+  const trimmedName = nombre.trim();
+
+  if (!trimmedName) {
+    return [];
+  }
+
   try {
-    const response = await getProyectos({ nombre: 'Proyecto', page_size: 1000 });
+    const response = await getProyectos({
+      nombre: trimmedName,
+      page_size: pageSize,
+    });
     return response.results;
   } catch (error) {
     console.error('Error obteniendo proyectos para ingestión:', error);
