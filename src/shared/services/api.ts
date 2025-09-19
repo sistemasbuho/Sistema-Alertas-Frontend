@@ -413,6 +413,54 @@ export const getProyectosList = async (
   return response.results;
 };
 
+export const getIngestionProjects = async (
+  nombre: string,
+  pageSize = 20
+): Promise<Proyecto[]> => {
+  const trimmedName = nombre.trim();
+
+  if (!trimmedName) {
+    return [];
+  }
+
+  try {
+    const response = await getProyectos({
+      nombre: trimmedName,
+      page_size: pageSize,
+    });
+    return response.results;
+  } catch (error) {
+    console.error('Error obteniendo proyectos para ingestión:', error);
+    throw error;
+  }
+};
+
+export const uploadIngestionDocument = async (
+  proyectoId: string,
+  file: File
+): Promise<any> => {
+  try {
+    const formData = new FormData();
+    formData.append('documento', file);
+    formData.append('proyecto_id', proyectoId);
+
+    const response = await apiClient.post(
+      `/api/ingestion/?proyecto=${encodeURIComponent(proyectoId)}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error subiendo documento de ingestión:', error);
+    throw error;
+  }
+};
+
 export const createProyecto = async (
   proyecto: Omit<Proyecto, 'id' | 'created_at' | 'modified_at'>
 ): Promise<Proyecto> => {
@@ -805,6 +853,8 @@ export const apiService = {
 
   getProyectos,
   getProyectosList,
+  getIngestionProjects,
+  uploadIngestionDocument,
   createProyecto,
   updateProyecto,
   deleteProyecto,
