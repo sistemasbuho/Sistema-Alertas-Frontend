@@ -466,7 +466,7 @@ const ConsultaDatos: React.FC = () => {
             reach: alertData.reach || 0,
           },
           activeTab,
-          selectedProjectId || ''
+          editingAlert.proyecto
         );
 
         const currentData = getCurrentData();
