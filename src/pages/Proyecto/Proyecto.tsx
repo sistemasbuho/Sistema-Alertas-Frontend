@@ -143,7 +143,7 @@ const ProyectoPage = () => {
     setFormData({
       nombre: proyecto.nombre,
       proveedor: proyecto.proveedor,
-      codigo_acceso: proyecto.grupo_nombre || proyecto.codigo_acceso || '',
+      codigo_acceso: proyecto.nombre_grupo || proyecto.codigo_acceso || '',
       estado: proyecto.estado,
       tipo_envio: proyecto.tipo_envio,
       tipo_alerta: proyecto.tipo_alerta,
