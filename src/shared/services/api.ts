@@ -457,10 +457,7 @@ export const triggerManualIngestion = async (
       url,
     };
 
-    const response = await apiClient.post(
-      `/api/ingestion/manual/?proyecto=${encodeURIComponent(proyectoId)}`,
-      payload
-    );
+    const response = await apiClient.post('/api/ingestion/', payload);
 
     return response.data;
   } catch (error) {
