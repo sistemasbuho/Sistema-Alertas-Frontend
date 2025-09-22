@@ -9,6 +9,7 @@ import Historial from '@/pages/Historial/Historial';
 import Proyecto from './pages/Proyecto/Proyecto';
 import LoginPage from './pages/auth/LoginPage';
 import Ingestion from './pages/Ingestion/Ingestion';
+import IngestionResultado from './pages/Ingestion/IngestionResultado';
 
 function App() {
   useTocMetrics();
@@ -29,6 +30,10 @@ function App() {
                 <Route path="/consulta-datos" element={<ConsultaDatos />} />
                 <Route path="/proyecto" element={<Proyecto />} />
                 <Route path="/ingestion" element={<Ingestion />} />
+                <Route
+                  path="/ingestion/resultados"
+                  element={<IngestionResultado />}
+                />
                 <Route path="/historial" element={<Historial />} />
                 <Route
                   path="/"
