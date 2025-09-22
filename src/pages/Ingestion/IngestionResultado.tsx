@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
@@ -84,6 +84,16 @@ type IngestionSummary = {
   }>;
 };
 
+type IngestionNavigationState = {
+  ingestionResponse?: {
+    mensaje?: string;
+    listado?: IngestionResultItem[];
+    errores?: unknown[];
+  };
+  projectId?: string;
+  projectName?: string | null;
+};
+
 const buildFilterState = (
   values: { proyecto_nombre?: string; autor?: string; url?: string },
   setter: React.Dispatch<
@@ -144,8 +154,19 @@ const normalizeIngestionItem = (
 
 const IngestionResultado: React.FC = () => {
   const { showSuccess, showError } = useToast();
+  const location = useLocation();
+  const navigationState =
+    (location.state as IngestionNavigationState | undefined) ?? undefined;
+  const stateProjectId = navigationState?.projectId ?? undefined;
+  const stateProjectName = navigationState?.projectName ?? null;
+  const ingestionResponseFromState = navigationState?.ingestionResponse;
+  const hasIngestionResponse = Boolean(
+    ingestionResponseFromState?.listado &&
+      ingestionResponseFromState.listado.length > 0
+  );
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialProjectId = searchParams.get('proyecto') || DEFAULT_PROJECT_ID;
+  const initialProjectId =
+    stateProjectId || searchParams.get('proyecto') || DEFAULT_PROJECT_ID;
 
   const [projectIdInput, setProjectIdInput] = useState(initialProjectId);
   const [projectId, setProjectId] = useState(initialProjectId);
@@ -198,7 +219,58 @@ const IngestionResultado: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!hasIngestionResponse || !ingestionResponseFromState) {
+      return;
+    }
+
+    const fallbackProjectId = stateProjectId || projectId || DEFAULT_PROJECT_ID;
+    const fallbackProjectName = stateProjectName || undefined;
+
+    const normalizedData = ingestionResponseFromState.listado?.map((item) => {
+      const enrichedItem: IngestionResultItem = {
+        ...item,
+        proyecto_nombre: item.proyecto_nombre || fallbackProjectName || undefined,
+      };
+
+      const normalized = normalizeIngestionItem(
+        enrichedItem,
+        fallbackProjectId
+      );
+
+      if (fallbackProjectName) {
+        normalized.proyecto_nombre = fallbackProjectName;
+      }
+
+      return normalized;
+    });
+
+    setMedios(normalizedData ?? []);
+    setSelectedItems([]);
+    setSearchTerm('');
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    setFetchError(null);
+    setIsLoadingData(false);
+
+    if (ingestionResponseFromState.mensaje) {
+      showSuccess('Ingestión completada', ingestionResponseFromState.mensaje);
+    }
+  }, [
+    hasIngestionResponse,
+    ingestionResponseFromState,
+    projectId,
+    showSuccess,
+    stateProjectId,
+    stateProjectName,
+  ]);
+
+  useEffect(() => {
     let isSubscribed = true;
+
+    if (hasIngestionResponse) {
+      return () => {
+        isSubscribed = false;
+      };
+    }
 
     if (!projectId) {
       setMedios([]);
@@ -243,7 +315,13 @@ const IngestionResultado: React.FC = () => {
     return () => {
       isSubscribed = false;
     };
-  }, [projectId, reloadToken, showError, extractErrorMessage]);
+  }, [
+    hasIngestionResponse,
+    projectId,
+    reloadToken,
+    showError,
+    extractErrorMessage,
+  ]);
 
   const filters = useMemo(
     () =>
