@@ -181,13 +181,12 @@ const IngestionResultado: React.FC = () => {
     ingestionResponseFromState?.listado &&
       ingestionResponseFromState.listado.length > 0
   );
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initialProjectId =
     stateProjectId || searchParams.get('proyecto') || DEFAULT_PROJECT_ID;
 
-  const [projectIdInput, setProjectIdInput] = useState(initialProjectId);
-  const [projectId, setProjectId] = useState(initialProjectId);
-  const [reloadToken, setReloadToken] = useState(0);
+  const [projectId] = useState(initialProjectId);
+  const [reloadToken] = useState(0);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [medios, setMedios] = useState<MediosItem[]>([]);
@@ -638,14 +637,6 @@ const IngestionResultado: React.FC = () => {
 
   const handlePageSizeChange = (pageSize: number) => {
     setPagination({ currentPage: 1, pageSize });
-  };
-
-  const handleProjectSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmedId = projectIdInput.trim();
-    setProjectId(trimmedId);
-    setSearchParams(trimmedId ? { proyecto: trimmedId } : {});
-    setReloadToken((prev) => prev + 1);
   };
 
   return (
