@@ -421,6 +421,9 @@ export const getIngestionProjects = async (
   }
 };
 
+const buildIngestionEndpoint = (proyectoId: string) =>
+  `/api/ingestion/?proyecto=${encodeURIComponent(proyectoId)}`;
+
 export const uploadIngestionDocument = async (
   proyectoId: string,
   file: File
@@ -431,7 +434,7 @@ export const uploadIngestionDocument = async (
     formData.append('proyecto_id', proyectoId);
 
     const response = await apiClient.post(
-      `/api/ingestion/?proyecto=${encodeURIComponent(proyectoId)}`,
+      buildIngestionEndpoint(proyectoId),
       formData,
       {
         headers: {
@@ -457,7 +460,10 @@ export const triggerManualIngestion = async (
       url,
     };
 
-    const response = await apiClient.post('/api/ingestion/', payload);
+    const response = await apiClient.post(
+      buildIngestionEndpoint(proyectoId),
+      payload
+    );
 
     return response.data;
   } catch (error) {
