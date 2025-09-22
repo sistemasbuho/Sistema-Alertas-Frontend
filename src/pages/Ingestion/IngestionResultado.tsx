@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
@@ -20,8 +21,12 @@ import {
   DataFilters,
   DataPagination,
 } from '@/pages/ConsultaDatos/components';
+import {
+  getIngestionResults,
+  type IngestionResultItem,
+} from '@shared/services/api';
 
-type TabType = 'medios' | 'redes';
+const DEFAULT_PROJECT_ID = 'a986a5c3-f710-4603-814f-22cb4af5ed21';
 
 type FilterState = {
   filters: {
@@ -41,6 +46,7 @@ type MediosItem = {
   url: string;
   autor: string;
   reach: number;
+  engagement: number | null;
   fecha_publicacion: string;
   created_at: string;
   estado_revisado: string;
@@ -50,24 +56,8 @@ type MediosItem = {
   emojis: string[];
   mensaje?: string;
   mensaje_formateado?: string | null;
-};
-
-type RedesItem = {
-  id: string;
-  contenido: string;
-  url: string;
-  autor: string;
-  reach: number;
-  engagement: number;
-  fecha_publicacion: string;
-  created_at: string;
-  estado_revisado: string;
-  proyecto: string;
-  proyecto_nombre: string;
-  proyecto_keywords: string[];
-  emojis: string[];
-  mensaje?: string;
-  mensaje_formateado?: string | null;
+  tipo?: string | null;
+  red_social?: string | null;
 };
 
 type IngestionSummary = {
@@ -116,30 +106,65 @@ const buildFilterState = (
   };
 };
 
+const normalizeIngestionItem = (
+  item: IngestionResultItem,
+  fallbackProjectId: string
+): MediosItem => {
+  const parsedDate = item.fecha ? new Date(item.fecha) : new Date();
+  const baseDate = Number.isNaN(parsedDate.getTime())
+    ? new Date().toISOString()
+    : parsedDate.toISOString();
+
+  return {
+    id: item.id,
+    titulo:
+      item.titulo?.trim() ||
+      (item.contenido ? `${item.contenido.slice(0, 80)}…` : 'Sin título disponible'),
+    contenido: item.contenido || '',
+    url: item.url || '',
+    autor: item.autor || 'Sin autor',
+    reach: item.reach ?? 0,
+    engagement: item.engagement ?? null,
+    fecha_publicacion: baseDate,
+    created_at: baseDate,
+    estado_revisado: 'Pendiente',
+    proyecto: item.proyecto || fallbackProjectId,
+    proyecto_nombre:
+      item.proyecto_nombre ||
+      item.proyecto ||
+      (fallbackProjectId ? `Proyecto ${fallbackProjectId.slice(0, 8)}` : 'Proyecto sin nombre'),
+    proyecto_keywords: [],
+    emojis: item.emojis || [],
+    mensaje: item.mensaje || item.contenido || '',
+    mensaje_formateado: item.mensaje_formateado || null,
+    tipo: item.tipo || null,
+    red_social: item.red_social || null,
+  };
+};
+
 const IngestionResultado: React.FC = () => {
-  const { showSuccess } = useToast();
-  const [activeTab, setActiveTab] = useState<TabType>('medios');
+  const { showSuccess, showError } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialProjectId = searchParams.get('proyecto') || DEFAULT_PROJECT_ID;
+
+  const [projectIdInput, setProjectIdInput] = useState(initialProjectId);
+  const [projectId, setProjectId] = useState(initialProjectId);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [medios, setMedios] = useState<MediosItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>('all');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewItem, setPreviewItem] = useState<MediosItem | RedesItem | null>(null);
+  const [previewItem, setPreviewItem] = useState<MediosItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editItem, setEditItem] = useState<MediosItem | RedesItem | null>(null);
+  const [editItem, setEditItem] = useState<MediosItem | null>(null);
   const [editNotes, setEditNotes] = useState('');
 
-  const [mediosFiltersValues, setMediosFiltersValues] = useState<{
-    proyecto_nombre?: string;
-    autor?: string;
-    url?: string;
-  }>({
-    proyecto_nombre: '',
-    autor: '',
-    url: '',
-  });
-  const [redesFiltersValues, setRedesFiltersValues] = useState<{
+  const [filtersValues, setFiltersValues] = useState<{
     proyecto_nombre?: string;
     autor?: string;
     url?: string;
@@ -149,186 +174,83 @@ const IngestionResultado: React.FC = () => {
     url: '',
   });
 
-  const [mediosPagination, setMediosPagination] = useState({
-    currentPage: 1,
-    pageSize: 10,
-  });
-  const [redesPagination, setRedesPagination] = useState({
+  const [pagination, setPagination] = useState({
     currentPage: 1,
     pageSize: 10,
   });
 
-  const [medios, setMedios] = useState<MediosItem[]>([
-    {
-      id: 'medio-1',
-      titulo: 'Reporte especial sobre la alerta en la zona norte',
-      contenido:
-        'Las autoridades reportan aumento de la conversación digital en torno a la alerta temprana emitida en la zona norte.',
-      url: 'https://noticiasseguras.com/alerta-zona-norte',
-      autor: 'Carlos Pérez',
-      reach: 56800,
-      fecha_publicacion: '2024-05-14T09:30:00Z',
-      created_at: '2024-05-14T10:00:00Z',
-      estado_revisado: 'Pendiente',
-      proyecto: 'proy-01',
-      proyecto_nombre: 'Campaña Seguridad 2024',
-      proyecto_keywords: ['alerta', 'seguridad', 'zona norte'],
-      emojis: ['🚨'],
-      mensaje:
-        'Las autoridades reportan aumento de la conversación digital en torno a la alerta temprana emitida en la zona norte.',
-      mensaje_formateado: null,
-    },
-    {
-      id: 'medio-2',
-      titulo: 'Cobertura de medios sobre campañas de sensibilización',
-      contenido:
-        'El despliegue de campañas de sensibilización ha incrementado el alcance de la información en medios regionales.',
-      url: 'https://diarioregional.co/campana-sensibilizacion',
-      autor: 'Laura Méndez',
-      reach: 32450,
-      fecha_publicacion: '2024-05-13T15:20:00Z',
-      created_at: '2024-05-13T16:45:00Z',
-      estado_revisado: 'Pendiente',
-      proyecto: 'proy-01',
-      proyecto_nombre: 'Campaña Seguridad 2024',
-      proyecto_keywords: ['campaña', 'sensibilización'],
-      emojis: [],
-      mensaje:
-        'El despliegue de campañas de sensibilización ha incrementado el alcance de la información en medios regionales.',
-      mensaje_formateado: null,
-    },
-    {
-      id: 'medio-3',
-      titulo: 'Análisis de percepción en la zona centro',
-      contenido:
-        'Analistas resaltan la importancia de reforzar los mensajes para contrarrestar desinformación detectada durante la semana.',
-      url: 'https://analisisurbano.org/percepcion-zona-centro',
-      autor: 'María Gómez',
-      reach: 48760,
-      fecha_publicacion: '2024-05-12T18:45:00Z',
-      created_at: '2024-05-12T19:10:00Z',
-      estado_revisado: 'Revisado',
-      proyecto: 'proy-02',
-      proyecto_nombre: 'Plan de Acompañamiento Territorial',
-      proyecto_keywords: ['percepción', 'desinformación'],
-      emojis: ['🛡️', '✅'],
-      mensaje:
-        'Analistas resaltan la importancia de reforzar los mensajes para contrarrestar desinformación detectada durante la semana.',
-      mensaje_formateado: null,
-    },
-  ]);
+  const extractErrorMessage = useCallback((error: unknown) => {
+    if (error && typeof error === 'object') {
+      const maybeResponse = (error as {
+        response?: { data?: { message?: string } };
+      }).response;
 
-  const [redes, setRedes] = useState<RedesItem[]>([
-    {
-      id: 'red-1',
-      contenido:
-        'Se confirma el despliegue de equipos comunitarios en la zona norte para atender la alerta temprana. #AlertaActiva',
-      url: 'https://twitter.com/seguridad/status/1',
-      autor: '@SeguridadCol',
-      reach: 125600,
-      engagement: 8450,
-      fecha_publicacion: '2024-05-14T07:15:00Z',
-      created_at: '2024-05-14T08:00:00Z',
-      estado_revisado: 'Pendiente',
-      proyecto: 'proy-01',
-      proyecto_nombre: 'Campaña Seguridad 2024',
-      proyecto_keywords: ['alerta', 'comunidad'],
-      emojis: ['🚨'],
-      mensaje:
-        'Se confirma el despliegue de equipos comunitarios en la zona norte para atender la alerta temprana. #AlertaActiva',
-      mensaje_formateado: null,
-    },
-    {
-      id: 'red-2',
-      contenido:
-        'En directo desde la zona centro explicando las acciones preventivas tomadas durante la última semana.',
-      url: 'https://facebook.com/live/prevencion',
-      autor: 'Alerta en Vivo',
-      reach: 88600,
-      engagement: 10450,
-      fecha_publicacion: '2024-05-13T21:10:00Z',
-      created_at: '2024-05-13T21:45:00Z',
-      estado_revisado: 'Revisado',
-      proyecto: 'proy-02',
-      proyecto_nombre: 'Plan de Acompañamiento Territorial',
-      proyecto_keywords: ['prevención', 'acciones'],
-      emojis: ['🛡️'],
-      mensaje:
-        'En directo desde la zona centro explicando las acciones preventivas tomadas durante la última semana.',
-      mensaje_formateado: null,
-    },
-    {
-      id: 'red-3',
-      contenido:
-        'Recordatorio de canales oficiales para reportar novedades durante la alerta temprana. Mantente informado.',
-      url: 'https://instagram.com/p/alerta-novedades',
-      autor: '@InfoComunidad',
-      reach: 64200,
-      engagement: 6230,
-      fecha_publicacion: '2024-05-12T12:25:00Z',
-      created_at: '2024-05-12T13:05:00Z',
-      estado_revisado: 'Pendiente',
-      proyecto: 'proy-01',
-      proyecto_nombre: 'Campaña Seguridad 2024',
-      proyecto_keywords: ['canales', 'oficial'],
-      emojis: [],
-      mensaje:
-        'Recordatorio de canales oficiales para reportar novedades durante la alerta temprana. Mantente informado.',
-      mensaje_formateado: null,
-    },
-  ]);
+      if (maybeResponse?.data?.message) {
+        return maybeResponse.data.message;
+      }
+    }
 
-  const ingestionSummary: IngestionSummary = useMemo(
-    () => ({
-      archivo: {
-        nombre: 'ingestion_alertas_mayo.xlsx',
-        proyecto: 'Campaña Seguridad 2024',
-        cargadoPor: 'Ana Rodríguez',
-        fecha: '2024-05-14T07:45:00Z',
-        filas: 128,
-      },
-      resumen: {
-        procesados: 126,
-        medios: medios.length,
-        redes: redes.length,
-        duplicados: 4,
-        descartados: 2,
-        duracion: '2m 45s',
-      },
-      incidencias: [
-        {
-          id: 'inc-1',
-          titulo: 'Entradas duplicadas',
-          descripcion:
-            'Se detectaron 4 entradas duplicadas vinculadas al proyecto Plan de Acompañamiento Territorial.',
-          tipo: 'warning',
-        },
-        {
-          id: 'inc-2',
-          titulo: 'URL con formato inválido',
-          descripcion:
-            '2 registros fueron descartados por contener URL sin protocolo seguro (https).',
-          tipo: 'error',
-        },
-      ],
-    }),
-    [medios.length, redes.length]
-  );
+    if (error instanceof Error) {
+      return error.message;
+    }
 
-  const mediosFilters = useMemo(
+    return 'No fue posible obtener los resultados de la ingestión.';
+  }, []);
+
+  useEffect(() => {
+    let isSubscribed = true;
+
+    if (!projectId) {
+      setMedios([]);
+      setFetchError(null);
+      return;
+    }
+
+    const fetchData = async () => {
+      setIsLoadingData(true);
+      setFetchError(null);
+
+      try {
+        const data = await getIngestionResults(projectId);
+        if (!isSubscribed) return;
+
+        const normalizedData = data.map((item) =>
+          normalizeIngestionItem(item, projectId)
+        );
+
+        setMedios(normalizedData);
+        setSelectedItems([]);
+        setSearchTerm('');
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+      } catch (error: unknown) {
+        if (!isSubscribed) return;
+
+        console.error('Error al consultar resultados de ingestión:', error);
+        const message = extractErrorMessage(error);
+
+        setMedios([]);
+        setFetchError(message);
+        showError('Error al consultar ingestión', message);
+      } finally {
+        if (isSubscribed) {
+          setIsLoadingData(false);
+        }
+      }
+    };
+
+    void fetchData();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [projectId, reloadToken, showError, extractErrorMessage]);
+
+  const filters = useMemo(
     () =>
-      buildFilterState(mediosFiltersValues, setMediosFiltersValues, () =>
-        setMediosPagination((prev) => ({ ...prev, currentPage: 1 }))
+      buildFilterState(filtersValues, setFiltersValues, () =>
+        setPagination((prev) => ({ ...prev, currentPage: 1 }))
       ),
-    [mediosFiltersValues]
-  );
-
-  const redesFilters = useMemo(
-    () =>
-      buildFilterState(redesFiltersValues, setRedesFiltersValues, () =>
-        setRedesPagination((prev) => ({ ...prev, currentPage: 1 }))
-      ),
-    [redesFiltersValues]
+    [filtersValues]
   );
 
   const formatDate = (dateString: string) => {
@@ -374,108 +296,111 @@ const IngestionResultado: React.FC = () => {
     return highlightedText;
   };
 
-  const applyFilters = <T extends MediosItem | RedesItem>(
-    data: T[],
-    filters: { proyecto_nombre?: string; autor?: string; url?: string }
-  ) => {
-    return data.filter((item) => {
-      const matchesProyecto = filters.proyecto_nombre
-        ? item.proyecto_nombre.toLowerCase().includes(
-            filters.proyecto_nombre.toLowerCase()
-          )
-        : true;
-      const matchesAutor = filters.autor
-        ? item.autor.toLowerCase().includes(filters.autor.toLowerCase())
-        : true;
-      const matchesUrl = filters.url
-        ? item.url.toLowerCase().includes(filters.url.toLowerCase())
-        : true;
+  const applyFilters = useCallback(
+    (
+      data: MediosItem[],
+      filtersToApply: { proyecto_nombre?: string; autor?: string; url?: string }
+    ) => {
+      return data.filter((item) => {
+        const matchesProyecto = filtersToApply.proyecto_nombre
+          ? item.proyecto_nombre
+              .toLowerCase()
+              .includes(filtersToApply.proyecto_nombre.toLowerCase())
+          : true;
+        const matchesAutor = filtersToApply.autor
+          ? item.autor.toLowerCase().includes(filtersToApply.autor.toLowerCase())
+          : true;
+        const matchesUrl = filtersToApply.url
+          ? item.url.toLowerCase().includes(filtersToApply.url.toLowerCase())
+          : true;
 
-      return matchesProyecto && matchesAutor && matchesUrl;
-    });
-  };
+        return matchesProyecto && matchesAutor && matchesUrl;
+      });
+    },
+    []
+  );
 
-  const applySearch = <T extends MediosItem | RedesItem>(data: T[]) => {
-    if (!searchTerm.trim()) return data;
+  const applySearch = useCallback(
+    (data: MediosItem[]) => {
+      if (!searchTerm.trim()) return data;
 
-    const search = searchTerm.toLowerCase();
+      const search = searchTerm.toLowerCase();
 
-    return data.filter((item) => {
-      if ('titulo' in item) {
+      return data.filter((item) => {
         return (
-          item.titulo.toLowerCase().includes(search) ||
+          (item.titulo ? item.titulo.toLowerCase().includes(search) : false) ||
           item.contenido.toLowerCase().includes(search) ||
           item.url.toLowerCase().includes(search) ||
           item.autor.toLowerCase().includes(search) ||
           item.proyecto_nombre.toLowerCase().includes(search)
         );
-      }
-
-      return (
-        item.contenido.toLowerCase().includes(search) ||
-        item.url.toLowerCase().includes(search) ||
-        item.autor.toLowerCase().includes(search) ||
-        item.proyecto_nombre.toLowerCase().includes(search)
-      );
-    });
-  };
+      });
+    },
+    [searchTerm]
+  );
 
   const filteredMedios = useMemo(() => {
-    const withFilters = applyFilters(medios, mediosFilters.filters);
+    const withFilters = applyFilters(medios, filtersValues);
     return applySearch(withFilters);
-  }, [medios, mediosFilters, searchTerm]);
-
-  const filteredRedes = useMemo(() => {
-    const withFilters = applyFilters(redes, redesFilters.filters);
-    return applySearch(withFilters);
-  }, [redes, redesFilters, searchTerm]);
+  }, [applyFilters, applySearch, medios, filtersValues]);
 
   const paginatedMedios = useMemo(() => {
-    const start = (mediosPagination.currentPage - 1) * mediosPagination.pageSize;
-    const end = start + mediosPagination.pageSize;
+    const start = (pagination.currentPage - 1) * pagination.pageSize;
+    const end = start + pagination.pageSize;
     return filteredMedios.slice(start, end);
-  }, [filteredMedios, mediosPagination]);
+  }, [filteredMedios, pagination]);
 
-  const paginatedRedes = useMemo(() => {
-    const start = (redesPagination.currentPage - 1) * redesPagination.pageSize;
-    const end = start + redesPagination.pageSize;
-    return filteredRedes.slice(start, end);
-  }, [filteredRedes, redesPagination]);
-
-  const mediosPaginationState = useMemo(
+  const paginationState = useMemo(
     () => ({
-      currentPage: mediosPagination.currentPage,
-      pageSize: mediosPagination.pageSize,
+      currentPage: pagination.currentPage,
+      pageSize: pagination.pageSize,
       count: filteredMedios.length,
-      previous: mediosPagination.currentPage > 1 ? 'prev' : null,
+      previous: pagination.currentPage > 1 ? 'prev' : null,
       next:
-        mediosPagination.currentPage * mediosPagination.pageSize <
-        filteredMedios.length
+        pagination.currentPage * pagination.pageSize < filteredMedios.length
           ? 'next'
           : null,
     }),
-    [filteredMedios.length, mediosPagination]
+    [filteredMedios.length, pagination]
   );
 
-  const redesPaginationState = useMemo(
-    () => ({
-      currentPage: redesPagination.currentPage,
-      pageSize: redesPagination.pageSize,
-      count: filteredRedes.length,
-      previous: redesPagination.currentPage > 1 ? 'prev' : null,
-      next:
-        redesPagination.currentPage * redesPagination.pageSize <
-        filteredRedes.length
-          ? 'next'
-          : null,
-    }),
-    [filteredRedes.length, redesPagination]
-  );
+  const ingestionSummary: IngestionSummary = useMemo(() => {
+    const totalItems = medios.length;
+    const totalRedes = medios.filter(
+      (item) => item.red_social || item.tipo?.toLowerCase() === 'red'
+    ).length;
+    const totalMedios = totalItems - totalRedes;
 
-  const currentData = activeTab === 'medios' ? paginatedMedios : paginatedRedes;
-  const filteredData = activeTab === 'medios' ? filteredMedios : filteredRedes;
-  const currentPagination =
-    activeTab === 'medios' ? mediosPaginationState : redesPaginationState;
+    const latestDate = medios.reduce<string | null>((latest, item) => {
+      const itemDate = item.fecha_publicacion;
+      if (!itemDate) return latest;
+      if (!latest) return itemDate;
+      return new Date(itemDate) > new Date(latest) ? itemDate : latest;
+    }, null);
+
+    const proyectoNombre =
+      medios[0]?.proyecto_nombre ||
+      (projectId ? `Proyecto ${projectId.slice(0, 8)}` : 'Proyecto sin nombre');
+
+    return {
+      archivo: {
+        nombre: 'Archivo de ingestión',
+        proyecto: proyectoNombre,
+        cargadoPor: '-',
+        fecha: latestDate || new Date().toISOString(),
+        filas: totalItems,
+      },
+      resumen: {
+        procesados: totalItems,
+        medios: totalMedios,
+        redes: totalRedes,
+        duplicados: 0,
+        descartados: 0,
+        duracion: '-',
+      },
+      incidencias: [],
+    };
+  }, [medios, projectId]);
 
   const handleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -484,7 +409,7 @@ const IngestionResultado: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    const currentIds = currentData.map((item) => item.id);
+    const currentIds = paginatedMedios.map((item) => item.id);
     const allSelected = currentIds.every((id) => selectedItems.includes(id));
 
     if (allSelected) {
@@ -502,82 +427,49 @@ const IngestionResultado: React.FC = () => {
     setShowEmojiPicker(true);
   };
 
-  const handleEmojiClick = (emojiData: EmojiClickData, _event: any) => {
+  const handleEmojiClick = (emojiData: EmojiClickData, _event: MouseEvent) => {
     const emojiValue = emojiData.emoji;
 
     if (emojiPickerTarget === 'all') {
-      if (activeTab === 'medios') {
-        setMedios((prev) =>
-          prev.map((item) =>
-            selectedItems.includes(item.id)
-              ? { ...item, emojis: [...item.emojis, emojiValue] }
-              : item
-          )
-        );
-      } else {
-        setRedes((prev) =>
-          prev.map((item) =>
-            selectedItems.includes(item.id)
-              ? { ...item, emojis: [...item.emojis, emojiValue] }
-              : item
-          )
-        );
-      }
+      setMedios((prev) =>
+        prev.map((item) =>
+          selectedItems.includes(item.id)
+            ? { ...item, emojis: [...item.emojis, emojiValue] }
+            : item
+        )
+      );
     } else if (emojiPickerTarget) {
-      if (activeTab === 'medios') {
-        setMedios((prev) =>
-          prev.map((item) =>
-            item.id === emojiPickerTarget
-              ? { ...item, emojis: [...item.emojis, emojiValue] }
-              : item
-          )
-        );
-      } else {
-        setRedes((prev) =>
-          prev.map((item) =>
-            item.id === emojiPickerTarget
-              ? { ...item, emojis: [...item.emojis, emojiValue] }
-              : item
-          )
-        );
-      }
+      setMedios((prev) =>
+        prev.map((item) =>
+          item.id === emojiPickerTarget
+            ? { ...item, emojis: [...item.emojis, emojiValue] }
+            : item
+        )
+      );
     }
 
     setShowEmojiPicker(false);
   };
 
   const handleRemoveEmoji = (itemId: string, emojiIndex: number) => {
-    if (activeTab === 'medios') {
-      setMedios((prev) =>
-        prev.map((item) =>
-          item.id === itemId
-            ? {
-                ...item,
-                emojis: item.emojis.filter((_, index) => index !== emojiIndex),
-              }
-            : item
-        )
-      );
-    } else {
-      setRedes((prev) =>
-        prev.map((item) =>
-          item.id === itemId
-            ? {
-                ...item,
-                emojis: item.emojis.filter((_, index) => index !== emojiIndex),
-              }
-            : item
-        )
-      );
-    }
+    setMedios((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              emojis: item.emojis.filter((_, index) => index !== emojiIndex),
+            }
+          : item
+      )
+    );
   };
 
-  const handlePreviewItem = (item: MediosItem | RedesItem) => {
+  const handlePreviewItem = (item: MediosItem) => {
     setPreviewItem(item);
     setShowPreviewModal(true);
   };
 
-  const handleEditItem = (item: MediosItem | RedesItem) => {
+  const handleEditItem = (item: MediosItem) => {
     setEditItem(item);
     setEditNotes('');
     setShowEditModal(true);
@@ -586,19 +478,11 @@ const IngestionResultado: React.FC = () => {
   const handleSaveEdits = () => {
     if (!editItem) return;
 
-    if (activeTab === 'medios' && 'titulo' in editItem) {
-      setMedios((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id ? { ...item, mensaje_formateado: editNotes } : item
-        )
-      );
-    } else {
-      setRedes((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id ? { ...item, mensaje_formateado: editNotes } : item
-        )
-      );
-    }
+    setMedios((prev) =>
+      prev.map((item) =>
+        item.id === editItem.id ? { ...item, mensaje_formateado: editNotes } : item
+      )
+    );
 
     setShowEditModal(false);
     showSuccess('Mensaje actualizado', 'Se guardaron los cambios en el contenido.');
@@ -612,77 +496,90 @@ const IngestionResultado: React.FC = () => {
   const handleMarkReviewed = () => {
     if (selectedItems.length === 0) return;
 
-    if (activeTab === 'medios') {
-      setMedios((prev) =>
-        prev.map((item) =>
-          selectedItems.includes(item.id)
-            ? { ...item, estado_revisado: 'Revisado' }
-            : item
-        )
-      );
-    } else {
-      setRedes((prev) =>
-        prev.map((item) =>
-          selectedItems.includes(item.id)
-            ? { ...item, estado_revisado: 'Revisado' }
-            : item
-        )
-      );
-    }
+    setMedios((prev) =>
+      prev.map((item) =>
+        selectedItems.includes(item.id)
+          ? { ...item, estado_revisado: 'Revisado' }
+          : item
+      )
+    );
 
     setSelectedItems([]);
     showSuccess('Registros actualizados', 'Los contenidos fueron marcados como revisados.');
   };
 
   const handlePreviousPage = () => {
-    if (currentPagination.previous) {
-      if (activeTab === 'medios') {
-        setMediosPagination((prev) => ({
-          ...prev,
-          currentPage: Math.max(1, prev.currentPage - 1),
-        }));
-      } else {
-        setRedesPagination((prev) => ({
-          ...prev,
-          currentPage: Math.max(1, prev.currentPage - 1),
-        }));
-      }
+    if (paginationState.previous) {
+      setPagination((prev) => ({
+        ...prev,
+        currentPage: Math.max(1, prev.currentPage - 1),
+      }));
     }
   };
 
   const handleNextPage = () => {
-    if (currentPagination.next) {
-      if (activeTab === 'medios') {
-        setMediosPagination((prev) => ({
-          ...prev,
-          currentPage: prev.currentPage + 1,
-        }));
-      } else {
-        setRedesPagination((prev) => ({
-          ...prev,
-          currentPage: prev.currentPage + 1,
-        }));
-      }
+    if (paginationState.next) {
+      setPagination((prev) => ({
+        ...prev,
+        currentPage: prev.currentPage + 1,
+      }));
     }
   };
 
   const handlePageSizeChange = (pageSize: number) => {
-    if (activeTab === 'medios') {
-      setMediosPagination({ currentPage: 1, pageSize });
-    } else {
-      setRedesPagination({ currentPage: 1, pageSize });
-    }
+    setPagination({ currentPage: 1, pageSize });
   };
 
-  const resetSelectionOnTabChange = (tab: TabType) => {
-    setActiveTab(tab);
-    setSelectedItems([]);
-    setShowFilters(false);
+  const handleProjectSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedId = projectIdInput.trim();
+    setProjectId(trimmedId);
+    setSearchParams(trimmedId ? { proyecto: trimmedId } : {});
+    setReloadToken((prev) => prev + 1);
   };
 
   return (
     <DashboardLayout title="Resultados de ingestión">
       <div className="space-y-6">
+        <Card>
+          <Card.Content>
+            <form className="flex flex-col gap-4 md:flex-row md:items-end" onSubmit={handleProjectSubmit}>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ID del proyecto
+                </label>
+                <input
+                  type="text"
+                  value={projectIdInput}
+                  onChange={(event) => setProjectIdInput(event.target.value)}
+                  placeholder="Ej: a986a5c3-f710-4603-814f-22cb4af5ed21"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" className="self-start">
+                  Consultar ingestión
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setReloadToken((prev) => prev + 1);
+                  }}
+                >
+                  Actualizar
+                </Button>
+              </div>
+            </form>
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              Mostrando resultados para el proyecto{' '}
+              <span className="font-medium text-gray-900 dark:text-gray-100 break-all">
+                {projectId || 'No especificado'}
+              </span>
+            </p>
+          </Card.Content>
+        </Card>
+
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
             <Card.Content className="flex flex-col gap-3">
@@ -698,7 +595,10 @@ const IngestionResultado: React.FC = () => {
                 </div>
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Proyecto: <span className="font-medium text-gray-900 dark:text-gray-100">{ingestionSummary.archivo.proyecto}</span>
+                Proyecto:{' '}
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {ingestionSummary.archivo.proyecto}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>Registros en archivo</span>
@@ -791,71 +691,48 @@ const IngestionResultado: React.FC = () => {
           </Card>
         </div>
 
-        <Card>
-          <Card.Header>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Incidencias detectadas durante la ingestión
-              </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Revisa y resuelve las observaciones antes de publicar los contenidos.
-              </p>
-            </div>
-          </Card.Header>
-          <Card.Content className="space-y-4">
-            {ingestionSummary.incidencias.map((incidencia) => (
-              <div
-                key={incidencia.id}
-                className={`rounded-lg border p-4 ${
-                  incidencia.tipo === 'error'
-                    ? 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20'
-                    : 'border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <ExclamationTriangleIcon
-                    className={`w-5 h-5 ${
-                      incidencia.tipo === 'error'
-                        ? 'text-red-600 dark:text-red-300'
-                        : 'text-amber-600 dark:text-amber-300'
-                    }`}
-                  />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {incidencia.titulo}
-                  </h3>
-                </div>
-                <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                  {incidencia.descripcion}
+        {ingestionSummary.incidencias.length > 0 && (
+          <Card>
+            <Card.Header>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Incidencias detectadas durante la ingestión
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Revisa y resuelve las observaciones antes de publicar los contenidos.
                 </p>
               </div>
-            ))}
-          </Card.Content>
-        </Card>
-
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => resetSelectionOnTabChange('medios')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'medios'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              Medios
-            </button>
-            <button
-              onClick={() => resetSelectionOnTabChange('redes')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'redes'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              Redes
-            </button>
-          </nav>
-        </div>
+            </Card.Header>
+            <Card.Content className="space-y-4">
+              {ingestionSummary.incidencias.map((incidencia) => (
+                <div
+                  key={incidencia.id}
+                  className={`rounded-lg border p-4 ${
+                    incidencia.tipo === 'error'
+                      ? 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20'
+                      : 'border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <ExclamationTriangleIcon
+                      className={`w-5 h-5 ${
+                        incidencia.tipo === 'error'
+                          ? 'text-red-600 dark:text-red-300'
+                          : 'text-amber-600 dark:text-amber-300'
+                      }`}
+                    />
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {incidencia.titulo}
+                    </h3>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                    {incidencia.descripcion}
+                  </p>
+                </div>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
 
         <Card>
           <Card.Content className="p-4">
@@ -865,15 +742,11 @@ const IngestionResultado: React.FC = () => {
                   <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder={`Buscar ${activeTab}...`}
+                    placeholder="Buscar registros..."
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
-                      if (activeTab === 'medios') {
-                        setMediosPagination((prev) => ({ ...prev, currentPage: 1 }));
-                      } else {
-                        setRedesPagination((prev) => ({ ...prev, currentPage: 1 }));
-                      }
+                      setPagination((prev) => ({ ...prev, currentPage: 1 }));
                     }}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   />
@@ -886,15 +759,9 @@ const IngestionResultado: React.FC = () => {
                   >
                     <FunnelIcon className="h-4 w-4" />
                     Filtros
-                    {(activeTab === 'medios'
-                      ? mediosFilters.hasActiveFilters()
-                      : redesFilters.hasActiveFilters()) && (
+                    {filters.hasActiveFilters() && (
                       <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
-                        {Object.values(
-                          activeTab === 'medios'
-                            ? mediosFilters.filters
-                            : redesFilters.filters
-                        ).filter((value) => value && value.trim() !== '').length}
+                        {Object.values(filters.filters).filter((value) => value && value.trim() !== '').length}
                       </span>
                     )}
                   </Button>
@@ -922,20 +789,13 @@ const IngestionResultado: React.FC = () => {
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <span>
-                  {filteredData.length} {activeTab} encontrados · {selectedItems.length} seleccionados
+                  {filteredMedios.length} registros encontrados · {selectedItems.length} seleccionados
                 </span>
-                {(activeTab === 'medios'
-                  ? mediosFilters.hasActiveFilters()
-                  : redesFilters.hasActiveFilters()) && (
+                {filters.hasActiveFilters() && (
                   <button
                     onClick={() => {
-                      if (activeTab === 'medios') {
-                        mediosFilters.clearFilters();
-                        setMediosPagination((prev) => ({ ...prev, currentPage: 1 }));
-                      } else {
-                        redesFilters.clearFilters();
-                        setRedesPagination((prev) => ({ ...prev, currentPage: 1 }));
-                      }
+                      filters.clearFilters();
+                      setPagination((prev) => ({ ...prev, currentPage: 1 }));
                     }}
                     className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
@@ -946,25 +806,29 @@ const IngestionResultado: React.FC = () => {
               </div>
 
               {showFilters && (
-                <DataFilters
-                  activeTab={activeTab}
-                  mediosFilters={mediosFilters}
-                  redesFilters={redesFilters}
-                />
+                <DataFilters activeTab="medios" mediosFilters={filters} redesFilters={filters} />
               )}
 
-              {currentData.length === 0 ? (
+              {isLoadingData ? (
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                  Cargando resultados de ingestión...
+                </div>
+              ) : fetchError ? (
+                <div className="text-center py-12 text-red-600 dark:text-red-400">
+                  {fetchError}
+                </div>
+              ) : paginatedMedios.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 dark:text-gray-400">
-                    {filteredData.length === 0
+                    {filteredMedios.length === 0
                       ? 'No se encontraron resultados con los filtros actuales.'
                       : 'No hay datos disponibles para mostrar.'}
                   </p>
                 </div>
               ) : (
                 <DataTable
-                  activeTab={activeTab}
-                  filteredData={currentData}
+                  activeTab="medios"
+                  filteredData={paginatedMedios}
                   selectedItems={selectedItems}
                   onSelectItem={handleSelectItem}
                   onSelectAll={handleSelectAll}
@@ -979,9 +843,9 @@ const IngestionResultado: React.FC = () => {
               )}
 
               <DataPagination
-                activeTab={activeTab}
-                currentData={currentData}
-                pagination={currentPagination}
+                activeTab="medios"
+                currentData={paginatedMedios}
+                pagination={paginationState}
                 onPreviousPage={handlePreviousPage}
                 onNextPage={handleNextPage}
                 onPageSizeChange={handlePageSizeChange}
@@ -1019,7 +883,9 @@ const IngestionResultado: React.FC = () => {
               <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
                 {previewItem.mensaje_formateado ||
                   (previewItem.emojis.length > 0
-                    ? `${previewItem.emojis.join(' ')} ${previewItem.mensaje || previewItem.contenido}`
+                    ? `${previewItem.emojis.join(' ')} ${
+                        previewItem.mensaje || previewItem.contenido
+                      }`
                     : previewItem.mensaje || previewItem.contenido)}
               </p>
             </div>

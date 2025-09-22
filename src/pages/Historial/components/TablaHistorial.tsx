@@ -103,7 +103,7 @@ export const TablaHistorial = ({
         hour: '2-digit',
         minute: '2-digit',
       });
-    } catch (error) {
+    } catch {
       return 'Error en fecha de creación';
     }
   };
