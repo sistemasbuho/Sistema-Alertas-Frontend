@@ -25,8 +25,7 @@ const Ingestion: React.FC = () => {
     null
   );
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [selectedProjectName, setSelectedProjectName] =
-    useState<string>('');
+  const [selectedProjectName, setSelectedProjectName] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fileInputKey, setFileInputKey] = useState<number>(0);
@@ -105,6 +104,9 @@ const Ingestion: React.FC = () => {
   const handleSelectProject = (project: Proyecto) => {
     setSelectedProjectId(project.id);
     setSelectedProjectName(project.nombre);
+    setProjectSearchTerm(project.nombre);
+    setProjects([]);
+    setHasSearchedProjects(false);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +186,8 @@ const Ingestion: React.FC = () => {
 
   const trimmedSearchTerm = projectSearchTerm.trim();
   const shouldShowProjectResults =
-    trimmedSearchTerm.length > 0 || isLoadingProjects || hasSearchedProjects;
+    !selectedProjectId &&
+    (trimmedSearchTerm.length > 0 || isLoadingProjects || hasSearchedProjects);
 
   return (
     <DashboardLayout title="Ingestión">
@@ -196,8 +199,8 @@ const Ingestion: React.FC = () => {
                 Envío de archivos para ingestión
               </h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Busca un proyecto por nombre y carga un archivo en formato
-                .xlsx o .csv para iniciar el proceso de ingestión.
+                Busca un proyecto por nombre y carga un archivo en formato .xlsx
+                o .csv para iniciar el proceso de ingestión.
               </p>
             </div>
           </Card.Header>
@@ -241,7 +244,9 @@ const Ingestion: React.FC = () => {
                                   }`}
                                   aria-pressed={isSelected}
                                 >
-                                  <span className="font-medium">{project.nombre}</span>
+                                  <span className="font-medium">
+                                    {project.nombre}
+                                  </span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400">
                                     ID: {project.id}
                                   </span>
@@ -262,7 +267,8 @@ const Ingestion: React.FC = () => {
                         </ul>
                       ) : hasSearchedProjects ? (
                         <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                          No se encontraron proyectos que coincidan con "{trimmedSearchTerm}".
+                          No se encontraron proyectos que coincidan con "
+                          {trimmedSearchTerm}".
                         </div>
                       ) : (
                         <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">

@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
@@ -97,7 +103,11 @@ type IngestionNavigationState = {
 const buildFilterState = (
   values: { proyecto_nombre?: string; autor?: string; url?: string },
   setter: React.Dispatch<
-    React.SetStateAction<{ proyecto_nombre?: string; autor?: string; url?: string }>
+    React.SetStateAction<{
+      proyecto_nombre?: string;
+      autor?: string;
+      url?: string;
+    }>
   >,
   onFiltersChange?: () => void
 ): FilterState => {
@@ -112,7 +122,9 @@ const buildFilterState = (
       onFiltersChange?.();
     },
     hasActiveFilters: () =>
-      Object.values(values).some((value) => value !== undefined && value.trim() !== ''),
+      Object.values(values).some(
+        (value) => value !== undefined && value.trim() !== ''
+      ),
   };
 };
 
@@ -129,7 +141,9 @@ const normalizeIngestionItem = (
     id: item.id,
     titulo:
       item.titulo?.trim() ||
-      (item.contenido ? `${item.contenido.slice(0, 80)}…` : 'Sin título disponible'),
+      (item.contenido
+        ? `${item.contenido.slice(0, 80)}…`
+        : 'Sin título disponible'),
     contenido: item.contenido || '',
     url: item.url || '',
     autor: item.autor || 'Sin autor',
@@ -142,7 +156,9 @@ const normalizeIngestionItem = (
     proyecto_nombre:
       item.proyecto_nombre ||
       item.proyecto ||
-      (fallbackProjectId ? `Proyecto ${fallbackProjectId.slice(0, 8)}` : 'Proyecto sin nombre'),
+      (fallbackProjectId
+        ? `Proyecto ${fallbackProjectId.slice(0, 8)}`
+        : 'Proyecto sin nombre'),
     proyecto_keywords: [],
     emojis: item.emojis || [],
     mensaje: item.mensaje || item.contenido || '',
@@ -155,6 +171,7 @@ const normalizeIngestionItem = (
 const IngestionResultado: React.FC = () => {
   const { showSuccess, showError } = useToast();
   const location = useLocation();
+  const hasShownSuccessMessage = useRef(false);
   const navigationState =
     (location.state as IngestionNavigationState | undefined) ?? undefined;
   const stateProjectId = navigationState?.projectId ?? undefined;
@@ -178,7 +195,9 @@ const IngestionResultado: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>('all');
+  const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>(
+    'all'
+  );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewItem, setPreviewItem] = useState<MediosItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -202,9 +221,11 @@ const IngestionResultado: React.FC = () => {
 
   const extractErrorMessage = useCallback((error: unknown) => {
     if (error && typeof error === 'object') {
-      const maybeResponse = (error as {
-        response?: { data?: { message?: string } };
-      }).response;
+      const maybeResponse = (
+        error as {
+          response?: { data?: { message?: string } };
+        }
+      ).response;
 
       if (maybeResponse?.data?.message) {
         return maybeResponse.data.message;
@@ -229,7 +250,8 @@ const IngestionResultado: React.FC = () => {
     const normalizedData = ingestionResponseFromState.listado?.map((item) => {
       const enrichedItem: IngestionResultItem = {
         ...item,
-        proyecto_nombre: item.proyecto_nombre || fallbackProjectName || undefined,
+        proyecto_nombre:
+          item.proyecto_nombre || fallbackProjectName || undefined,
       };
 
       const normalized = normalizeIngestionItem(
@@ -251,14 +273,14 @@ const IngestionResultado: React.FC = () => {
     setFetchError(null);
     setIsLoadingData(false);
 
-    if (ingestionResponseFromState.mensaje) {
+    // Solo mostrar el mensaje de éxito una vez
+    if (ingestionResponseFromState.mensaje && !hasShownSuccessMessage.current) {
       showSuccess('Ingestión completada', ingestionResponseFromState.mensaje);
+      hasShownSuccessMessage.current = true;
     }
   }, [
     hasIngestionResponse,
     ingestionResponseFromState,
-    projectId,
-    showSuccess,
     stateProjectId,
     stateProjectName,
   ]);
@@ -386,7 +408,9 @@ const IngestionResultado: React.FC = () => {
               .includes(filtersToApply.proyecto_nombre.toLowerCase())
           : true;
         const matchesAutor = filtersToApply.autor
-          ? item.autor.toLowerCase().includes(filtersToApply.autor.toLowerCase())
+          ? item.autor
+              .toLowerCase()
+              .includes(filtersToApply.autor.toLowerCase())
           : true;
         const matchesUrl = filtersToApply.url
           ? item.url.toLowerCase().includes(filtersToApply.url.toLowerCase())
@@ -558,12 +582,17 @@ const IngestionResultado: React.FC = () => {
 
     setMedios((prev) =>
       prev.map((item) =>
-        item.id === editItem.id ? { ...item, mensaje_formateado: editNotes } : item
+        item.id === editItem.id
+          ? { ...item, mensaje_formateado: editNotes }
+          : item
       )
     );
 
     setShowEditModal(false);
-    showSuccess('Mensaje actualizado', 'Se guardaron los cambios en el contenido.');
+    showSuccess(
+      'Mensaje actualizado',
+      'Se guardaron los cambios en el contenido.'
+    );
   };
 
   const handleClosePreview = () => {
@@ -583,7 +612,10 @@ const IngestionResultado: React.FC = () => {
     );
 
     setSelectedItems([]);
-    showSuccess('Registros actualizados', 'Los contenidos fueron marcados como revisados.');
+    showSuccess(
+      'Registros actualizados',
+      'Los contenidos fueron marcados como revisados.'
+    );
   };
 
   const handlePreviousPage = () => {
@@ -621,7 +653,10 @@ const IngestionResultado: React.FC = () => {
       <div className="space-y-6">
         <Card>
           <Card.Content>
-            <form className="flex flex-col gap-4 md:flex-row md:items-end" onSubmit={handleProjectSubmit}>
+            <form
+              className="flex flex-col gap-4 md:flex-row md:items-end"
+              onSubmit={handleProjectSubmit}
+            >
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   ID del proyecto
@@ -666,7 +701,9 @@ const IngestionResultado: React.FC = () => {
                   <DocumentArrowUpIcon className="w-6 h-6 text-blue-600 dark:text-blue-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Archivo cargado</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Archivo cargado
+                  </p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {ingestionSummary.archivo.nombre}
                   </h3>
@@ -694,7 +731,9 @@ const IngestionResultado: React.FC = () => {
                   <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Registros procesados</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Registros procesados
+                  </p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {ingestionSummary.resumen.procesados}
                   </h3>
@@ -722,9 +761,12 @@ const IngestionResultado: React.FC = () => {
                   <ExclamationTriangleIcon className="w-6 h-6 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Observaciones</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Observaciones
+                  </p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {ingestionSummary.resumen.duplicados + ingestionSummary.resumen.descartados}
+                    {ingestionSummary.resumen.duplicados +
+                      ingestionSummary.resumen.descartados}
                   </h3>
                 </div>
               </div>
@@ -750,7 +792,9 @@ const IngestionResultado: React.FC = () => {
                   <ClockIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Tiempo de procesamiento</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Tiempo de procesamiento
+                  </p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {ingestionSummary.resumen.duracion}
                   </h3>
@@ -777,7 +821,8 @@ const IngestionResultado: React.FC = () => {
                   Incidencias detectadas durante la ingestión
                 </h2>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Revisa y resuelve las observaciones antes de publicar los contenidos.
+                  Revisa y resuelve las observaciones antes de publicar los
+                  contenidos.
                 </p>
               </div>
             </Card.Header>
@@ -839,7 +884,11 @@ const IngestionResultado: React.FC = () => {
                     Filtros
                     {filters.hasActiveFilters() && (
                       <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
-                        {Object.values(filters.filters).filter((value) => value && value.trim() !== '').length}
+                        {
+                          Object.values(filters.filters).filter(
+                            (value) => value && value.trim() !== ''
+                          ).length
+                        }
                       </span>
                     )}
                   </Button>
@@ -867,7 +916,8 @@ const IngestionResultado: React.FC = () => {
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
                 <span>
-                  {filteredMedios.length} registros encontrados · {selectedItems.length} seleccionados
+                  {filteredMedios.length} registros encontrados ·{' '}
+                  {selectedItems.length} seleccionados
                 </span>
                 {filters.hasActiveFilters() && (
                   <button
@@ -884,7 +934,11 @@ const IngestionResultado: React.FC = () => {
               </div>
 
               {showFilters && (
-                <DataFilters activeTab="medios" mediosFilters={filters} redesFilters={filters} />
+                <DataFilters
+                  activeTab="medios"
+                  mediosFilters={filters}
+                  redesFilters={filters}
+                />
               )}
 
               {isLoadingData ? (
@@ -940,11 +994,19 @@ const IngestionResultado: React.FC = () => {
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 Seleccionar emoji
               </h3>
-              <Button onClick={() => setShowEmojiPicker(false)} size="sm" className="p-2">
+              <Button
+                onClick={() => setShowEmojiPicker(false)}
+                size="sm"
+                className="p-2"
+              >
                 <XMarkIcon className="h-4 w-4" />
               </Button>
             </div>
-            <EmojiPicker onEmojiClick={handleEmojiClick} width={350} height={400} />
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              width={350}
+              height={400}
+            />
           </div>
         </div>
       )}
@@ -969,15 +1031,21 @@ const IngestionResultado: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">Autor</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  Autor
+                </p>
                 <p>{previewItem.autor}</p>
               </div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">Proyecto</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  Proyecto
+                </p>
                 <p>{previewItem.proyecto_nombre}</p>
               </div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">URL</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  URL
+                </p>
                 <a
                   href={previewItem.url}
                   target="_blank"
@@ -988,7 +1056,9 @@ const IngestionResultado: React.FC = () => {
                 </a>
               </div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">Fecha publicación</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  Fecha publicación
+                </p>
                 <p>{formatDate(previewItem.fecha_publicacion)}</p>
               </div>
             </div>
