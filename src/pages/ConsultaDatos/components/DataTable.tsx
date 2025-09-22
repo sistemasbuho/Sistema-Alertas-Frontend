@@ -39,7 +39,7 @@ interface DataTableProps {
   onRemoveEmoji: (itemId: string, emojiIndex: number) => void;
   onEditItem: (item: any) => void;
   onPreviewItem: (item: any) => void;
-  highlightKeywords: (text: string, keywords: string[]) => string;
+  highlightKeywords: (text: string | null | undefined, keywords: string[]) => string;
 }
 
 const DataTable: React.FC<DataTableProps> = ({

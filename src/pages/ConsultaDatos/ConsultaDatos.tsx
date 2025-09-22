@@ -802,10 +802,15 @@ const ConsultaDatos: React.FC = () => {
     return new Intl.NumberFormat('es-ES').format(num);
   };
 
-  const highlightKeywords = (text: string, keywords: string[] = []) => {
-    if (!keywords || keywords.length === 0) return text;
+  const highlightKeywords = (
+    text: string | null | undefined,
+    keywords: string[] = []
+  ) => {
+    const safeText = text ?? '';
+    if (!safeText) return '';
+    if (!keywords || keywords.length === 0) return safeText;
 
-    let highlightedText = text;
+    let highlightedText = safeText;
 
     keywords.forEach((keyword) => {
       if (keyword && keyword.trim()) {

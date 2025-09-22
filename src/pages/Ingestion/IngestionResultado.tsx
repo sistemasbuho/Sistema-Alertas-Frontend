@@ -383,10 +383,15 @@ const IngestionResultado: React.FC = () => {
   const formatNumber = (num: number) =>
     new Intl.NumberFormat('es-ES', { notation: 'compact' }).format(num);
 
-  const highlightKeywords = (text: string, keywords: string[] = []) => {
-    if (!keywords || keywords.length === 0) return text;
+  const highlightKeywords = (
+    text: string | null | undefined,
+    keywords: string[] = []
+  ) => {
+    const safeText = text ?? '';
+    if (!safeText) return '';
+    if (!keywords || keywords.length === 0) return safeText;
 
-    let highlightedText = text;
+    let highlightedText = safeText;
 
     keywords.forEach((keyword) => {
       if (keyword && keyword.trim()) {
