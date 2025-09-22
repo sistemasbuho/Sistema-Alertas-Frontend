@@ -447,6 +447,28 @@ export const uploadIngestionDocument = async (
   }
 };
 
+export const triggerManualIngestion = async (
+  proyectoId: string,
+  url: string
+): Promise<any> => {
+  try {
+    const payload = {
+      proyecto_id: proyectoId,
+      url,
+    };
+
+    const response = await apiClient.post(
+      `/api/ingestion/manual/?proyecto=${encodeURIComponent(proyectoId)}`,
+      payload
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error iniciando ingestión manual:', error);
+    throw error;
+  }
+};
+
 export interface IngestionResultItem {
   id: string;
   tipo?: string | null;

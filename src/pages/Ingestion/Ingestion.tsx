@@ -4,10 +4,12 @@ import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Input from '@shared/components/ui/Input';
 import Button from '@shared/components/ui/Button';
+import Modal from '@shared/components/ui/Modal';
 import { useToast } from '@shared/contexts/ToastContext';
 import {
   getIngestionProjects,
   uploadIngestionDocument,
+  triggerManualIngestion,
   type Proyecto,
 } from '@shared/services/api';
 
@@ -29,6 +31,23 @@ const Ingestion: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fileInputKey, setFileInputKey] = useState<number>(0);
+  const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
+  const [manualProjectSearchTerm, setManualProjectSearchTerm] =
+    useState<string>('');
+  const [manualProjects, setManualProjects] = useState<Proyecto[]>([]);
+  const [isManualLoadingProjects, setIsManualLoadingProjects] =
+    useState<boolean>(false);
+  const [manualHasSearchedProjects, setManualHasSearchedProjects] =
+    useState<boolean>(false);
+  const [manualProjectSearchError, setManualProjectSearchError] =
+    useState<string | null>(null);
+  const [manualSelectedProjectId, setManualSelectedProjectId] =
+    useState<string>('');
+  const [manualSelectedProjectName, setManualSelectedProjectName] =
+    useState<string>('');
+  const [manualUrl, setManualUrl] = useState<string>('');
+  const [isManualSubmitting, setIsManualSubmitting] =
+    useState<boolean>(false);
 
   useEffect(() => {
     const trimmedTerm = projectSearchTerm.trim();
@@ -83,6 +102,71 @@ const Ingestion: React.FC = () => {
     };
   }, [projectSearchTerm, showError]);
 
+  useEffect(() => {
+    if (!isManualModalOpen) {
+      setManualProjects([]);
+      setManualHasSearchedProjects(false);
+      setIsManualLoadingProjects(false);
+      setManualProjectSearchError(null);
+      return;
+    }
+
+    const trimmedTerm = manualProjectSearchTerm.trim();
+
+    if (!trimmedTerm) {
+      setManualProjects([]);
+      setManualHasSearchedProjects(false);
+      setIsManualLoadingProjects(false);
+      setManualProjectSearchError(null);
+      return;
+    }
+
+    setIsManualLoadingProjects(true);
+    setManualHasSearchedProjects(false);
+    setManualProjectSearchError(null);
+    let isCurrent = true;
+
+    const handler = window.setTimeout(() => {
+      const searchProjects = async () => {
+        try {
+          const data = await getIngestionProjects(trimmedTerm);
+          if (isCurrent) {
+            setManualProjects(data);
+            setManualProjectSearchError(null);
+          }
+        } catch (error) {
+          console.error('Error al buscar proyectos para ingestión manual:', error);
+          if (isCurrent) {
+            showError(
+              'Error al buscar proyectos',
+              'No fue posible obtener la lista de proyectos disponibles.'
+            );
+            setManualProjects([]);
+            setManualProjectSearchError(
+              'Ocurrió un error al consultar los proyectos. Intenta nuevamente.'
+            );
+          }
+        } finally {
+          if (isCurrent) {
+            setIsManualLoadingProjects(false);
+            setManualHasSearchedProjects(true);
+          }
+        }
+      };
+
+      void searchProjects();
+    }, 400);
+
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(handler);
+    };
+  }, [
+    manualProjectSearchTerm,
+    isManualModalOpen,
+    showError,
+  ]);
+
   const handleProjectSearchChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -109,6 +193,32 @@ const Ingestion: React.FC = () => {
     setHasSearchedProjects(false);
   };
 
+  const handleManualProjectSearchChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = event.target.value;
+    setManualProjectSearchTerm(value);
+    setManualSelectedProjectId('');
+    setManualSelectedProjectName('');
+    setManualHasSearchedProjects(false);
+    setManualProjectSearchError(null);
+
+    if (value.trim()) {
+      setIsManualLoadingProjects(true);
+    } else {
+      setManualProjects([]);
+      setIsManualLoadingProjects(false);
+    }
+  };
+
+  const handleManualSelectProject = (project: Proyecto) => {
+    setManualSelectedProjectId(project.id);
+    setManualSelectedProjectName(project.nombre);
+    setManualProjectSearchTerm(project.nombre);
+    setManualProjects([]);
+    setManualHasSearchedProjects(false);
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
 
@@ -131,6 +241,86 @@ const Ingestion: React.FC = () => {
 
     setSelectedFile(file);
   };
+
+  const handleManualSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!manualSelectedProjectId) {
+      showWarning(
+        'Proyecto requerido',
+        'Selecciona un proyecto antes de enviar la alerta manual.'
+      );
+      return;
+    }
+
+    const trimmedUrl = manualUrl.trim();
+
+    if (!trimmedUrl) {
+      showWarning(
+        'URL requerida',
+        'Ingresa una URL válida para continuar con la ingestión manual.'
+      );
+      return;
+    }
+
+    try {
+      // Validar formato de la URL
+      new URL(trimmedUrl);
+    } catch {
+      showWarning(
+        'URL inválida',
+        'Verifica que la URL ingresada tenga un formato válido.'
+      );
+      return;
+    }
+
+    try {
+      setIsManualSubmitting(true);
+      const response = await triggerManualIngestion(
+        manualSelectedProjectId,
+        trimmedUrl
+      );
+
+      showSuccess(
+        'Ingestión manual iniciada',
+        'La alerta manual se ha enviado correctamente para su procesamiento.'
+      );
+
+      setIsManualModalOpen(false);
+      setManualUrl('');
+
+      navigate('/ingestion/resultados', {
+        state: {
+          ingestionResponse: response,
+          projectId: manualSelectedProjectId,
+          projectName: manualSelectedProjectName,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error al enviar alerta manual de ingestión:', error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Ocurrió un error al procesar la alerta manual.';
+      showError('Error al enviar la alerta manual', message);
+    } finally {
+      setIsManualSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isManualModalOpen) {
+      setManualProjectSearchTerm('');
+      setManualProjects([]);
+      setManualHasSearchedProjects(false);
+      setManualProjectSearchError(null);
+      setManualSelectedProjectId('');
+      setManualSelectedProjectName('');
+      setManualUrl('');
+    }
+  }, [isManualModalOpen]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -188,20 +378,36 @@ const Ingestion: React.FC = () => {
   const shouldShowProjectResults =
     !selectedProjectId &&
     (trimmedSearchTerm.length > 0 || isLoadingProjects || hasSearchedProjects);
+  const trimmedManualSearchTerm = manualProjectSearchTerm.trim();
+  const shouldShowManualProjectResults =
+    isManualModalOpen &&
+    !manualSelectedProjectId &&
+    (trimmedManualSearchTerm.length > 0 ||
+      isManualLoadingProjects ||
+      manualHasSearchedProjects);
 
   return (
     <DashboardLayout title="Ingestión">
       <div className="max-w-5xl mx-auto space-y-6">
         <Card>
           <Card.Header>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Envío de archivos para ingestión
-              </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Busca un proyecto por nombre y carga un archivo en formato .xlsx
-                o .csv para iniciar el proceso de ingestión.
-              </p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Envío de archivos para ingestión
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Busca un proyecto por nombre y carga un archivo en formato
+                  .xlsx o .csv para iniciar el proceso de ingestión.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsManualModalOpen(true)}
+              >
+                Ingestión manual
+              </Button>
             </div>
           </Card.Header>
           <Card.Content>
@@ -328,6 +534,129 @@ const Ingestion: React.FC = () => {
           </Card.Content>
         </Card>
       </div>
+
+      <Modal
+        isOpen={isManualModalOpen}
+        onClose={() => setIsManualModalOpen(false)}
+        title="Ingestión manual"
+        size="lg"
+      >
+        <form className="space-y-6" onSubmit={handleManualSubmit}>
+          <div className="space-y-3">
+            <Input
+              type="search"
+              label="Proyecto"
+              placeholder="Busca un proyecto por nombre"
+              value={manualProjectSearchTerm}
+              onChange={handleManualProjectSearchChange}
+              autoComplete="off"
+              helperText="Selecciona un proyecto para enviar la alerta manual."
+            />
+
+            {shouldShowManualProjectResults && (
+              <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
+                {isManualLoadingProjects ? (
+                  <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    Buscando proyectos...
+                  </div>
+                ) : manualProjectSearchError ? (
+                  <div className="px-4 py-3 text-sm text-red-600 dark:text-red-400">
+                    {manualProjectSearchError}
+                  </div>
+                ) : manualProjects.length > 0 ? (
+                  <ul className="max-h-60 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
+                    {manualProjects.map((project) => {
+                      const isSelected = manualSelectedProjectId === project.id;
+                      return (
+                        <li key={project.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleManualSelectProject(project)}
+                            className={`flex w-full flex-col gap-1 px-4 py-3 text-left text-sm transition-colors ${
+                              isSelected
+                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200'
+                                : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'
+                            }`}
+                            aria-pressed={isSelected}
+                          >
+                            <span className="font-medium">{project.nombre}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ID: {project.id}
+                            </span>
+                            {project.proveedor && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                Proveedor: {project.proveedor}
+                              </span>
+                            )}
+                            {isSelected && (
+                              <span className="text-xs font-semibold text-blue-600 dark:text-blue-300">
+                                Seleccionado
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : manualHasSearchedProjects ? (
+                  <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    No se encontraron proyectos que coincidan con "
+                    {trimmedManualSearchTerm}".
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    Escribe para buscar un proyecto por nombre.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {manualSelectedProjectId && manualSelectedProjectName && (
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200">
+                <p className="font-medium">Proyecto seleccionado</p>
+                <p className="mt-1 break-all">
+                  {manualSelectedProjectName}
+                  <span className="ml-2 text-xs font-normal text-emerald-600 dark:text-emerald-300">
+                    ID: {manualSelectedProjectId}
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          <Input
+            type="url"
+            label="URL de la alerta"
+            placeholder="https://ejemplo.com/articulo"
+            value={manualUrl}
+            onChange={(event) => setManualUrl(event.target.value)}
+            helperText="Ingresa la URL que deseas procesar como alerta manual."
+            required
+          />
+
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsManualModalOpen(false)}
+              disabled={isManualSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              isLoading={isManualSubmitting}
+              disabled={
+                isManualSubmitting ||
+                !manualSelectedProjectId ||
+                !manualUrl.trim()
+              }
+            >
+              Enviar alerta
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </DashboardLayout>
   );
 };
