@@ -441,7 +441,7 @@ export const uploadIngestionDocument = async (
 ): Promise<any> => {
   try {
     const formData = new FormData();
-    formData.append('documento', file);
+    formData.append('file', file);
     formData.append('proyecto_id', proyectoId);
 
     const response = await apiClient.post(
