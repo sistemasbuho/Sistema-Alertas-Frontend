@@ -650,118 +650,78 @@ const IngestionResultado: React.FC = () => {
 
   return (
     <DashboardLayout title="Resultados de ingestión">
-      <div className="space-y-6">
-        <Card>
-          <Card.Content>
-            <form
-              className="flex flex-col gap-4 md:flex-row md:items-end"
-              onSubmit={handleProjectSubmit}
-            >
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ID del proyecto
-                </label>
-                <input
-                  type="text"
-                  value={projectIdInput}
-                  onChange={(event) => setProjectIdInput(event.target.value)}
-                  placeholder="Ej: a986a5c3-f710-4603-814f-22cb4af5ed21"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="self-start">
-                  Consultar ingestión
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setReloadToken((prev) => prev + 1);
-                  }}
-                >
-                  Actualizar
-                </Button>
-              </div>
-            </form>
-            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-              Mostrando resultados para el proyecto{' '}
-              <span className="font-medium text-gray-900 dark:text-gray-100 break-all">
-                {projectId || 'No especificado'}
-              </span>
-            </p>
-          </Card.Content>
-        </Card>
-
-        <div className="grid gap-4 md:grid-cols-4">
+      <div className="space-y-4">
+        <div className="grid gap-2 md:grid-cols-4">
           <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-            <Card.Content className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40">
-                  <DocumentArrowUpIcon className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+            <Card.Content className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded bg-blue-100 dark:bg-blue-900/40">
+                  <DocumentArrowUpIcon className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     Archivo cargado
                   </p>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3
+                    className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px]"
+                    title={ingestionSummary.archivo.nombre}
+                  >
                     {ingestionSummary.archivo.nombre}
                   </h3>
                 </div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Proyecto:{' '}
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                 <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.archivo.proyecto}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>Registros en archivo</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.archivo.filas}
+                  {ingestionSummary.archivo.filas} registros
                 </span>
               </div>
             </Card.Content>
           </Card>
 
           <Card>
-            <Card.Content className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/40">
-                  <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-300" />
+            <Card.Content className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded bg-green-100 dark:bg-green-900/40">
+                  <CheckCircleIcon className="w-4 h-4 text-green-600 dark:text-green-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Registros procesados
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Procesados
                   </p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {ingestionSummary.resumen.procesados}
                   </h3>
                 </div>
               </div>
-              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>Medios</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.resumen.medios}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>Redes</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.resumen.redes}
-                </span>
+              <div className="text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Medios
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {ingestionSummary.resumen.medios}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Redes
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {ingestionSummary.resumen.redes}
+                  </span>
+                </div>
               </div>
             </Card.Content>
           </Card>
 
           <Card>
-            <Card.Content className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40">
-                  <ExclamationTriangleIcon className="w-6 h-6 text-amber-600 dark:text-amber-300" />
+            <Card.Content className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded bg-amber-100 dark:bg-amber-900/40">
+                  <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     Observaciones
                   </p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -770,44 +730,52 @@ const IngestionResultado: React.FC = () => {
                   </h3>
                 </div>
               </div>
-              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>Duplicados</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.resumen.duplicados}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>Descartados</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.resumen.descartados}
-                </span>
+              <div className="text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Duplicados
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {ingestionSummary.resumen.duplicados}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Descartados
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {ingestionSummary.resumen.descartados}
+                  </span>
+                </div>
               </div>
             </Card.Content>
           </Card>
 
           <Card>
-            <Card.Content className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/40">
-                  <ClockIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-300" />
+            <Card.Content className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded bg-indigo-100 dark:bg-indigo-900/40">
+                  <ClockIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Tiempo de procesamiento
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Tiempo
                   </p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {ingestionSummary.resumen.duracion}
                   </h3>
                 </div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Cargado por{' '}
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.archivo.cargadoPor}
-                </span>
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Fecha de carga: {formatDate(ingestionSummary.archivo.fecha)}
+              <div className="text-xs space-y-1">
+                <div className="text-gray-600 dark:text-gray-400">
+                  Por:{' '}
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {ingestionSummary.archivo.cargadoPor}
+                  </span>
+                </div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {formatDate(ingestionSummary.archivo.fecha)}
+                </div>
               </div>
             </Card.Content>
           </Card>
