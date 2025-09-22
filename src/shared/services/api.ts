@@ -95,21 +95,7 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   async (config) => {
-    let token = getAccessToken();
-
-    if (token && isTokenExpired()) {
-      try {
-        await refreshTokens();
-        token = getAccessToken();
-      } catch (error) {
-        console.error('Failed to refresh token:', error);
-        clearTokens();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    }
+    const token = getAccessToken();
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -209,7 +195,7 @@ export const getUserData = (): Omit<
 
 export const isAuthenticated = (): boolean => {
   const accessToken = getAccessToken();
-  return !!accessToken && !isTokenExpired();
+  return !!accessToken;
 };
 
 export const setToken = (token: string): void => {

@@ -66,16 +66,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const savedUser = getUserData();
           if (savedUser) {
             setUser(savedUser as User);
-          } else {
-            console.log(
-              'Tokens válidos pero sin datos de usuario, limpiando sesión'
-            );
-            clearTokens();
           }
         }
       } catch (error) {
         console.error('Error inicializando auth:', error);
-        clearTokens();
       } finally {
         setIsLoading(false);
       }
