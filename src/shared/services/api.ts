@@ -461,6 +461,49 @@ export const uploadIngestionDocument = async (
   }
 };
 
+export interface IngestionResultItem {
+  id: string;
+  tipo?: string | null;
+  titulo?: string | null;
+  contenido: string;
+  fecha?: string | null;
+  autor?: string | null;
+  reach?: number | null;
+  engagement?: number | null;
+  url?: string | null;
+  red_social?: string | null;
+  proyecto?: string | null;
+  proyecto_nombre?: string | null;
+  emojis?: string[];
+  mensaje?: string | null;
+  mensaje_formateado?: string | null;
+}
+
+export const getIngestionResults = async (
+  proyectoId: string
+): Promise<IngestionResultItem[]> => {
+  if (!proyectoId.trim()) {
+    return [];
+  }
+
+  try {
+    const response = await apiClient.get(
+      `/api/ingestion/?proyecto=${encodeURIComponent(proyectoId)}`
+    );
+
+    const data = response.data;
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    return data ? [data] : [];
+  } catch (error) {
+    console.error('Error obteniendo resultados de ingestión:', error);
+    throw error;
+  }
+};
+
 export const createProyecto = async (
   proyecto: Omit<Proyecto, 'id' | 'created_at' | 'modified_at'>
 ): Promise<Proyecto> => {
