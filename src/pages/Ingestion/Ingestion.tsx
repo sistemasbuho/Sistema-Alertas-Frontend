@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Input from '@shared/components/ui/Input';
@@ -13,6 +14,7 @@ import {
 const ACCEPTED_EXTENSIONS = ['xlsx', 'csv'];
 
 const Ingestion: React.FC = () => {
+  const navigate = useNavigate();
   const { showError, showSuccess, showWarning } = useToast();
   const [projectSearchTerm, setProjectSearchTerm] = useState<string>('');
   const [projects, setProjects] = useState<Proyecto[]>([]);
@@ -149,13 +151,25 @@ const Ingestion: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      await uploadIngestionDocument(selectedProjectId, selectedFile);
+      const response = await uploadIngestionDocument(
+        selectedProjectId,
+        selectedFile
+      );
+
       showSuccess(
         'Ingestión iniciada',
         'El archivo se ha enviado correctamente para su procesamiento.'
       );
       setSelectedFile(null);
       setFileInputKey((prev) => prev + 1);
+
+      navigate('/ingestion/resultados', {
+        state: {
+          ingestionResponse: response,
+          projectId: selectedProjectId,
+          projectName: selectedProjectName,
+        },
+      });
     } catch (error: any) {
       console.error('Error al enviar archivo de ingestión:', error);
       const message =
