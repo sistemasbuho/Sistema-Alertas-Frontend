@@ -14,6 +14,7 @@ import { useToast } from '@shared/contexts/ToastContext';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
+  EyeIcon,
   XMarkIcon,
   PlusIcon,
   CheckCircleIcon,
@@ -22,6 +23,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import AlertModal, { AlertaData } from '@shared/components/ui/AlertModal';
 import {
   DataTable,
   DataFilters,
@@ -29,7 +31,9 @@ import {
 } from '@/pages/ConsultaDatos/components';
 import {
   getIngestionResults,
+  enviarAlertasAPI,
   type IngestionResultItem,
+  type EnvioAlertaRequest,
 } from '@shared/services/api';
 
 const DEFAULT_PROJECT_ID = 'a986a5c3-f710-4603-814f-22cb4af5ed21';
@@ -199,9 +203,11 @@ const IngestionResultado: React.FC = () => {
   );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewItem, setPreviewItem] = useState<MediosItem | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editItem, setEditItem] = useState<MediosItem | null>(null);
-  const [editNotes, setEditNotes] = useState('');
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [editingAlert, setEditingAlert] = useState<any>(null);
+  const [isAlertLoading, setIsAlertLoading] = useState(false);
+  const [isEnviandoAlertas, setIsEnviandoAlertas] = useState(false);
+  const [showSummaryCards, setShowSummaryCards] = useState(false);
 
   const [filtersValues, setFiltersValues] = useState<{
     proyecto_nombre?: string;
@@ -533,19 +539,37 @@ const IngestionResultado: React.FC = () => {
 
     if (emojiPickerTarget === 'all') {
       setMedios((prev) =>
-        prev.map((item) =>
-          selectedItems.includes(item.id)
-            ? { ...item, emojis: [...item.emojis, emojiValue] }
-            : item
-        )
+        prev.map((item) => {
+          if (selectedItems.includes(item.id)) {
+            const newEmojis = [...(item.emojis || []), emojiValue];
+            return {
+              ...item,
+              emojis: newEmojis,
+              mensaje_formateado:
+                newEmojis.length > 0
+                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  : item.mensaje || item.contenido,
+            };
+          }
+          return item;
+        })
       );
     } else if (emojiPickerTarget) {
       setMedios((prev) =>
-        prev.map((item) =>
-          item.id === emojiPickerTarget
-            ? { ...item, emojis: [...item.emojis, emojiValue] }
-            : item
-        )
+        prev.map((item) => {
+          if (item.id === emojiPickerTarget) {
+            const newEmojis = [...(item.emojis || []), emojiValue];
+            return {
+              ...item,
+              emojis: newEmojis,
+              mensaje_formateado:
+                newEmojis.length > 0
+                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  : item.mensaje || item.contenido,
+            };
+          }
+          return item;
+        })
       );
     }
 
@@ -554,14 +578,22 @@ const IngestionResultado: React.FC = () => {
 
   const handleRemoveEmoji = (itemId: string, emojiIndex: number) => {
     setMedios((prev) =>
-      prev.map((item) =>
-        item.id === itemId
-          ? {
-              ...item,
-              emojis: item.emojis.filter((_, index) => index !== emojiIndex),
-            }
-          : item
-      )
+      prev.map((item) => {
+        if (item.id === itemId) {
+          const newEmojis = item.emojis.filter(
+            (_, index) => index !== emojiIndex
+          );
+          return {
+            ...item,
+            emojis: newEmojis,
+            mensaje_formateado:
+              newEmojis.length > 0
+                ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                : item.mensaje || item.contenido,
+          };
+        }
+        return item;
+      })
     );
   };
 
@@ -571,27 +603,43 @@ const IngestionResultado: React.FC = () => {
   };
 
   const handleEditItem = (item: MediosItem) => {
-    setEditItem(item);
-    setEditNotes('');
-    setShowEditModal(true);
+    setEditingAlert(item);
+    setIsAlertModalOpen(true);
   };
 
-  const handleSaveEdits = () => {
-    if (!editItem) return;
+  const handleCloseAlertModal = () => {
+    setIsAlertModalOpen(false);
+    setEditingAlert(null);
+  };
 
-    setMedios((prev) =>
-      prev.map((item) =>
-        item.id === editItem.id
-          ? { ...item, mensaje_formateado: editNotes }
-          : item
-      )
-    );
+  const handleSaveAlert = async (alertData: AlertaData) => {
+    setIsAlertLoading(true);
 
-    setShowEditModal(false);
-    showSuccess(
-      'Mensaje actualizado',
-      'Se guardaron los cambios en el contenido.'
-    );
+    try {
+      if (editingAlert) {
+        // En lugar de llamar updateAlerta, actualizamos localmente
+        const currentData = medios;
+        const updatedData = currentData.map((item) =>
+          item.id === editingAlert.id ? { ...item, ...alertData } : item
+        );
+
+        setMedios(updatedData);
+
+        showSuccess(
+          'Elemento actualizado',
+          'El elemento se ha actualizado correctamente'
+        );
+
+        handleCloseAlertModal();
+      }
+    } catch (error: any) {
+      showError(
+        'Error al actualizar',
+        error.response?.data?.message || 'No se pudo actualizar el elemento'
+      );
+    } finally {
+      setIsAlertLoading(false);
+    }
   };
 
   const handleClosePreview = () => {
@@ -639,138 +687,226 @@ const IngestionResultado: React.FC = () => {
     setPagination({ currentPage: 1, pageSize });
   };
 
+  const handleEnviarAlertasAPI = async () => {
+    if (selectedItems.length === 0) {
+      showError(
+        'Sin selección',
+        'Debes seleccionar al menos una alerta para enviar'
+      );
+      return;
+    }
+
+    const selectedData = filteredMedios.filter((item) =>
+      selectedItems.includes(item.id)
+    );
+
+    if (!projectId) {
+      showError('Error de configuración', 'No se ha seleccionado un proyecto');
+      return;
+    }
+
+    try {
+      setIsEnviandoAlertas(true);
+
+      const payload: EnvioAlertaRequest = {
+        proyecto_id: projectId,
+        tipo_alerta: 'medios',
+        enviar: true,
+        alertas: selectedData.map((item) => ({
+          id: item.id,
+          url: item.url,
+          contenido: item.mensaje_formateado || item.contenido,
+          fecha: item.fecha_publicacion || new Date().toISOString(),
+          titulo: item.titulo || '',
+          autor: item.autor || '',
+          reach: item.reach || null,
+        })),
+      };
+
+      const result = await enviarAlertasAPI(payload);
+
+      const totalProcesadas = result.procesadas?.length || 0;
+      const totalDuplicadas = result.duplicadas?.length || 0;
+
+      if (result.success) {
+        showSuccess(
+          'Alertas enviadas correctamente',
+          `Procesadas: ${totalProcesadas}, Duplicadas: ${totalDuplicadas}`
+        );
+
+        setSelectedItems([]);
+      } else {
+        showError(
+          'Error al enviar',
+          result.message || 'No se pudieron enviar las alertas'
+        );
+      }
+    } catch (error: any) {
+      console.error('Error enviando alertas:', error);
+      showError(
+        'Error al enviar',
+        error.message || 'No se pudieron enviar las alertas'
+      );
+    } finally {
+      setIsEnviandoAlertas(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Resultados de ingestión">
       <div className="space-y-4">
-        <div className="grid gap-2 md:grid-cols-4">
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-            <Card.Content className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1 rounded bg-blue-100 dark:bg-blue-900/40">
-                  <DocumentArrowUpIcon className="w-4 h-4 text-blue-600 dark:text-blue-300" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Archivo cargado
-                  </p>
-                  <h3
-                    className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px]"
-                    title={ingestionSummary.archivo.nombre}
-                  >
-                    {ingestionSummary.archivo.nombre}
-                  </h3>
-                </div>
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {ingestionSummary.archivo.filas} registros
-                </span>
-              </div>
-            </Card.Content>
-          </Card>
-
-          <Card>
-            <Card.Content className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1 rounded bg-green-100 dark:bg-green-900/40">
-                  <CheckCircleIcon className="w-4 h-4 text-green-600 dark:text-green-300" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Procesados
-                  </p>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {ingestionSummary.resumen.procesados}
-                  </h3>
-                </div>
-              </div>
-              <div className="text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Medios
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ingestionSummary.resumen.medios}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Redes
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ingestionSummary.resumen.redes}
-                  </span>
-                </div>
-              </div>
-            </Card.Content>
-          </Card>
-
-          <Card>
-            <Card.Content className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1 rounded bg-amber-100 dark:bg-amber-900/40">
-                  <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-300" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Observaciones
-                  </p>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {ingestionSummary.resumen.duplicados +
-                      ingestionSummary.resumen.descartados}
-                  </h3>
-                </div>
-              </div>
-              <div className="text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Duplicados
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ingestionSummary.resumen.duplicados}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Descartados
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ingestionSummary.resumen.descartados}
-                  </span>
-                </div>
-              </div>
-            </Card.Content>
-          </Card>
-
-          <Card>
-            <Card.Content className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1 rounded bg-indigo-100 dark:bg-indigo-900/40">
-                  <ClockIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Tiempo
-                  </p>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {ingestionSummary.resumen.duracion}
-                  </h3>
-                </div>
-              </div>
-              <div className="text-xs space-y-1">
-                <div className="text-gray-600 dark:text-gray-400">
-                  Por:{' '}
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ingestionSummary.archivo.cargadoPor}
-                  </span>
-                </div>
-                <div className="text-gray-600 dark:text-gray-400">
-                  {formatDate(ingestionSummary.archivo.fecha)}
-                </div>
-              </div>
-            </Card.Content>
-          </Card>
+        <div className="flex justify-end">
+          <Button
+            onClick={() => setShowSummaryCards(!showSummaryCards)}
+            variant="outline"
+            size="sm"
+            className="inline-flex items-center gap-2"
+          >
+            {showSummaryCards ? (
+              <>
+                <XMarkIcon className="h-4 w-4" />
+                Ocultar resumen
+              </>
+            ) : (
+              <>
+                <EyeIcon className="h-4 w-4" />
+                Mostrar resumen
+              </>
+            )}
+          </Button>
         </div>
+
+        {showSummaryCards && (
+          <div className="grid gap-2 md:grid-cols-4">
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+              <Card.Content className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1 rounded bg-blue-100 dark:bg-blue-900/40">
+                    <DocumentArrowUpIcon className="w-4 h-4 text-blue-600 dark:text-blue-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Archivo cargado
+                    </p>
+                    <h3
+                      className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px]"
+                      title={ingestionSummary.archivo.nombre}
+                    >
+                      {ingestionSummary.archivo.nombre}
+                    </h3>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {ingestionSummary.archivo.filas} registros
+                  </span>
+                </div>
+              </Card.Content>
+            </Card>
+
+            <Card>
+              <Card.Content className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1 rounded bg-green-100 dark:bg-green-900/40">
+                    <CheckCircleIcon className="w-4 h-4 text-green-600 dark:text-green-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Procesados
+                    </p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {ingestionSummary.resumen.procesados}
+                    </h3>
+                  </div>
+                </div>
+                <div className="text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Medios
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {ingestionSummary.resumen.medios}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Redes
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {ingestionSummary.resumen.redes}
+                    </span>
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+
+            <Card>
+              <Card.Content className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1 rounded bg-amber-100 dark:bg-amber-900/40">
+                    <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Observaciones
+                    </p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {ingestionSummary.resumen.duplicados +
+                        ingestionSummary.resumen.descartados}
+                    </h3>
+                  </div>
+                </div>
+                <div className="text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Duplicados
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {ingestionSummary.resumen.duplicados}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Descartados
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {ingestionSummary.resumen.descartados}
+                    </span>
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+
+            <Card>
+              <Card.Content className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1 rounded bg-indigo-100 dark:bg-indigo-900/40">
+                    <ClockIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Tiempo
+                    </p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {ingestionSummary.resumen.duracion}
+                    </h3>
+                  </div>
+                </div>
+                <div className="text-xs space-y-1">
+                  <div className="text-gray-600 dark:text-gray-400">
+                    Por:{' '}
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {ingestionSummary.archivo.cargadoPor}
+                    </span>
+                  </div>
+                  <div className="text-gray-600 dark:text-gray-400">
+                    {formatDate(ingestionSummary.archivo.fecha)}
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+          </div>
+        )}
 
         {ingestionSummary.incidencias.length > 0 && (
           <Card>
@@ -863,10 +999,40 @@ const IngestionResultado: React.FC = () => {
                       </Button>
                       <Button
                         onClick={handleMarkReviewed}
-                        className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                        variant="outline"
+                        className="inline-flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300 dark:bg-green-900/10 dark:hover:bg-green-900/20 dark:text-green-400 dark:border-green-800"
                       >
                         <CheckCircleIcon className="h-4 w-4" />
-                        Marcar revisados
+                        Revisados
+                      </Button>
+                      <Button
+                        onClick={handleEnviarAlertasAPI}
+                        disabled={isEnviandoAlertas}
+                        className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {isEnviandoAlertas ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                              />
+                            </svg>
+                            Enviar Alertas
+                          </>
+                        )}
                       </Button>
                     </>
                   )}
@@ -1025,34 +1191,13 @@ const IngestionResultado: React.FC = () => {
         </Modal>
       )}
 
-      {showEditModal && editItem && (
-        <Modal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          title="Ajustar mensaje"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Texto personalizado para alertas
-              </label>
-              <textarea
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                rows={4}
-                placeholder="Agrega notas o resalta partes clave del contenido..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowEditModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveEdits}>Guardar cambios</Button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      <AlertModal
+        isOpen={isAlertModalOpen}
+        onClose={handleCloseAlertModal}
+        onSave={handleSaveAlert}
+        editingAlert={editingAlert}
+        isLoading={isAlertLoading}
+      />
     </DashboardLayout>
   );
 };
