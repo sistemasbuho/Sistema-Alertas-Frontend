@@ -88,13 +88,11 @@ export interface HistorialPaginationParams {
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 apiClient.interceptors.request.use(
   async (config) => {
+    config.headers = config.headers ?? {};
     const token = getAccessToken();
 
     if (token) {
