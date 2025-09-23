@@ -1046,7 +1046,7 @@ export const exportarHistorial = async (
       queryParams.append('fin_envio_hasta', params.fin_envio_hasta);
     }
 
-    const url = `/api/exportar_historial/${
+    const url = `/api/exportar-historial/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''
     }`;
 
