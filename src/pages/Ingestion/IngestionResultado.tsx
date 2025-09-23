@@ -5,7 +5,7 @@ import React, {
   useState,
   useRef,
 } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
@@ -176,6 +176,7 @@ const normalizeIngestionItem = (
 const IngestionResultado: React.FC = () => {
   const { showSuccess, showError } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const hasShownSuccessMessage = useRef(false);
   const navigationState =
     (location.state as IngestionNavigationState | undefined) ?? undefined;
@@ -737,16 +738,19 @@ const IngestionResultado: React.FC = () => {
 
       const result = await enviarAlertasAPI(payload);
 
-      const totalProcesadas = result.procesadas?.length || 0;
-      const totalDuplicadas = result.duplicadas?.length || 0;
+      const totalEnviadas = selectedData.length;
 
       if (result.success) {
         showSuccess(
           'Alertas enviadas correctamente',
-          `Procesadas: ${totalProcesadas}, Duplicadas: ${totalDuplicadas}`
+          `Total enviadas: ${totalEnviadas}`
         );
 
         setSelectedItems([]);
+
+        setTimeout(() => {
+          navigate('/ingestion');
+        }, 2000);
       } else {
         showError(
           'Error al enviar',
