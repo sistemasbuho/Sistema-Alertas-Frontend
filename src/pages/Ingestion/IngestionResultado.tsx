@@ -712,12 +712,17 @@ const IngestionResultado: React.FC = () => {
       return;
     }
 
+    const hasRedSocial = selectedData.some(
+      (item) => item.tipo?.toLowerCase() === 'red'
+    );
+    const tipoAlerta = hasRedSocial ? 'redes' : 'medios';
+
     try {
       setIsEnviandoAlertas(true);
 
       const payload: EnvioAlertaRequest = {
         proyecto_id: projectId,
-        tipo_alerta: 'medios',
+        tipo_alerta: tipoAlerta,
         enviar: true,
         alertas: selectedData.map((item) => ({
           id: item.id,
