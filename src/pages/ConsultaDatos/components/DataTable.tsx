@@ -39,7 +39,10 @@ interface DataTableProps {
   onRemoveEmoji: (itemId: string, emojiIndex: number) => void;
   onEditItem: (item: any) => void;
   onPreviewItem: (item: any) => void;
-  highlightKeywords: (text: string | null | undefined, keywords: string[]) => string;
+  highlightKeywords: (
+    text: string | null | undefined,
+    keywords: string[]
+  ) => string;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -96,6 +99,9 @@ const DataTable: React.FC<DataTableProps> = ({
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
                     Reach
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
+                    Engagement
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Fecha Pub.
@@ -238,6 +244,13 @@ const DataTable: React.FC<DataTableProps> = ({
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
                         {formatNumber(item.reach || 0)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 w-24">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                        {item.engagement !== null
+                          ? formatNumber(item.engagement)
+                          : 'N/A'}
                       </span>
                     </td>
                     <td className="px-4 py-4 w-32">

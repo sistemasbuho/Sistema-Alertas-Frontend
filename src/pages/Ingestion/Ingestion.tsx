@@ -39,15 +39,15 @@ const Ingestion: React.FC = () => {
     useState<boolean>(false);
   const [manualHasSearchedProjects, setManualHasSearchedProjects] =
     useState<boolean>(false);
-  const [manualProjectSearchError, setManualProjectSearchError] =
-    useState<string | null>(null);
+  const [manualProjectSearchError, setManualProjectSearchError] = useState<
+    string | null
+  >(null);
   const [manualSelectedProjectId, setManualSelectedProjectId] =
     useState<string>('');
   const [manualSelectedProjectName, setManualSelectedProjectName] =
     useState<string>('');
   const [manualUrl, setManualUrl] = useState<string>('');
-  const [isManualSubmitting, setIsManualSubmitting] =
-    useState<boolean>(false);
+  const [isManualSubmitting, setIsManualSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     const trimmedTerm = projectSearchTerm.trim();
@@ -135,7 +135,10 @@ const Ingestion: React.FC = () => {
             setManualProjectSearchError(null);
           }
         } catch (error) {
-          console.error('Error al buscar proyectos para ingestión manual:', error);
+          console.error(
+            'Error al buscar proyectos para ingestión manual:',
+            error
+          );
           if (isCurrent) {
             showError(
               'Error al buscar proyectos',
@@ -161,11 +164,7 @@ const Ingestion: React.FC = () => {
       isCurrent = false;
       window.clearTimeout(handler);
     };
-  }, [
-    manualProjectSearchTerm,
-    isManualModalOpen,
-    showError,
-  ]);
+  }, [manualProjectSearchTerm, isManualModalOpen, showError]);
 
   const handleProjectSearchChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -300,11 +299,19 @@ const Ingestion: React.FC = () => {
       });
     } catch (error: any) {
       console.error('Error al enviar alerta manual de ingestión:', error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Ocurrió un error al procesar la alerta manual.';
-      showError('Error al enviar la alerta manual', message);
+
+      if (error?.response?.status === 400) {
+        showError(
+          'Error al enviar la alerta manual',
+          'La URL ya existe para este proyecto'
+        );
+      } else {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          'Ocurrió un error al procesar la alerta manual.';
+        showError('Error al enviar la alerta manual', message);
+      }
     } finally {
       setIsManualSubmitting(false);
     }
@@ -364,11 +371,18 @@ const Ingestion: React.FC = () => {
       });
     } catch (error: any) {
       console.error('Error al enviar archivo de ingestión:', error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Ocurrió un error al procesar el archivo.';
-      showError('Error al enviar el archivo', message);
+      if (error?.response?.status === 400) {
+        showError(
+          'Error al enviar el archivo',
+          'La URL ya existe para este proyecto'
+        );
+      } else {
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          'Ocurrió un error al procesar el archivo.';
+        showError('Error al enviar el archivo', message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -579,7 +593,9 @@ const Ingestion: React.FC = () => {
                             }`}
                             aria-pressed={isSelected}
                           >
-                            <span className="font-medium">{project.nombre}</span>
+                            <span className="font-medium">
+                              {project.nombre}
+                            </span>
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               ID: {project.id}
                             </span>
