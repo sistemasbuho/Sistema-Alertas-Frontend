@@ -432,15 +432,19 @@ export const uploadIngestionDocument = async (
   formData.append('file', file);
   formData.append('proyecto_id', proyectoId);
 
+  const defaultHeaders = apiClient.defaults.headers.common;
+  const hadContentType =
+    !!defaultHeaders && Object.prototype.hasOwnProperty.call(defaultHeaders, 'Content-Type');
+  const previousContentType = hadContentType ? defaultHeaders['Content-Type'] : undefined;
+
   try {
+    if (hadContentType) {
+      delete defaultHeaders['Content-Type'];
+    }
+
     const response = await apiClient.post(
       buildIngestionEndpoint(proyectoId),
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
+      formData
     );
 
     setTimeout(() => {
@@ -451,6 +455,10 @@ export const uploadIngestionDocument = async (
   } catch (error) {
     console.error('Error subiendo documento de ingestión:', error);
     throw error;
+  } finally {
+    if (hadContentType) {
+      defaultHeaders['Content-Type'] = previousContentType;
+    }
   }
 };
 
