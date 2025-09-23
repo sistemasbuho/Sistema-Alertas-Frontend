@@ -99,6 +99,7 @@ type IngestionNavigationState = {
     mensaje?: string;
     listado?: IngestionResultItem[];
     errores?: unknown[];
+    proyecto_keywords?: string[];
   };
   projectId?: string;
   projectName?: string | null;
@@ -163,7 +164,7 @@ const normalizeIngestionItem = (
       (fallbackProjectId
         ? `Proyecto ${fallbackProjectId.slice(0, 8)}`
         : 'Proyecto sin nombre'),
-    proyecto_keywords: [],
+    proyecto_keywords: item.proyecto_keywords || [],
     emojis: item.emojis || [],
     mensaje: item.mensaje || item.contenido || '',
     mensaje_formateado: item.mensaje_formateado || null,
@@ -257,6 +258,7 @@ const IngestionResultado: React.FC = () => {
         ...item,
         proyecto_nombre:
           item.proyecto_nombre || fallbackProjectName || undefined,
+        proyecto_keywords: ingestionResponseFromState.proyecto_keywords || [],
       };
 
       const normalized = normalizeIngestionItem(

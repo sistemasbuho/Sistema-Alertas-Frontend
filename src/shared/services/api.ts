@@ -495,6 +495,7 @@ export interface IngestionResultItem {
   red_social?: string | null;
   proyecto?: string | null;
   proyecto_nombre?: string | null;
+  proyecto_keywords?: string[];
   emojis?: string[];
   mensaje?: string | null;
   mensaje_formateado?: string | null;
