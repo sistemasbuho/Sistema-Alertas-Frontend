@@ -66,6 +66,7 @@ const ProyectoPage = () => {
     tipo_alerta: string;
     formato_mensaje: string;
     keywords: string;
+    criterios_aceptacion: string;
   }>({
     nombre: '',
     proveedor: '',
@@ -75,6 +76,7 @@ const ProyectoPage = () => {
     tipo_alerta: 'redes',
     formato_mensaje: 'uno a uno',
     keywords: '',
+    criterios_aceptacion: '',
   });
 
   const loadData = async (params?: PaginationParams) => {
@@ -129,6 +131,7 @@ const ProyectoPage = () => {
       tipo_alerta: 'redes',
       formato_mensaje: 'uno a uno',
       keywords: '',
+      criterios_aceptacion: '',
     });
     setIsSlideOverOpen(true);
   };
@@ -149,6 +152,7 @@ const ProyectoPage = () => {
       tipo_alerta: proyecto.tipo_alerta,
       formato_mensaje: proyecto.formato_mensaje,
       keywords: proyecto.keywords || '',
+      criterios_aceptacion: proyecto.criterios_aceptacion || '',
     });
     setIsEditSlideOverOpen(true);
   };
@@ -882,6 +886,28 @@ const ProyectoPage = () => {
               </p>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Criterios de Aceptación
+              </label>
+              <input
+                type="text"
+                value={formData.criterios_aceptacion}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    criterios_aceptacion: e.target.value,
+                  })
+                }
+                placeholder="Ej: Verificar que la información sea veraz y actual"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                disabled={isCreating}
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Define los criterios que debe cumplir el contenido
+              </p>
+            </div>
+
             <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
               <Button
                 type="submit"
@@ -1054,6 +1080,28 @@ const ProyectoPage = () => {
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Separa las keywords con comas
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Criterios de Aceptación
+              </label>
+              <input
+                type="text"
+                value={formData.criterios_aceptacion}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    criterios_aceptacion: e.target.value,
+                  })
+                }
+                placeholder="Ej: Verificar que la información sea veraz y actual"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                disabled={isUpdating}
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Define los criterios que debe cumplir el contenido
               </p>
             </div>
 
