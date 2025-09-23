@@ -713,7 +713,7 @@ const IngestionResultado: React.FC = () => {
     }
 
     const hasRedSocial = selectedData.some(
-      (item) => item.tipo?.toLowerCase() === 'red'
+      (item) => item.tipo?.toLowerCase() === 'redes'
     );
     const tipoAlerta = hasRedSocial ? 'redes' : 'medios';
 
