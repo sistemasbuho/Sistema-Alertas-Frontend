@@ -428,20 +428,20 @@ export const uploadIngestionDocument = async (
   proyectoId: string,
   file: File
 ): Promise<any> => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('proyecto_id', proyectoId);
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('proyecto_id', proyectoId);
 
-    const response = await apiClient.post(
-      buildIngestionEndpoint(proyectoId),
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+  try {
+    const response = await apiClient.post('/api/ingestion/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    setTimeout(() => {
+      window.location.href = '/ingestion/resultados';
+    }, 0);
 
     return response.data;
   } catch (error) {
