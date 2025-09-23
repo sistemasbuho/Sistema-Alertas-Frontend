@@ -449,10 +449,6 @@ export const uploadIngestionDocument = async (
       formData
     );
 
-    setTimeout(() => {
-      window.location.href = '/ingestion/resultados';
-    }, 0);
-
     return response.data;
   } catch (error) {
     console.error('Error subiendo documento de ingestión:', error);
