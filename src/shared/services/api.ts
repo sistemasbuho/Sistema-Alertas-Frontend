@@ -433,11 +433,15 @@ export const uploadIngestionDocument = async (
   formData.append('proyecto_id', proyectoId);
 
   try {
-    const response = await apiClient.post('/api/ingestion/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await apiClient.post(
+      buildIngestionEndpoint(proyectoId),
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
 
     setTimeout(() => {
       window.location.href = '/ingestion/resultados';
