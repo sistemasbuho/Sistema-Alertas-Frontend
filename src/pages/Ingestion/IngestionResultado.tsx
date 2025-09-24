@@ -210,6 +210,7 @@ const IngestionResultado: React.FC = () => {
   const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>(
     'all'
   );
+  const [customText, setCustomText] = useState('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewItem, setPreviewItem] = useState<MediosItem | null>(null);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
@@ -560,17 +561,20 @@ const IngestionResultado: React.FC = () => {
       return;
     }
     setEmojiPickerTarget(target);
+    setCustomText('');
     setShowEmojiPicker(true);
   };
 
   const handleEmojiClick = (emojiData: EmojiClickData, _event: MouseEvent) => {
-    const emojiValue = emojiData.emoji;
+    const emojiContent = customText.trim()
+      ? `${emojiData.emoji} ${customText.trim()}`
+      : emojiData.emoji;
 
     if (emojiPickerTarget === 'all') {
       setMedios((prev) =>
         prev.map((item) => {
           if (selectedItems.includes(item.id)) {
-            const newEmojis = [...(item.emojis || []), emojiValue];
+            const newEmojis = [...(item.emojis || []), emojiContent];
             return {
               ...item,
               emojis: newEmojis,
@@ -587,7 +591,7 @@ const IngestionResultado: React.FC = () => {
       setMedios((prev) =>
         prev.map((item) => {
           if (item.id === emojiPickerTarget) {
-            const newEmojis = [...(item.emojis || []), emojiValue];
+            const newEmojis = [...(item.emojis || []), emojiContent];
             return {
               ...item,
               emojis: newEmojis,
@@ -603,6 +607,46 @@ const IngestionResultado: React.FC = () => {
     }
 
     setShowEmojiPicker(false);
+  };
+
+  const handleAddCustomTextOnly = () => {
+    if (!customText.trim()) return;
+
+    if (emojiPickerTarget === 'all') {
+      setMedios((prev) =>
+        prev.map((item) => {
+          if (selectedItems.includes(item.id)) {
+            const newEmojis = [...(item.emojis || []), customText.trim()];
+            return {
+              ...item,
+              emojis: newEmojis,
+              mensaje_formateado:
+                newEmojis.length > 0
+                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  : item.mensaje || item.contenido,
+            };
+          }
+          return item;
+        })
+      );
+    } else if (emojiPickerTarget) {
+      setMedios((prev) =>
+        prev.map((item) => {
+          if (item.id === emojiPickerTarget) {
+            const newEmojis = [...(item.emojis || []), customText.trim()];
+            return {
+              ...item,
+              emojis: newEmojis,
+              mensaje_formateado:
+                newEmojis.length > 0
+                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  : item.mensaje || item.contenido,
+            };
+          }
+          return item;
+        })
+      );
+    }
   };
 
   const handleRemoveEmoji = (itemId: string, emojiIndex: number) => {
@@ -1151,10 +1195,10 @@ const IngestionResultado: React.FC = () => {
 
       {showEmojiPicker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                Seleccionar emoji
+                Agregar Emoji y Texto
               </h3>
               <Button
                 onClick={() => setShowEmojiPicker(false)}
@@ -1164,6 +1208,43 @@ const IngestionResultado: React.FC = () => {
                 <XMarkIcon className="h-4 w-4" />
               </Button>
             </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Texto personalizado (opcional)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  placeholder="Escribe un texto personalizado..."
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && customText.trim()) {
+                      handleAddCustomTextOnly();
+                      setShowEmojiPicker(false);
+                    }
+                  }}
+                />
+                <Button
+                  onClick={() => {
+                    handleAddCustomTextOnly();
+                    setShowEmojiPicker(false);
+                  }}
+                  disabled={!customText.trim()}
+                  size="sm"
+                  variant="outline"
+                >
+                  Solo Texto
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Presiona Enter o selecciona un emoji. El texto se agregará
+                automáticamente.
+              </p>
+            </div>
+
             <EmojiPicker
               onEmojiClick={handleEmojiClick}
               width={350}
