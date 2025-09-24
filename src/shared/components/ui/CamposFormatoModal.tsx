@@ -297,7 +297,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
 
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Label
+                                Nombre a Mostrar
                               </label>
                               <Input
                                 value={campo.label || ''}
@@ -308,7 +308,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                                     e.target.value
                                   )
                                 }
-                                placeholder="Ej: Título"
+                                placeholder="Ej: Título, Autor, Fecha..."
                               />
                             </div>
 
