@@ -97,6 +97,11 @@ const ConsultaDatos: React.FC = () => {
   const [isAlertLoading, setIsAlertLoading] = useState(false);
   // const [isEnviando, setIsEnviando] = useState(false);
   const [isEnviandoAlertas, setIsEnviandoAlertas] = useState(false);
+  const [alertProgress, setAlertProgress] = useState({
+    current: 0,
+    total: 0,
+    message: '',
+  });
   const [isMarcandoRevisado, setIsMarcandoRevisado] = useState(false);
 
   const getCurrentFilters = () => {
@@ -610,6 +615,11 @@ const ConsultaDatos: React.FC = () => {
 
     try {
       setIsEnviandoAlertas(true);
+      setAlertProgress({
+        current: 0,
+        total: selectedData.length,
+        message: 'Preparando alertas...',
+      });
 
       const payload: EnvioAlertaRequest = {
         proyecto_id: selectedProjectId,
@@ -624,15 +634,33 @@ const ConsultaDatos: React.FC = () => {
           titulo: item.titulo || '',
           autor: item.autor || '',
           reach: item.reach || null,
+          engagement: item.engagement || null,
         })),
       };
+
+      setAlertProgress((prev) => ({
+        ...prev,
+        message: 'Enviando alertas al servidor...',
+      }));
 
       const result = await enviarAlertasAPI(payload);
 
       const totalProcesadas = result.procesadas?.length || 0;
       const totalDuplicadas = result.duplicadas?.length || 0;
 
+      setAlertProgress((prev) => ({
+        ...prev,
+        current: totalProcesadas,
+        message: 'Finalizando envío...',
+      }));
+
       if (result.success) {
+        setAlertProgress((prev) => ({
+          ...prev,
+          current: prev.total,
+          message: 'Alertas enviadas correctamente',
+        }));
+
         showSuccess(
           'Alertas enviadas correctamente',
           `Procesadas: ${totalProcesadas}, Duplicadas: ${totalDuplicadas}`
@@ -643,6 +671,11 @@ const ConsultaDatos: React.FC = () => {
 
         await loadData();
       } else {
+        setAlertProgress((prev) => ({
+          ...prev,
+          message: 'Error en el envío',
+        }));
+
         showError(
           'Error al enviar',
           result.message || 'No se pudieron enviar las alertas'
@@ -650,12 +683,21 @@ const ConsultaDatos: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error enviando alertas:', error);
+
+      setAlertProgress((prev) => ({
+        ...prev,
+        message: 'Error en el envío',
+      }));
+
       showError(
         'Error al enviar',
         error.message || 'No se pudieron enviar las alertas'
       );
     } finally {
       setIsEnviandoAlertas(false);
+      setTimeout(() => {
+        setAlertProgress({ current: 0, total: 0, message: '' });
+      }, 2000);
     }
   };
 
@@ -958,35 +1000,62 @@ const ConsultaDatos: React.FC = () => {
                           </>
                         )}
                       </Button>
-                      <Button
-                        onClick={handleEnviarAlertasAPI}
-                        disabled={isEnviandoAlertas}
-                        className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        {isEnviandoAlertas ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            Enviando...
-                          </>
-                        ) : (
-                          <>
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                              />
-                            </svg>
-                            Enviar Alertas
-                          </>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          onClick={handleEnviarAlertasAPI}
+                          disabled={isEnviandoAlertas}
+                          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {isEnviandoAlertas ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                                />
+                              </svg>
+                              Enviar Alertas
+                            </>
+                          )}
+                        </Button>
+
+                        {isEnviandoAlertas && alertProgress.total > 0 && (
+                          <div className="w-full">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs text-gray-600 dark:text-gray-400">
+                                {alertProgress.message}
+                              </span>
+                              <span className="text-xs text-gray-600 dark:text-gray-400">
+                                {alertProgress.current}/{alertProgress.total}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-green-600 h-2 rounded-full transition-all duration-300 ease-out"
+                                style={{
+                                  width: `${
+                                    (alertProgress.current /
+                                      alertProgress.total) *
+                                    100
+                                  }%`,
+                                }}
+                              ></div>
+                            </div>
+                          </div>
                         )}
-                      </Button>
+                      </div>
                     </>
                   )}
                   <div className="flex flex-col items-end gap-1">

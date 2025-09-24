@@ -1110,6 +1110,7 @@ export interface EnvioAlertaRequest {
     titulo?: string;
     autor?: string;
     reach?: number | null;
+    engagement?: number | null;
   }>;
 }
 
