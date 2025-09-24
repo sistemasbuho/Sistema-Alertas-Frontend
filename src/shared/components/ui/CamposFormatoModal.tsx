@@ -160,8 +160,13 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
               JSON.stringify(campo.estilo || {});
             const labelCambio =
               (campoOriginal?.label || '') !== (campo.label || '');
+            const saltoLineaCambio =
+              (campoOriginal?.estilo?.salto_linea ?? true) !==
+              (campo.estilo?.salto_linea ?? true);
 
-            return ordenCambio || estiloCambio || labelCambio;
+            return (
+              ordenCambio || estiloCambio || labelCambio || saltoLineaCambio
+            );
           }
 
           return false;
@@ -233,9 +238,17 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
               Configuración de Campos
             </h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Configura el orden y estilo de cada campo. Los nombres de los
-              campos no pueden modificarse.
+              Configura el orden, estilo y formato de cada campo. Los nombres de
+              los campos no pueden modificarse.
             </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                <strong>Salto de Línea:</strong> Cuando está marcado, el campo
+                aparecerá en una nueva línea. Cuando está desmarcado, el
+                siguiente campo aparecerá en la misma línea (útil para agrupar
+                campos relacionados).
+              </p>
+            </div>
 
             {campos.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -269,7 +282,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                       )}
                       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                         <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Nombre del Campo
@@ -289,7 +302,11 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                               <Input
                                 value={campo.label || ''}
                                 onChange={(e) =>
-                                  handleCampoChange(index, 'label', e.target.value)
+                                  handleCampoChange(
+                                    index,
+                                    'label',
+                                    e.target.value
+                                  )
                                 }
                                 placeholder="Ej: Título"
                               />
@@ -342,6 +359,32 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                                   }
                                 }}
                               />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Salto de Línea
+                              </label>
+                              <div className="flex items-center h-10">
+                                <input
+                                  type="checkbox"
+                                  id={`salto-linea-${campo.id}`}
+                                  checked={campo.estilo?.salto_linea ?? true}
+                                  onChange={(e) =>
+                                    handleCampoChange(index, 'estilo', {
+                                      ...campo.estilo,
+                                      salto_linea: e.target.checked,
+                                    })
+                                  }
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
+                                />
+                                <label
+                                  htmlFor={`salto-linea-${campo.id}`}
+                                  className="ml-2 text-sm text-gray-600 dark:text-gray-400"
+                                >
+                                  Salto después
+                                </label>
+                              </div>
                             </div>
                           </div>
 

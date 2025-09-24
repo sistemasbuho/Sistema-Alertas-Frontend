@@ -835,7 +835,7 @@ export interface Campo {
   id?: string | null;
   campo: string;
   orden: number;
-  estilo: Record<string, any>;
+  estilo: Record<string, any>; // includes salto_linea, negrita, inclinado, etc.
   label?: string;
 }
 
