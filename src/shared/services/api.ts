@@ -836,6 +836,7 @@ export interface Campo {
   campo: string;
   orden: number;
   estilo: Record<string, any>;
+  label?: string;
 }
 
 export interface Plantilla {
@@ -851,6 +852,7 @@ export interface Plantilla {
       estilo?: {
         [key: string]: any;
       };
+      label?: string;
     };
   };
 }
@@ -879,6 +881,7 @@ export const guardarCamposPlantilla = async (
         campo: campo.campo,
         orden: campo.orden,
         estilo: campo.estilo,
+        label: campo.label,
       })),
     };
 
