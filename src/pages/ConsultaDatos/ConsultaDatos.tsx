@@ -72,14 +72,14 @@ const ConsultaDatos: React.FC = () => {
     proyecto_nombre: '',
     autor: '',
     url: '',
-    estado_enviado: 'false',
+    estado_enviado: '',
   });
 
   const redesFilters = useUrlFilters({
     proyecto_nombre: '',
     autor: '',
     url: '',
-    estado_enviado: 'false',
+    estado_enviado: '', // No default filter - shows all items
   });
 
   const [isInitializing, setIsInitializing] = useState(true);

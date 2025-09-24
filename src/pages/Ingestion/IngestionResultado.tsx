@@ -43,6 +43,7 @@ type FilterState = {
     proyecto_nombre?: string;
     autor?: string;
     url?: string;
+    estado_enviado?: string;
   };
   updateFilters: (newFilters: Record<string, string>) => void;
   clearFilters: () => void;
@@ -106,12 +107,18 @@ type IngestionNavigationState = {
 };
 
 const buildFilterState = (
-  values: { proyecto_nombre?: string; autor?: string; url?: string },
+  values: {
+    proyecto_nombre?: string;
+    autor?: string;
+    url?: string;
+    estado_enviado?: string;
+  },
   setter: React.Dispatch<
     React.SetStateAction<{
       proyecto_nombre?: string;
       autor?: string;
       url?: string;
+      estado_enviado?: string;
     }>
   >,
   onFiltersChange?: () => void
@@ -123,7 +130,7 @@ const buildFilterState = (
       onFiltersChange?.();
     },
     clearFilters: () => {
-      setter({ proyecto_nombre: '', autor: '', url: '' });
+      setter({ proyecto_nombre: '', autor: '', url: '', estado_enviado: '' });
       onFiltersChange?.();
     },
     hasActiveFilters: () =>
@@ -215,10 +222,12 @@ const IngestionResultado: React.FC = () => {
     proyecto_nombre?: string;
     autor?: string;
     url?: string;
+    estado_enviado?: string;
   }>({
     proyecto_nombre: '',
     autor: '',
     url: '',
+    estado_enviado: '',
   });
 
   const [pagination, setPagination] = useState({
@@ -412,7 +421,12 @@ const IngestionResultado: React.FC = () => {
   const applyFilters = useCallback(
     (
       data: MediosItem[],
-      filtersToApply: { proyecto_nombre?: string; autor?: string; url?: string }
+      filtersToApply: {
+        proyecto_nombre?: string;
+        autor?: string;
+        url?: string;
+        estado_enviado?: string;
+      }
     ) => {
       return data.filter((item) => {
         const matchesProyecto = filtersToApply.proyecto_nombre
@@ -428,8 +442,15 @@ const IngestionResultado: React.FC = () => {
         const matchesUrl = filtersToApply.url
           ? item.url.toLowerCase().includes(filtersToApply.url.toLowerCase())
           : true;
+        const matchesEstadoEnviado = filtersToApply.estado_enviado
+          ? filtersToApply.estado_enviado === 'true'
+            ? item.estado_revisado === 'Enviado'
+            : item.estado_revisado !== 'Enviado'
+          : true;
 
-        return matchesProyecto && matchesAutor && matchesUrl;
+        return (
+          matchesProyecto && matchesAutor && matchesUrl && matchesEstadoEnviado
+        );
       });
     },
     []
