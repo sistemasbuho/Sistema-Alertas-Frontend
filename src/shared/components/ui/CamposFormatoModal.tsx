@@ -66,12 +66,14 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
             const configData = config as {
               orden?: number;
               estilo?: Record<string, any>;
+              label?: string;
             };
             camposConfigurados.push({
               id: `config-${nombreCampo}`,
               campo: nombreCampo,
               orden: configData.orden || 1,
               estilo: configData.estilo || {},
+              label: configData.label || '',
             });
           }
         });
@@ -88,6 +90,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
               campo: campo.campo,
               orden: campo.orden || 1,
               estilo: campo.estilo || {},
+              label: campo.label || '',
             });
           });
 
@@ -155,8 +158,10 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
             const estiloCambio =
               JSON.stringify(campoOriginal?.estilo || {}) !==
               JSON.stringify(campo.estilo || {});
+            const labelCambio =
+              (campoOriginal?.label || '') !== (campo.label || '');
 
-            return ordenCambio || estiloCambio;
+            return ordenCambio || estiloCambio || labelCambio;
           }
 
           return false;
@@ -165,6 +170,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
           campo: campo.campo,
           orden: campo.orden,
           estilo: campo.estilo,
+          label: campo.label,
         }));
 
       await guardarCamposPlantilla(selectedPlantilla.id, camposParaEnviar);
@@ -263,7 +269,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                       )}
                       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                         <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Nombre del Campo
@@ -273,6 +279,19 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                                 readOnly
                                 className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
                                 placeholder="Ej: titulo, autor, contenido..."
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Label
+                              </label>
+                              <Input
+                                value={campo.label || ''}
+                                onChange={(e) =>
+                                  handleCampoChange(index, 'label', e.target.value)
+                                }
+                                placeholder="Ej: Título"
                               />
                             </div>
 
@@ -302,9 +321,9 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                               <Select
                                 options={estiloOptions}
                                 value={
-                                  campo.estilo.negrita
+                                  campo.estilo?.negrita
                                     ? 'negrita'
-                                    : campo.estilo.inclinado
+                                    : campo.estilo?.inclinado
                                     ? 'inclinado'
                                     : 'normal'
                                 }
