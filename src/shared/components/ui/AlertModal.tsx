@@ -36,7 +36,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const [formData, setFormData] = useState<AlertaData>({
     url: '',
     contenido: '',
-    fecha: new Date().toISOString().slice(0, 16),
+    fecha: new Date().toISOString().slice(0, 10),
     titulo: '',
     autor: '',
     reach: 0,
@@ -52,8 +52,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
         setFormData({
           ...editingAlert,
           fecha: editingAlert.fecha
-            ? new Date(editingAlert.fecha).toISOString().slice(0, 16)
-            : new Date().toISOString().slice(0, 16),
+            ? new Date(editingAlert.fecha).toISOString().slice(0, 10)
+            : new Date().toISOString().slice(0, 10),
           reach: editingAlert.reach || 0,
           engagement: editingAlert.engagement || 0,
           emojis: editingAlert.emojis || [],
@@ -62,7 +62,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         setFormData({
           url: '',
           contenido: '',
-          fecha: new Date().toISOString().slice(0, 16),
+          fecha: new Date().toISOString().slice(0, 10),
           titulo: '',
           autor: '',
           reach: 0,
@@ -208,8 +208,8 @@ const AlertModal: React.FC<AlertModalProps> = ({
         </div>
 
         <Input
-          label="Fecha y Hora *"
-          type="datetime-local"
+          label="Fecha"
+          type="date"
           value={formData.fecha}
           onChange={handleInputChange('fecha')}
           error={errors.fecha}
