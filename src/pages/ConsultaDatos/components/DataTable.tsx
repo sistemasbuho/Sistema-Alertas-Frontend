@@ -43,6 +43,8 @@ interface DataTableProps {
     text: string | null | undefined,
     keywords: string[]
   ) => string;
+  showEmojiActions?: boolean;
+  showEditActions?: boolean;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -58,6 +60,8 @@ const DataTable: React.FC<DataTableProps> = ({
   onEditItem,
   onPreviewItem,
   highlightKeywords,
+  showEmojiActions = true,
+  showEditActions = true,
 }) => {
   return (
     <>
@@ -201,16 +205,22 @@ const DataTable: React.FC<DataTableProps> = ({
                       >
                         {item.emojis && item.emojis.length > 0 && (
                           <span className="inline-flex items-center gap-1 mr-2">
-                            {item.emojis.map((emoji: string, index: number) => (
-                              <button
-                                key={index}
-                                onClick={() => onRemoveEmoji(item.id, index)}
-                                className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
-                                title="Clic para remover emoji"
-                              >
-                                {emoji}
-                              </button>
-                            ))}
+                            {item.emojis.map((emoji: string, index: number) =>
+                              showEmojiActions ? (
+                                <button
+                                  key={index}
+                                  onClick={() => onRemoveEmoji(item.id, index)}
+                                  className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
+                                  title="Clic para remover emoji"
+                                >
+                                  {emoji}
+                                </button>
+                              ) : (
+                                <span key={index} className="px-1">
+                                  {emoji}
+                                </span>
+                              )
+                            )}
                           </span>
                         )}
                         <span
@@ -285,24 +295,28 @@ const DataTable: React.FC<DataTableProps> = ({
                         >
                           <EyeIcon className="h-3 w-3" />
                         </Button>
-                        <Button
-                          onClick={() => onEditItem(item)}
-                          variant="outline"
-                          size="sm"
-                          className="inline-flex items-center gap-1 p-2 text-green-600 hover:text-green-800 hover:border-green-300"
-                          title="Editar"
-                        >
-                          <PencilIcon className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          onClick={() => onAddEmoji(item.id)}
-                          variant="outline"
-                          size="sm"
-                          className="inline-flex items-center justify-center p-2 text-yellow-600 hover:text-yellow-800 hover:border-yellow-300"
-                          title="Agregar emoji"
-                        >
-                          <span className="text-sm">😊</span>
-                        </Button>
+                        {showEditActions && (
+                          <Button
+                            onClick={() => onEditItem(item)}
+                            variant="outline"
+                            size="sm"
+                            className="inline-flex items-center gap-1 p-2 text-green-600 hover:text-green-800 hover:border-green-300"
+                            title="Editar"
+                          >
+                            <PencilIcon className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {showEmojiActions && (
+                          <Button
+                            onClick={() => onAddEmoji(item.id)}
+                            variant="outline"
+                            size="sm"
+                            className="inline-flex items-center justify-center p-2 text-yellow-600 hover:text-yellow-800 hover:border-yellow-300"
+                            title="Agregar emoji"
+                          >
+                            <span className="text-sm">😊</span>
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </>
@@ -325,16 +339,22 @@ const DataTable: React.FC<DataTableProps> = ({
                       >
                         {item.emojis && item.emojis.length > 0 && (
                           <span className="inline-flex items-center gap-1 mr-2">
-                            {item.emojis.map((emoji: string, index: number) => (
-                              <button
-                                key={index}
-                                onClick={() => onRemoveEmoji(item.id, index)}
-                                className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
-                                title="Clic para remover emoji"
-                              >
-                                {emoji}
-                              </button>
-                            ))}
+                            {item.emojis.map((emoji: string, index: number) =>
+                              showEmojiActions ? (
+                                <button
+                                  key={index}
+                                  onClick={() => onRemoveEmoji(item.id, index)}
+                                  className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
+                                  title="Clic para remover emoji"
+                                >
+                                  {emoji}
+                                </button>
+                              ) : (
+                                <span key={index} className="px-1">
+                                  {emoji}
+                                </span>
+                              )
+                            )}
                           </span>
                         )}
                         <span
@@ -407,24 +427,28 @@ const DataTable: React.FC<DataTableProps> = ({
                         >
                           <EyeIcon className="h-3 w-3" />
                         </Button>
-                        <Button
-                          onClick={() => onEditItem(item)}
-                          variant="outline"
-                          size="sm"
-                          className="inline-flex items-center gap-1 p-2 text-green-600 hover:text-green-800 hover:border-green-300"
-                          title="Editar"
-                        >
-                          <PencilIcon className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          onClick={() => onAddEmoji(item.id)}
-                          variant="outline"
-                          size="sm"
-                          className="inline-flex items-center justify-center p-2 text-yellow-600 hover:text-yellow-800 hover:border-yellow-300"
-                          title="Agregar emoji"
-                        >
-                          <span className="text-sm">😊</span>
-                        </Button>
+                        {showEditActions && (
+                          <Button
+                            onClick={() => onEditItem(item)}
+                            variant="outline"
+                            size="sm"
+                            className="inline-flex items-center gap-1 p-2 text-green-600 hover:text-green-800 hover:border-green-300"
+                            title="Editar"
+                          >
+                            <PencilIcon className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {showEmojiActions && (
+                          <Button
+                            onClick={() => onAddEmoji(item.id)}
+                            variant="outline"
+                            size="sm"
+                            className="inline-flex items-center justify-center p-2 text-yellow-600 hover:text-yellow-800 hover:border-yellow-300"
+                            title="Agregar emoji"
+                          >
+                            <span className="text-sm">😊</span>
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </>

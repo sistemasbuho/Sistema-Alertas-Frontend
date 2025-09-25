@@ -8,7 +8,7 @@ import {
   getRedes,
   // capturaAlertaMedios,
   // capturaAlertaRedes,
-  updateAlerta,
+  // updateAlerta, // COMENTADO - NO VA POR AHORA
   // enviarAlertasWhatsApp,
   enviarAlertasAPI,
   type MediosPaginationParams,
@@ -24,10 +24,10 @@ import {
   FunnelIcon,
   EyeIcon,
   XMarkIcon,
-  PlusIcon,
+  // PlusIcon, // COMENTADO - NO VA POR AHORA
 } from '@heroicons/react/24/outline';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import AlertModal, { AlertaData } from '@shared/components/ui/AlertModal';
+// import EmojiPicker, { EmojiClickData } from 'emoji-picker-react'; // COMENTADO - NO VA POR AHORA
+// import AlertModal, { AlertaData } from '@shared/components/ui/AlertModal'; // COMENTADO - NO VA POR AHORA
 import { DataTable, DataFilters, DataPagination } from './components';
 
 type TabType = 'medios' | 'redes';
@@ -84,17 +84,16 @@ const ConsultaDatos: React.FC = () => {
 
   const [isInitializing, setIsInitializing] = useState(true);
 
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>(
-    'all'
-  );
-  const [customText, setCustomText] = useState('');
+  // ESTADOS COMENTADOS - FUNCIONALIDADES NO VAN POR AHORA
+  // const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  // const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>('all');
+  // const [customText, setCustomText] = useState('');
+  // const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  // const [editingAlert, setEditingAlert] = useState<any>(null);
+  // const [isAlertLoading, setIsAlertLoading] = useState(false);
 
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewItem, setPreviewItem] = useState<any>(null);
-  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [editingAlert, setEditingAlert] = useState<any>(null);
-  const [isAlertLoading, setIsAlertLoading] = useState(false);
   // const [isEnviando, setIsEnviando] = useState(false);
   const [isEnviandoAlertas, setIsEnviandoAlertas] = useState(false);
   const [alertProgress, setAlertProgress] = useState({
@@ -103,6 +102,14 @@ const ConsultaDatos: React.FC = () => {
     message: '',
   });
   const [isMarcandoRevisado, setIsMarcandoRevisado] = useState(false);
+
+  // ESTADOS COMENTADOS - FUNCIONALIDADES NO VAN POR AHORA
+  // const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  // const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>('all');
+  // const [customText, setCustomText] = useState('');
+  // const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  // const [editingAlert, setEditingAlert] = useState<any>(null);
+  // const [isAlertLoading, setIsAlertLoading] = useState(false);
 
   const getCurrentFilters = () => {
     const filters = activeTab === 'medios' ? mediosFilters : redesFilters;
@@ -346,177 +353,213 @@ const ConsultaDatos: React.FC = () => {
     }
   };
 
-  const handleAddEmojiToAll = (emoji: string) => {
-    const currentData = getCurrentData();
-    const updatedData = currentData.map((item) => {
-      if (selectedItems.includes(item.id)) {
-        const newEmojis = [...(item.emojis || []), emoji];
-        return {
-          ...item,
-          emojis: newEmojis,
-          mensaje_formateado:
-            newEmojis.length > 0
-              ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
-              : item.mensaje || item.contenido,
-        };
-      }
-      return item;
-    });
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Agregar emoji o texto personalizado a todos los elementos seleccionados
+   */
+  // const handleAddEmojiToAll = (emoji: string) => {
+  //   const currentData = getCurrentData();
+  //   const updatedData = currentData.map((item) => {
+  //     if (selectedItems.includes(item.id)) {
+  //       const newEmojis = [...(item.emojis || []), emoji];
+  //       return {
+  //         ...item,
+  //         emojis: newEmojis,
+  //         mensaje_formateado:
+  //           newEmojis.length > 0
+  //             ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+  //             : item.mensaje || item.contenido,
+  //       };
+  //     }
+  //     return item;
+  //   });
 
-    if (activeTab === 'medios') {
-      setMedios(updatedData);
-    } else {
-      setRedes(updatedData);
-    }
-    setShowEmojiPicker(false);
-  };
+  //   if (activeTab === 'medios') {
+  //     setMedios(updatedData);
+  //   } else {
+  //     setRedes(updatedData);
+  //   }
+  //   setShowEmojiPicker(false);
+  // };
 
-  const handleAddEmojiToItem = (itemId: string, emoji: string) => {
-    const currentData = getCurrentData();
-    const updatedData = currentData.map((item) => {
-      if (item.id === itemId) {
-        const newEmojis = [...(item.emojis || []), emoji];
-        return {
-          ...item,
-          emojis: newEmojis,
-          mensaje_formateado:
-            newEmojis.length > 0
-              ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
-              : item.mensaje || item.contenido,
-        };
-      }
-      return item;
-    });
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Agregar emoji o texto personalizado a un elemento específico
+   */
+  // const handleAddEmojiToItem = (itemId: string, emoji: string) => {
+  //   const currentData = getCurrentData();
+  //   const updatedData = currentData.map((item) => {
+  //     if (item.id === itemId) {
+  //       const newEmojis = [...(item.emojis || []), emoji];
+  //       return {
+  //         ...item,
+  //         emojis: newEmojis,
+  //         mensaje_formateado:
+  //           newEmojis.length > 0
+  //             ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+  //             : item.mensaje || item.contenido,
+  //       };
+  //     }
+  //     return item;
+  //   });
 
-    if (activeTab === 'medios') {
-      setMedios(updatedData);
-    } else {
-      setRedes(updatedData);
-    }
-    setShowEmojiPicker(false);
-  };
+  //   if (activeTab === 'medios') {
+  //     setMedios(updatedData);
+  //   } else {
+  //     setRedes(updatedData);
+  //   }
+  //   setShowEmojiPicker(false);
+  // };
 
-  const handleRemoveEmoji = (itemId: string, emojiIndex: number) => {
-    const currentData = getCurrentData();
-    const updatedData = currentData.map((item) => {
-      if (item.id === itemId) {
-        const newEmojis =
-          item.emojis?.filter(
-            (_: string, index: number) => index !== emojiIndex
-          ) || [];
-        return {
-          ...item,
-          emojis: newEmojis,
-          mensaje_formateado:
-            newEmojis.length > 0
-              ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
-              : item.mensaje || item.contenido,
-        };
-      }
-      return item;
-    });
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Remover emoji de un elemento específico
+   */
+  // const handleRemoveEmoji = (itemId: string, emojiIndex: number) => {
+  //   const currentData = getCurrentData();
+  //   const updatedData = currentData.map((item) => {
+  //     if (item.id === itemId) {
+  //       const newEmojis =
+  //         item.emojis?.filter(
+  //           (_: string, index: number) => index !== emojiIndex
+  //         ) || [];
+  //       return {
+  //         ...item,
+  //         emojis: newEmojis,
+  //         mensaje_formateado:
+  //           newEmojis.length > 0
+  //             ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+  //             : item.mensaje || item.contenido,
+  //       };
+  //     }
+  //     return item;
+  //   });
 
-    if (activeTab === 'medios') {
-      setMedios(updatedData);
-    } else {
-      setRedes(updatedData);
-    }
-  };
+  //   if (activeTab === 'medios') {
+  //     setMedios(updatedData);
+  //   } else {
+  //     setRedes(updatedData);
+  //   }
+  // };
 
-  const handleOpenEmojiPicker = (target: string | 'all') => {
-    setEmojiPickerTarget(target);
-    setCustomText('');
-    setShowEmojiPicker(true);
-  };
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Abrir el picker de emojis
+   */
+  // const handleOpenEmojiPicker = (target: string | 'all') => {
+  //   setEmojiPickerTarget(target);
+  //   setCustomText('');
+  //   setShowEmojiPicker(true);
+  // };
 
-  const handleEmojiClick = (emojiData: EmojiClickData) => {
-    const emojiContent = customText.trim()
-      ? `${emojiData.emoji} ${customText.trim()}`
-      : emojiData.emoji;
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Manejar click en emoji del picker
+   */
+  // const handleEmojiClick = (emojiData: EmojiClickData) => {
+  //   const emojiContent = customText.trim()
+  //     ? `${emojiData.emoji} ${customText.trim()}`
+  //     : emojiData.emoji;
 
-    if (emojiPickerTarget === 'all') {
-      handleAddEmojiToAll(emojiContent);
-    } else {
-      handleAddEmojiToItem(emojiPickerTarget, emojiContent);
-    }
-  };
+  //   if (emojiPickerTarget === 'all') {
+  //     handleAddEmojiToAll(emojiContent);
+  //   } else {
+  //     handleAddEmojiToItem(emojiPickerTarget, emojiContent);
+  //   }
+  // };
 
-  const handleAddCustomTextOnly = () => {
-    if (!customText.trim()) return;
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Agregar solo texto personalizado sin emoji
+   */
+  // const handleAddCustomTextOnly = () => {
+  //   if (!customText.trim()) return;
 
-    if (emojiPickerTarget === 'all') {
-      handleAddEmojiToAll(customText.trim());
-    } else {
-      handleAddEmojiToItem(emojiPickerTarget, customText.trim());
-    }
-  };
+  //   if (emojiPickerTarget === 'all') {
+  //     handleAddEmojiToAll(customText.trim());
+  //   } else {
+  //     handleAddEmojiToItem(emojiPickerTarget, customText.trim());
+  //   }
+  // };
 
   const handlePreviewItem = (item: any) => {
     setPreviewItem(item);
     setShowPreviewModal(true);
   };
 
-  const handleEditItem = (item: any) => {
-    setEditingAlert(item);
-    setIsAlertModalOpen(true);
-  };
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Editar un elemento específico
+   */
+  // const handleEditItem = (item: any) => {
+  //   setEditingAlert(item);
+  //   setIsAlertModalOpen(true);
+  // };
 
   const handleClosePreview = () => {
     setShowPreviewModal(false);
     setPreviewItem(null);
   };
 
-  const handleCloseAlertModal = () => {
-    setIsAlertModalOpen(false);
-    setEditingAlert(null);
-  };
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Cerrar modal de edición de alerta
+   */
+  // const handleCloseAlertModal = () => {
+  //   setIsAlertModalOpen(false);
+  //   setEditingAlert(null);
+  // };
 
-  const handleSaveAlert = async (alertData: AlertaData) => {
-    setIsAlertLoading(true);
+  /**
+   * FUNCIONALIDAD COMENTADA - NO VA POR AHORA
+   * Guardar cambios de una alerta editada
+   */
+  // const handleSaveAlert = async (alertData: AlertaData) => {
+  //   setIsAlertLoading(true);
 
-    try {
-      if (editingAlert) {
-        await updateAlerta(
-          editingAlert.id,
-          {
-            url: alertData.url,
-            contenido: alertData.contenido,
-            fecha: alertData.fecha,
-            titulo: alertData.titulo,
-            autor: alertData.autor,
-            reach: alertData.reach || 0,
-          },
-          activeTab,
-          editingAlert.proyecto
-        );
+  //   try {
+  //     if (editingAlert) {
+  //       await updateAlerta(
+  //         editingAlert.id,
+  //         {
+  //           url: alertData.url,
+  //           contenido: alertData.contenido,
+  //           fecha: alertData.fecha,
+  //           titulo: alertData.titulo,
+  //           autor: alertData.autor,
+  //           reach: alertData.reach || 0,
+  //         },
+  //         activeTab,
+  //         editingAlert.proyecto
+  //       );
 
-        const currentData = getCurrentData();
-        const updatedData = currentData.map((item) =>
-          item.id === editingAlert.id ? { ...item, ...alertData } : item
-        );
+  //       const currentData = getCurrentData();
+  //       const updatedData = currentData.map((item) =>
+  //         item.id === editingAlert.id ? { ...item, ...alertData } : item
+  //       );
 
-        if (activeTab === 'medios') {
-          setMedios(updatedData);
-        } else {
-          setRedes(updatedData);
-        }
+  //       if (activeTab === 'medios') {
+  //         setMedios(updatedData);
+  //       } else {
+  //         setRedes(updatedData);
+  //       }
 
-        showSuccess(
-          'Elemento actualizado',
-          'El elemento se ha actualizado correctamente'
-        );
+  //       showSuccess(
+  //         'Elemento actualizado',
+  //         'El elemento se ha actualizado correctamente'
+  //       );
 
-        handleCloseAlertModal();
-      }
-    } catch (error: any) {
-      showError(
-        'Error al actualizar',
-        error.response?.data?.message || 'No se pudo actualizar el elemento'
-      );
-    } finally {
-      setIsAlertLoading(false);
-    }
-  };
+  //       handleCloseAlertModal();
+  //     }
+  //   } catch (error: any) {
+  //     showError(
+  //       'Error al actualizar',
+  //       error.response?.data?.message || 'No se pudo actualizar el elemento'
+  //     );
+  //   } finally {
+  //     setIsAlertLoading(false);
+  //   }
+  // };
 
   // const handleEnviarAlertas = async () => {
   //   if (selectedItems.length === 0) {
@@ -962,14 +1005,14 @@ const ConsultaDatos: React.FC = () => {
                   </Button>
                   {selectedItems.length > 0 && (
                     <>
-                      <Button
+                      {/* <Button
                         onClick={() => handleOpenEmojiPicker('all')}
                         variant="outline"
                         className="inline-flex items-center gap-2"
                       >
                         <PlusIcon className="h-4 w-4" />
                         Agregar emoji
-                      </Button>
+                      </Button> */}
                       <Button
                         onClick={handleMarcarRevisado}
                         disabled={isMarcandoRevisado}
@@ -1108,11 +1151,16 @@ const ConsultaDatos: React.FC = () => {
                 onSelectAll={handleSelectAll}
                 formatDate={formatDate}
                 formatNumber={formatNumber}
-                onAddEmoji={handleOpenEmojiPicker}
-                onRemoveEmoji={handleRemoveEmoji}
-                onEditItem={handleEditItem}
+                onAddEmoji={() => {}}
+                onRemoveEmoji={() => {}}
+                onEditItem={() => {}}
+                // onAddEmoji={handleOpenEmojiPicker}
+                // onRemoveEmoji={handleRemoveEmoji}
+                // onEditItem={handleEditItem}
                 onPreviewItem={handlePreviewItem}
                 highlightKeywords={highlightKeywords}
+                showEmojiActions={false}
+                showEditActions={false}
               />
             )}
 
@@ -1127,7 +1175,7 @@ const ConsultaDatos: React.FC = () => {
           </Card.Content>
         </Card>
       </div>
-      {showEmojiPicker && (
+      {/* {showEmojiPicker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
@@ -1186,7 +1234,7 @@ const ConsultaDatos: React.FC = () => {
             />
           </div>
         </div>
-      )}
+      )} */}
 
       {showPreviewModal && previewItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1333,13 +1381,13 @@ const ConsultaDatos: React.FC = () => {
         </div>
       )}
 
-      <AlertModal
+      {/* <AlertModal
         isOpen={isAlertModalOpen}
         onClose={handleCloseAlertModal}
         onSave={handleSaveAlert}
         editingAlert={editingAlert}
         isLoading={isAlertLoading}
-      />
+      /> */}
     </DashboardLayout>
   );
 };
