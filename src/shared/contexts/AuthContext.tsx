@@ -6,11 +6,13 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   loginWithGoogle,
   isAuthenticated as checkAuth,
   getUserData,
   clearTokens,
+  setNavigationFunction,
   type AuthResponse,
 } from '@shared/services/api';
 
@@ -48,16 +50,36 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   const isAuthenticated = !!user;
 
-  const handleTokenExpiration = useCallback(async () => {
-    console.log('Token expiration handler called but disabled temporarily');
+  useEffect(() => {
+    setNavigationFunction(navigate);
+  }, [navigate]);
+
+  const logout = useCallback((): void => {
+    clearTokens();
+    setUser(null);
+    setIsLoading(false);
+
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
   }, []);
 
   useEffect(() => {
-    console.log('Token expiration check disabled temporarily');
-  }, [user, handleTokenExpiration]);
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_access_token' && e.newValue === null && user) {
+        setUser(null);
+        setIsLoading(false);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [user]);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -100,17 +122,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error('Error al iniciar sesión. Por favor, intenta de nuevo.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const logout = (): void => {
-    clearTokens();
-    setUser(null);
-    setIsLoading(false);
-
-    if (typeof window !== 'undefined') {
-      localStorage.clear();
-      sessionStorage.clear();
     }
   };
 

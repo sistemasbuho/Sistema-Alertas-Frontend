@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ThemeProvider } from '@shared/contexts/ThemeContext';
 import { AuthProvider } from '@shared/contexts/AuthContext';
 import { ToastProvider } from '@shared/contexts/ToastContext';
+import ProtectedRoute from '@shared/components/auth/ProtectedRoute';
 import useTocMetrics from '@shared/hooks/useTocMetrics';
 import ConsultaDatos from '@/pages/ConsultaDatos/ConsultaDatos';
 import Historial from '@/pages/Historial/Historial';
@@ -27,14 +28,39 @@ function App() {
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/consulta-datos" element={<ConsultaDatos />} />
                 <Route path="/proyecto" element={<Proyecto />} />
-                <Route path="/ingestion" element={<Ingestion />} />
+                <Route
+                  path="/consulta-datos"
+                  element={
+                    <ProtectedRoute>
+                      <ConsultaDatos />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ingestion"
+                  element={
+                    <ProtectedRoute>
+                      <Ingestion />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/ingestion/resultados"
-                  element={<IngestionResultado />}
+                  element={
+                    <ProtectedRoute>
+                      <IngestionResultado />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="/historial" element={<Historial />} />
+                <Route
+                  path="/historial"
+                  element={
+                    <ProtectedRoute>
+                      <Historial />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/"
                   element={<Navigate to="/consulta-datos" replace />}

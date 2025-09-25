@@ -104,11 +104,44 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+let navigationFunction: ((path: string) => void) | null = null;
+let isRedirecting = false;
+
+export const setNavigationFunction = (navigate: (path: string) => void) => {
+  navigationFunction = navigate;
+};
+
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      console.log('401 error intercepted but handling disabled temporarily');
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.pathname.includes('/login')
+      ) {
+        if (!isRedirecting) {
+          isRedirecting = true;
+          console.warn('🔒 Sesión expirada. Redirigiendo al login...');
+
+          clearTokens();
+          localStorage.removeItem(AUTH_KEYS.USER_DATA);
+
+          if (navigationFunction) {
+            try {
+              navigationFunction('/login');
+            } catch {
+              console.log('React navigation failed, using window.location');
+              window.location.href = '/login';
+            }
+          } else {
+            window.location.href = '/login';
+          }
+
+          setTimeout(() => {
+            isRedirecting = false;
+          }, 500);
+        }
+      }
     }
 
     return Promise.reject(error);
