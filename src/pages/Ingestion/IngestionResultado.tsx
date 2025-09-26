@@ -67,6 +67,7 @@ type MediosItem = {
   emojis: string[];
   mensaje?: string;
   mensaje_formateado?: string | null;
+  emojis_only?: string;
   tipo?: string | null;
   red_social?: string | null;
 };
@@ -185,6 +186,7 @@ const normalizeIngestionItem = (
     emojis: item.emojis || [],
     mensaje: item.mensaje || item.contenido || '',
     mensaje_formateado: item.mensaje_formateado || null,
+    emojis_only: '',
     tipo: item.tipo || null,
     red_social: item.red_social || null,
   };
@@ -306,7 +308,6 @@ const IngestionResultado: React.FC = () => {
     setFetchError(null);
     setIsLoadingData(false);
 
-    // Solo mostrar el mensaje de éxito una vez
     if (ingestionResponseFromState.mensaje && !hasShownSuccessMessage.current) {
       showSuccess('Ingestión completada', ingestionResponseFromState.mensaje);
       hasShownSuccessMessage.current = true;
@@ -592,7 +593,6 @@ const IngestionResultado: React.FC = () => {
       return;
     }
     setEmojiPickerTarget(target);
-    setCustomText('');
     setShowEmojiPicker(true);
   };
 
@@ -601,18 +601,26 @@ const IngestionResultado: React.FC = () => {
       ? `${emojiData.emoji} ${customText.trim()}`
       : emojiData.emoji;
 
+    console.log('DEBUG - customText:', `"${customText}"`);
+    console.log('DEBUG - emojiContent:', `"${emojiContent}"`);
+    console.log('DEBUG - emojiData.emoji:', `"${emojiData.emoji}"`);
+
     if (emojiPickerTarget === 'all') {
       setMedios((prev) =>
         prev.map((item) => {
           if (selectedItems.includes(item.id)) {
             const newEmojis = [...(item.emojis || []), emojiContent];
+            const emojisOnly = newEmojis.join(' ');
+            console.log('DEBUG - newEmojis:', newEmojis);
+            console.log('DEBUG - emojisOnly final:', `"${emojisOnly}"`);
             return {
               ...item,
               emojis: newEmojis,
               mensaje_formateado:
                 newEmojis.length > 0
-                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  ? `${emojisOnly} ${item.mensaje || item.contenido}`
                   : item.mensaje || item.contenido,
+              emojis_only: emojisOnly,
             };
           }
           return item;
@@ -623,13 +631,15 @@ const IngestionResultado: React.FC = () => {
         prev.map((item) => {
           if (item.id === emojiPickerTarget) {
             const newEmojis = [...(item.emojis || []), emojiContent];
+            const emojisOnly = newEmojis.join(' ');
             return {
               ...item,
               emojis: newEmojis,
               mensaje_formateado:
                 newEmojis.length > 0
-                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  ? `${emojisOnly} ${item.mensaje || item.contenido}`
                   : item.mensaje || item.contenido,
+              emojis_only: emojisOnly,
             };
           }
           return item;
@@ -637,6 +647,7 @@ const IngestionResultado: React.FC = () => {
       );
     }
 
+    setCustomText('');
     setShowEmojiPicker(false);
   };
 
@@ -648,13 +659,15 @@ const IngestionResultado: React.FC = () => {
         prev.map((item) => {
           if (selectedItems.includes(item.id)) {
             const newEmojis = [...(item.emojis || []), customText.trim()];
+            const emojisOnly = newEmojis.join(' ');
             return {
               ...item,
               emojis: newEmojis,
               mensaje_formateado:
                 newEmojis.length > 0
-                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  ? `${emojisOnly} ${item.mensaje || item.contenido}`
                   : item.mensaje || item.contenido,
+              emojis_only: emojisOnly,
             };
           }
           return item;
@@ -665,19 +678,24 @@ const IngestionResultado: React.FC = () => {
         prev.map((item) => {
           if (item.id === emojiPickerTarget) {
             const newEmojis = [...(item.emojis || []), customText.trim()];
+            const emojisOnly = newEmojis.join(' ');
             return {
               ...item,
               emojis: newEmojis,
               mensaje_formateado:
                 newEmojis.length > 0
-                  ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                  ? `${emojisOnly} ${item.mensaje || item.contenido}`
                   : item.mensaje || item.contenido,
+              emojis_only: emojisOnly,
             };
           }
           return item;
         })
       );
     }
+
+    setCustomText('');
+    setShowEmojiPicker(false);
   };
 
   const handleRemoveEmoji = (itemId: string, emojiIndex: number) => {
@@ -687,13 +705,15 @@ const IngestionResultado: React.FC = () => {
           const newEmojis = item.emojis.filter(
             (_, index) => index !== emojiIndex
           );
+          const emojisOnly = newEmojis.join(' ');
           return {
             ...item,
             emojis: newEmojis,
             mensaje_formateado:
               newEmojis.length > 0
-                ? `${newEmojis.join(' ')} ${item.mensaje || item.contenido}`
+                ? `${emojisOnly} ${item.mensaje || item.contenido}`
                 : item.mensaje || item.contenido,
+            emojis_only: emojisOnly,
           };
         }
         return item;
@@ -721,7 +741,6 @@ const IngestionResultado: React.FC = () => {
 
     try {
       if (editingAlert) {
-        // En lugar de llamar updateAlerta, actualizamos localmente
         const currentData = medios;
         const updatedData = currentData.map((item) =>
           item.id === editingAlert.id ? { ...item, ...alertData } : item
@@ -835,7 +854,7 @@ const IngestionResultado: React.FC = () => {
           autor: item.autor || '',
           reach: item.reach || null,
           engagement: item.engagement || null,
-          emojis: item.mensaje_formateado || '',
+          emojis: item.emojis_only || '',
         })),
       };
 

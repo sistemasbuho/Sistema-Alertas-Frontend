@@ -678,7 +678,7 @@ const ConsultaDatos: React.FC = () => {
           autor: item.autor || '',
           reach: item.reach || null,
           engagement: item.engagement || null,
-          emojis: item.mensaje_formateado || '',
+          emojis: (item as any).emojis_only || '',
         })),
       };
 
