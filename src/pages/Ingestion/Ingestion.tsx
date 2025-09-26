@@ -31,6 +31,7 @@ const Ingestion: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fileInputKey, setFileInputKey] = useState<number>(0);
+  const [fileListKey, setFileListKey] = useState<number>(0);
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
   const [manualProjectSearchTerm, setManualProjectSearchTerm] =
     useState<string>('');
@@ -48,6 +49,19 @@ const Ingestion: React.FC = () => {
     useState<string>('');
   const [manualUrl, setManualUrl] = useState<string>('');
   const [isManualSubmitting, setIsManualSubmitting] = useState<boolean>(false);
+
+  const getFileCounterText = () => {
+    const count = selectedFiles.length;
+    const text =
+      count === 1
+        ? 'Archivo listo para enviar'
+        : `${count} archivos listos para enviar`;
+    return text;
+  };
+
+  useEffect(() => {
+    setFileListKey((prev) => prev + 1);
+  }, [selectedFiles]);
 
   useEffect(() => {
     const trimmedTerm = projectSearchTerm.trim();
@@ -557,30 +571,77 @@ const Ingestion: React.FC = () => {
                   )}
                 </div>
 
-                <Input
-                  key={fileInputKey}
-                  type="file"
-                  label="Documento"
-                  accept=".xlsx,.csv"
-                  multiple
-                  onChange={handleFileChange}
-                  className="cursor-pointer file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700 dark:file:bg-blue-500 dark:hover:file:bg-blue-600"
-                  helperText="Formatos soportados: archivos .xlsx o .csv. Puedes seleccionar múltiples archivos."
-                  required
-                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Documento
+                  </label>
+                  <div className="relative">
+                    <input
+                      key={fileInputKey}
+                      type="file"
+                      accept=".xlsx,.csv"
+                      multiple
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      required
+                    />
+                    <div className="flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg
+                          className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 20 16"
+                        >
+                          <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                          />
+                        </svg>
+                        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                          <span className="font-semibold">
+                            Clic para elegir archivos
+                          </span>{' '}
+                          o arrastra y suelta
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {selectedFiles.length === 0
+                            ? 'XLSX o CSV'
+                            : `${selectedFiles.length} archivo${
+                                selectedFiles.length === 1 ? '' : 's'
+                              } seleccionado${
+                                selectedFiles.length === 1 ? '' : 's'
+                              }`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Formatos soportados: archivos .xlsx o .csv. Puedes
+                    seleccionar múltiples archivos.
+                  </p>
+                </div>
               </div>
 
               {selectedFiles.length > 0 && (
-                <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
-                  <p className="font-medium">
-                    {selectedFiles.length === 1
-                      ? 'Archivo listo para enviar'
-                      : `${selectedFiles.length} archivos listos para enviar`}
+                <div
+                  key={`file-container-${fileListKey}`}
+                  className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200"
+                >
+                  <p
+                    className="font-medium"
+                    key={`file-counter-${selectedFiles.length}`}
+                  >
+                    {getFileCounterText()}
                   </p>
                   <div className="mt-2 space-y-1">
                     {selectedFiles.map((file, index) => (
                       <div
-                        key={index}
+                        key={`${file.name}-${file.size}-${index}`}
                         className="flex items-center justify-between"
                       >
                         <p className="break-all text-xs">{file.name}</p>
