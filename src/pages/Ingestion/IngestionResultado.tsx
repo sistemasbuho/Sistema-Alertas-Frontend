@@ -829,12 +829,13 @@ const IngestionResultado: React.FC = () => {
         alertas: selectedData.map((item) => ({
           id: item.id,
           url: item.url,
-          contenido: item.mensaje_formateado || item.contenido,
+          contenido: item.contenido,
           fecha: item.fecha_publicacion || new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
           reach: item.reach || null,
           engagement: item.engagement || null,
+          emojis: item.mensaje_formateado || '',
         })),
       };
 

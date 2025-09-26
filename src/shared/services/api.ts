@@ -1202,6 +1202,7 @@ export interface EnvioAlertaRequest {
     autor?: string;
     reach?: number | null;
     engagement?: number | null;
+    emojis?: string;
   }>;
 }
 
