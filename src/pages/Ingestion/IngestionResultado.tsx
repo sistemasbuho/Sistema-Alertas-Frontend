@@ -102,8 +102,15 @@ type IngestionNavigationState = {
     errores?: unknown[];
     proyecto_keywords?: string[];
   };
+  multipleResults?: Array<{
+    file: string;
+    response?: any;
+    error?: any;
+    success: boolean;
+  }>;
   projectId?: string;
   projectName?: string | null;
+  isMultipleFiles?: boolean;
 };
 
 const buildFilterState = (
@@ -876,9 +883,79 @@ const IngestionResultado: React.FC = () => {
     }
   };
 
+  const multipleResults = navigationState?.multipleResults;
+  const isMultipleFiles = navigationState?.isMultipleFiles;
+
   return (
     <DashboardLayout title="Resultados de ingestión">
       <div className="space-y-4">
+        {isMultipleFiles && multipleResults && (
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+            <Card.Header>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                📁 Procesamiento de múltiples archivos
+              </h3>
+            </Card.Header>
+            <Card.Content>
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {multipleResults.filter((r) => r.success).length}
+                    </div>
+                    <div className="text-gray-600 dark:text-gray-400">
+                      Exitosos
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      {multipleResults.filter((r) => !r.success).length}
+                    </div>
+                    <div className="text-gray-600 dark:text-gray-400">
+                      Fallidos
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {multipleResults.length}
+                    </div>
+                    <div className="text-gray-600 dark:text-gray-400">
+                      Total
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-3">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                    Estado por archivo:
+                  </h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {multipleResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between text-sm py-1 px-2 rounded bg-white/50 dark:bg-gray-800/50"
+                      >
+                        <span className="truncate font-mono text-xs">
+                          {result.file}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            result.success
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                          }`}
+                        >
+                          {result.success ? '✓ OK' : '✗ Error'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card.Content>
+          </Card>
+        )}
+
         <div className="flex justify-end">
           <Button
             onClick={() => setShowSummaryCards(!showSummaryCards)}

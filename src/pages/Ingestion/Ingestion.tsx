@@ -28,7 +28,7 @@ const Ingestion: React.FC = () => {
   );
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedProjectName, setSelectedProjectName] = useState<string>('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fileInputKey, setFileInputKey] = useState<number>(0);
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
@@ -219,26 +219,31 @@ const Ingestion: React.FC = () => {
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
+    const files = Array.from(event.target.files || []);
 
-    if (!file) {
-      setSelectedFile(null);
+    if (files.length === 0) {
+      setSelectedFiles([]);
       return;
     }
 
-    const extension = file.name.split('.').pop()?.toLowerCase();
+    const invalidFiles = files.filter((file) => {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      return !extension || !ACCEPTED_EXTENSIONS.includes(extension);
+    });
 
-    if (!extension || !ACCEPTED_EXTENSIONS.includes(extension)) {
+    if (invalidFiles.length > 0) {
       showWarning(
         'Formato no soportado',
-        'Solo se permiten archivos en formato .xlsx o .csv.'
+        `Los siguientes archivos no son válidos: ${invalidFiles
+          .map((f) => f.name)
+          .join(', ')}. Solo se permiten archivos en formato .xlsx o .csv.`
       );
-      setSelectedFile(null);
+      setSelectedFiles([]);
       setFileInputKey((prev) => prev + 1);
       return;
     }
 
-    setSelectedFile(file);
+    setSelectedFiles(files);
   };
 
   const handleManualSubmit = async (
@@ -340,48 +345,89 @@ const Ingestion: React.FC = () => {
       return;
     }
 
-    if (!selectedFile) {
+    if (selectedFiles.length === 0) {
       showWarning(
-        'Archivo requerido',
-        'Selecciona un archivo .xlsx o .csv para continuar.'
+        'Archivo(s) requerido(s)',
+        'Selecciona al menos un archivo .xlsx o .csv para continuar.'
       );
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const response = await uploadIngestionDocument(
-        selectedProjectId,
-        selectedFile
-      );
+      // Procesar archivos uno por uno
+      const results = [];
+      for (const file of selectedFiles) {
+        if (!file) continue;
 
-      showSuccess(
-        'Ingestión iniciada',
-        'El archivo se ha enviado correctamente para su procesamiento.'
-      );
-      setSelectedFile(null);
+        try {
+          const response = await uploadIngestionDocument(
+            selectedProjectId,
+            file
+          );
+          results.push({ file: file.name, response, success: true });
+        } catch (fileError) {
+          console.error(`Error al subir ${file.name}:`, fileError);
+          results.push({ file: file.name, error: fileError, success: false });
+        }
+      }
+
+      const successCount = results.filter((r) => r.success).length;
+      const failureCount = results.filter((r) => !r.success).length;
+
+      if (successCount === selectedFiles.length) {
+        const mensaje =
+          selectedFiles.length === 1
+            ? 'El archivo se ha enviado correctamente para su procesamiento.'
+            : `Los ${successCount} archivos se han enviado correctamente para su procesamiento.`;
+        showSuccess('Ingestión iniciada', mensaje);
+      } else if (successCount > 0) {
+        const mensaje =
+          selectedFiles.length === 1
+            ? 'El archivo falló al procesarse.'
+            : `${successCount} de ${selectedFiles.length} archivos enviados correctamente. ${failureCount} archivo(s) fallaron.`;
+        showWarning('Ingestión parcial', mensaje);
+      } else {
+        const mensaje =
+          selectedFiles.length === 1
+            ? 'No se pudo enviar el archivo.'
+            : `No se pudo enviar ninguno de los ${selectedFiles.length} archivos.`;
+        showError('Error en la ingestión', mensaje);
+        return;
+      }
+
+      setSelectedFiles([]);
       setFileInputKey((prev) => prev + 1);
 
-      navigate('/ingestion/resultados', {
-        state: {
-          ingestionResponse: response,
-          projectId: selectedProjectId,
-          projectName: selectedProjectName,
-        },
-      });
+      if (successCount > 0) {
+        navigate('/ingestion/resultados', {
+          state: {
+            ingestionResponse:
+              results.find((r) => r.success)?.response || results,
+            multipleResults: results,
+            projectId: selectedProjectId,
+            projectName: selectedProjectName,
+            isMultipleFiles: selectedFiles.length > 1,
+          },
+        });
+      }
     } catch (error: any) {
-      console.error('Error al enviar archivo de ingestión:', error);
+      console.error('Error al enviar archivo(s) de ingestión:', error);
+      const tituloError =
+        selectedFiles.length === 1
+          ? 'Error al enviar el archivo'
+          : 'Error al enviar los archivos';
+
       if (error?.response?.status === 400) {
-        showError(
-          'Error al enviar el archivo',
-          'La URL ya existe para este proyecto'
-        );
+        showError(tituloError, 'La URL ya existe para este proyecto');
       } else {
         const message =
           error?.response?.data?.message ||
           error?.message ||
-          'Ocurrió un error al procesar el archivo.';
-        showError('Error al enviar el archivo', message);
+          (selectedFiles.length === 1
+            ? 'Ocurrió un error al procesar el archivo.'
+            : 'Ocurrió un error al procesar los archivos.');
+        showError(tituloError, message);
       }
     } finally {
       setIsSubmitting(false);
@@ -516,17 +562,44 @@ const Ingestion: React.FC = () => {
                   type="file"
                   label="Documento"
                   accept=".xlsx,.csv"
+                  multiple
                   onChange={handleFileChange}
                   className="cursor-pointer file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700 dark:file:bg-blue-500 dark:hover:file:bg-blue-600"
-                  helperText="Formatos soportados: archivos .xlsx o .csv."
+                  helperText="Formatos soportados: archivos .xlsx o .csv. Puedes seleccionar múltiples archivos."
                   required
                 />
               </div>
 
-              {selectedFile && (
+              {selectedFiles.length > 0 && (
                 <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
-                  <p className="font-medium">Archivo listo para enviar</p>
-                  <p className="mt-1 break-all">{selectedFile.name}</p>
+                  <p className="font-medium">
+                    {selectedFiles.length === 1
+                      ? 'Archivo listo para enviar'
+                      : `${selectedFiles.length} archivos listos para enviar`}
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between"
+                      >
+                        <p className="break-all text-xs">{file.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFiles = selectedFiles.filter(
+                              (_, i) => i !== index
+                            );
+                            setSelectedFiles(newFiles);
+                          }}
+                          className="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
+                          title="Eliminar archivo"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -537,7 +610,7 @@ const Ingestion: React.FC = () => {
                   disabled={
                     isSubmitting ||
                     !selectedProjectId ||
-                    !selectedFile ||
+                    selectedFiles.length === 0 ||
                     isLoadingProjects
                   }
                 >
