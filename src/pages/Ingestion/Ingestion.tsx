@@ -9,6 +9,8 @@ import { useToast } from '@shared/contexts/ToastContext';
 import {
   getIngestionProjects,
   uploadIngestionDocument,
+  uploadMultipleIngestionDocuments,
+  uploadIngestionDocumentsInParallel,
   triggerManualIngestion,
   type Proyecto,
 } from '@shared/services/api';
@@ -369,25 +371,50 @@ const Ingestion: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      // Procesar archivos uno por uno
-      const results = [];
-      for (const file of selectedFiles) {
-        if (!file) continue;
+      let results = [];
+      let successCount = 0;
+      let failureCount = 0;
+
+      if (selectedFiles.length === 1) {
+        const singleFile = selectedFiles[0];
+        if (!singleFile) return;
 
         try {
           const response = await uploadIngestionDocument(
             selectedProjectId,
-            file
+            singleFile
           );
-          results.push({ file: file.name, response, success: true });
-        } catch (fileError) {
-          console.error(`Error al subir ${file.name}:`, fileError);
-          results.push({ file: file.name, error: fileError, success: false });
+          results = [{ file: singleFile.name, response, success: true }];
+          successCount = 1;
+          failureCount = 0;
+        } catch (error) {
+          results = [{ file: singleFile.name, error, success: false }];
+          successCount = 0;
+          failureCount = 1;
+        }
+      } else {
+        try {
+          const response = await uploadMultipleIngestionDocuments(
+            selectedProjectId,
+            selectedFiles
+          );
+
+          results = selectedFiles.map((file) => ({
+            file: file.name,
+            response,
+            success: true,
+          }));
+          successCount = selectedFiles.length;
+          failureCount = 0;
+        } catch (multipleUploadError) {
+          results = await uploadIngestionDocumentsInParallel(
+            selectedProjectId,
+            selectedFiles
+          );
+          successCount = results.filter((r) => r.success).length;
+          failureCount = results.filter((r) => !r.success).length;
         }
       }
-
-      const successCount = results.filter((r) => r.success).length;
-      const failureCount = results.filter((r) => !r.success).length;
 
       if (successCount === selectedFiles.length) {
         const mensaje =

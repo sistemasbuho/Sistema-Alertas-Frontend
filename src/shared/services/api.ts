@@ -493,6 +493,64 @@ export const uploadIngestionDocument = async (
   }
 };
 
+export const uploadMultipleIngestionDocuments = async (
+  proyectoId: string,
+  files: File[]
+): Promise<any> => {
+  const formData = new FormData();
+
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  formData.append('proyecto_id', proyectoId);
+
+  const defaultHeaders = apiClient.defaults.headers.common;
+  const hadContentType =
+    !!defaultHeaders &&
+    Object.prototype.hasOwnProperty.call(defaultHeaders, 'Content-Type');
+  const previousContentType = hadContentType
+    ? defaultHeaders['Content-Type']
+    : undefined;
+
+  try {
+    if (hadContentType) {
+      delete defaultHeaders['Content-Type'];
+    }
+
+    const response = await apiClient.post(
+      buildIngestionEndpoint(proyectoId),
+      formData
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error subiendo múltiples documentos de ingestión:', error);
+    throw error;
+  } finally {
+    if (hadContentType) {
+      defaultHeaders['Content-Type'] = previousContentType;
+    }
+  }
+};
+
+export const uploadIngestionDocumentsInParallel = async (
+  proyectoId: string,
+  files: File[]
+): Promise<
+  Array<{ file: string; response?: any; error?: any; success: boolean }>
+> => {
+  const uploadPromises = files.map(async (file) => {
+    try {
+      const response = await uploadIngestionDocument(proyectoId, file);
+      return { file: file.name, response, success: true };
+    } catch (error) {
+      return { file: file.name, error, success: false };
+    }
+  });
+
+  return Promise.all(uploadPromises);
+};
+
 export const triggerManualIngestion = async (
   proyectoId: string,
   url: string
