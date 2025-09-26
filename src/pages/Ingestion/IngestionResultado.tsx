@@ -101,6 +101,9 @@ type IngestionNavigationState = {
     listado?: IngestionResultItem[];
     errores?: unknown[];
     proyecto_keywords?: string[];
+    duplicados?: number;
+    descartados?: number;
+    proveedor?: string;
   };
   multipleResults?: Array<{
     file: string;
@@ -531,25 +534,41 @@ const IngestionResultado: React.FC = () => {
       medios[0]?.proyecto_nombre ||
       (projectId ? `Proyecto ${projectId.slice(0, 8)}` : 'Proyecto sin nombre');
 
+    let duplicadosFromAPI = ingestionResponseFromState?.duplicados ?? 0;
+    let descartadosFromAPI = ingestionResponseFromState?.descartados ?? 0;
+
+    const multipleResults = navigationState?.multipleResults;
+    if (multipleResults && multipleResults.length > 0) {
+      const totalDuplicados = multipleResults.reduce((sum, result) => {
+        return sum + (result.response?.duplicados ?? 0);
+      }, 0);
+      const totalDescartados = multipleResults.reduce((sum, result) => {
+        return sum + (result.response?.descartados ?? 0);
+      }, 0);
+
+      duplicadosFromAPI = totalDuplicados;
+      descartadosFromAPI = totalDescartados;
+    }
+
     return {
       archivo: {
         nombre: 'Archivo de ingestión',
         proyecto: proyectoNombre,
         cargadoPor: '-',
         fecha: latestDate || new Date().toISOString(),
-        filas: totalItems,
+        filas: totalItems + duplicadosFromAPI + descartadosFromAPI,
       },
       resumen: {
         procesados: totalItems,
         medios: totalMedios,
         redes: totalRedes,
-        duplicados: 0,
-        descartados: 0,
+        duplicados: duplicadosFromAPI,
+        descartados: descartadosFromAPI,
         duracion: '-',
       },
       incidencias: [],
     };
-  }, [medios, projectId]);
+  }, [medios, projectId, ingestionResponseFromState]);
 
   const handleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
