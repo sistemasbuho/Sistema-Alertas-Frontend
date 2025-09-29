@@ -116,6 +116,24 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
       setCampos((prevCampos) => {
         const newCampos = [...prevCampos];
         if (newCampos[index]) {
+          if (field === 'orden') {
+            const newOrder = parseInt(value) || 1;
+
+            const existingFieldWithSameOrder = newCampos.find(
+              (campo, idx) => idx !== index && campo.orden === newOrder
+            );
+
+            if (existingFieldWithSameOrder) {
+              const currentFieldOrder = newCampos[index].orden;
+              existingFieldWithSameOrder.orden = currentFieldOrder;
+
+              showSuccess(
+                'Orden ajustado automáticamente',
+                `El campo "${existingFieldWithSameOrder.campo}" ahora tiene el orden ${currentFieldOrder}`
+              );
+            }
+          }
+
           newCampos[index] = {
             ...newCampos[index],
             [field]: value,
@@ -124,7 +142,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
         return newCampos;
       });
     },
-    []
+    [showSuccess]
   );
 
   // const handleRemoveCampo = (index: number) => {
@@ -242,11 +260,16 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
               los campos no pueden modificarse.
             </p>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
                 <strong>Salto de Línea:</strong> Cuando está marcado, el campo
                 aparecerá en una nueva línea. Cuando está desmarcado, el
                 siguiente campo aparecerá en la misma línea (útil para agrupar
                 campos relacionados).
+              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                <strong>Orden:</strong> Los números de orden deben ser únicos.
+                Si intentas usar un número ya asignado, el sistema intercambiará
+                automáticamente las posiciones de los campos.
               </p>
             </div>
 
@@ -328,7 +351,14 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                                   )
                                 }
                                 className="text-center"
+                                title={`Órdenes en uso: ${campos
+                                  .map((c) => c.orden)
+                                  .sort((a, b) => a - b)
+                                  .join(', ')}`}
                               />
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Actual: {campo.orden}
+                              </p>
                             </div>
 
                             <div>

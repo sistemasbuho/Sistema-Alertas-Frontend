@@ -924,6 +924,34 @@ const IngestionResultado: React.FC = () => {
   return (
     <DashboardLayout title="Resultados de ingestión">
       <div className="space-y-4">
+        {(stateProjectName || ingestionSummary.archivo.proyecto) && (
+          <Card>
+            <Card.Content className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                    Proyecto:{' '}
+                    {stateProjectName || ingestionSummary.archivo.proyecto}
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Resultados de la ingestión para este proyecto
+                  </p>
+                </div>
+                {stateProjectId && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      ID del proyecto
+                    </p>
+                    <p className="text-sm font-mono text-gray-700 dark:text-gray-300">
+                      {stateProjectId}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card.Content>
+          </Card>
+        )}
+
         <div className="flex justify-end">
           <Button
             onClick={() => setShowSummaryCards(!showSummaryCards)}
