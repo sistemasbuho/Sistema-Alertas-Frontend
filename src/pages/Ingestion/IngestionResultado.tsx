@@ -841,10 +841,16 @@ const IngestionResultado: React.FC = () => {
         message: 'Preparando alertas...',
       });
 
+      const projectKeywords =
+        selectedData.length > 0
+          ? selectedData[0]?.proyecto_keywords || []
+          : ingestionResponseFromState?.proyecto_keywords || [];
+
       const payload: EnvioAlertaRequest = {
         proyecto_id: projectId,
         tipo_alerta: tipoAlerta,
         enviar: true,
+        keywords: projectKeywords,
         alertas: selectedData.map((item) => ({
           id: item.id,
           url: item.url,
@@ -1264,10 +1270,35 @@ const IngestionResultado: React.FC = () => {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
-                <span>
-                  {filteredMedios.length} registros encontrados ·{' '}
-                  {selectedItems.length} seleccionados
-                </span>
+                <div className="flex flex-col gap-1">
+                  <span>
+                    {filteredMedios.length} registros encontrados ·{' '}
+                    {selectedItems.length} seleccionados
+                  </span>
+                  {selectedItems.length > 0 && (
+                    <div className="text-xs">
+                      {(() => {
+                        const projectKeywords =
+                          selectedItems.length > 0
+                            ? filteredMedios.find((item) =>
+                                selectedItems.includes(item.id)
+                              )?.proyecto_keywords || []
+                            : ingestionResponseFromState?.proyecto_keywords ||
+                              [];
+
+                        return projectKeywords.length > 0 ? (
+                          <span className="text-blue-600 dark:text-blue-400">
+                            Keywords a enviar: {projectKeywords.join(', ')}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Sin keywords definidas para este proyecto
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
                 {filters.hasActiveFilters() && (
                   <button
                     onClick={() => {

@@ -1193,6 +1193,7 @@ export interface EnvioAlertaRequest {
   proyecto_id: string;
   tipo_alerta: 'medios' | 'redes';
   enviar: boolean;
+  keywords?: string[];
   alertas: Array<{
     id: string;
     url: string;
