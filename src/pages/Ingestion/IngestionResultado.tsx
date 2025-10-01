@@ -213,10 +213,16 @@ const IngestionResultado: React.FC = () => {
   const stateProjectId = navigationState?.projectId ?? undefined;
   const stateProjectName = navigationState?.projectName ?? null;
   const ingestionResponseFromState = navigationState?.ingestionResponse;
-  const hasIngestionResponse = Boolean(
-    ingestionResponseFromState?.listado &&
-      ingestionResponseFromState.listado.length > 0
+
+  const hasIngestionResponse = useMemo(
+    () =>
+      Boolean(
+        ingestionResponseFromState?.listado &&
+          ingestionResponseFromState.listado.length > 0
+      ),
+    [ingestionResponseFromState]
   );
+
   const [searchParams] = useSearchParams();
   const initialProjectId =
     stateProjectId || searchParams.get('proyecto') || DEFAULT_PROJECT_ID;
@@ -325,12 +331,8 @@ const IngestionResultado: React.FC = () => {
       showSuccess('Ingestión completada', ingestionResponseFromState.mensaje);
       hasShownSuccessMessage.current = true;
     }
-  }, [
-    hasIngestionResponse,
-    ingestionResponseFromState,
-    stateProjectId,
-    stateProjectName,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasIngestionResponse]);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -384,13 +386,8 @@ const IngestionResultado: React.FC = () => {
     return () => {
       isSubscribed = false;
     };
-  }, [
-    hasIngestionResponse,
-    projectId,
-    reloadToken,
-    showError,
-    extractErrorMessage,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasIngestionResponse, projectId, reloadToken]);
 
   const filters = useMemo(
     () =>
