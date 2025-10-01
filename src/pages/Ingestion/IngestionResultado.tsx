@@ -204,7 +204,7 @@ const normalizeIngestionItem = (
 };
 
 const IngestionResultado: React.FC = () => {
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showWarning } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const hasShownSuccessMessage = useRef(false);
@@ -328,7 +328,11 @@ const IngestionResultado: React.FC = () => {
     setIsLoadingData(false);
 
     if (ingestionResponseFromState.mensaje && !hasShownSuccessMessage.current) {
-      showSuccess('Ingestión completada', ingestionResponseFromState.mensaje);
+      if (normalizedData?.length === 0) {
+        showWarning('Ingestión completada', ingestionResponseFromState.mensaje);
+      } else {
+        showSuccess('Ingestión completada', ingestionResponseFromState.mensaje);
+      }
       hasShownSuccessMessage.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

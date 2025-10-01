@@ -321,17 +321,29 @@ const Ingestion: React.FC = () => {
     } catch (error: any) {
       console.error('Error al enviar alerta manual de ingestión:', error);
 
-      if (error?.response?.status === 400) {
+      const status = error?.response?.status;
+      const errorData = error?.response?.data;
+      const backendMessage =
+        errorData?.message ||
+        errorData?.detail ||
+        errorData?.error ||
+        error?.message;
+
+      if (status === 400) {
         showError(
           'Error al enviar la alerta manual',
-          'La URL ya existe para este proyecto'
+          backendMessage || 'La URL ya existe para este proyecto'
+        );
+      } else if (status === 404) {
+        showError(
+          'Error al enviar la alerta manual',
+          backendMessage || 'No se encontró el recurso especificado'
         );
       } else {
-        const message =
-          error?.response?.data?.message ||
-          error?.message ||
-          'Ocurrió un error al procesar la alerta manual.';
-        showError('Error al enviar la alerta manual', message);
+        showError(
+          'Error al enviar la alerta manual',
+          backendMessage || 'Ocurrió un error al procesar la alerta manual.'
+        );
       }
     } finally {
       setIsManualSubmitting(false);
@@ -459,16 +471,30 @@ const Ingestion: React.FC = () => {
           ? 'Error al enviar el archivo'
           : 'Error al enviar los archivos';
 
-      if (error?.response?.status === 400) {
-        showError(tituloError, 'La URL ya existe para este proyecto');
+      const status = error?.response?.status;
+      const errorData = error?.response?.data;
+      const backendMessage =
+        errorData?.message ||
+        errorData?.detail ||
+        errorData?.error ||
+        error?.message;
+
+      if (status === 400) {
+        showError(
+          tituloError,
+          backendMessage || 'La URL ya existe para este proyecto'
+        );
+      } else if (status === 404) {
+        showError(
+          tituloError,
+          backendMessage || 'No se encontró el recurso especificado'
+        );
       } else {
-        const message =
-          error?.response?.data?.message ||
-          error?.message ||
-          (selectedFiles.length === 1
+        const defaultMessage =
+          selectedFiles.length === 1
             ? 'Ocurrió un error al procesar el archivo.'
-            : 'Ocurrió un error al procesar los archivos.');
-        showError(tituloError, message);
+            : 'Ocurrió un error al procesar los archivos.';
+        showError(tituloError, backendMessage || defaultMessage);
       }
     } finally {
       setIsSubmitting(false);
