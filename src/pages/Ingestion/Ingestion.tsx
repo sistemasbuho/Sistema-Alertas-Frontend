@@ -705,6 +705,7 @@ const Ingestion: React.FC = () => {
                               (_, i) => i !== index
                             );
                             setSelectedFiles(newFiles);
+                            setFileInputKey((prev) => prev + 1);
                           }}
                           className="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
                           title="Eliminar archivo"
