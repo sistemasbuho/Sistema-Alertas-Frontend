@@ -44,6 +44,7 @@ type FilterState = {
     autor?: string;
     url?: string;
     estado_enviado?: string;
+    estado_revisado?: string;
   };
   updateFilters: (newFilters: Record<string, string>) => void;
   clearFilters: () => void;
@@ -60,7 +61,8 @@ type MediosItem = {
   engagement: number | null;
   fecha_publicacion: string;
   created_at: string;
-  estado_revisado: string;
+  estado_enviado?: boolean | string;
+  estado_revisado?: boolean | string;
   proyecto: string;
   proyecto_nombre: string;
   proyecto_keywords: string[];
@@ -123,6 +125,7 @@ const buildFilterState = (
     autor?: string;
     url?: string;
     estado_enviado?: string;
+    estado_revisado?: string;
   },
   setter: React.Dispatch<
     React.SetStateAction<{
@@ -130,6 +133,7 @@ const buildFilterState = (
       autor?: string;
       url?: string;
       estado_enviado?: string;
+      estado_revisado?: string;
     }>
   >,
   onFiltersChange?: () => void
@@ -141,7 +145,13 @@ const buildFilterState = (
       onFiltersChange?.();
     },
     clearFilters: () => {
-      setter({ proyecto_nombre: '', autor: '', url: '', estado_enviado: '' });
+      setter({
+        proyecto_nombre: '',
+        autor: '',
+        url: '',
+        estado_enviado: '',
+        estado_revisado: '',
+      });
       onFiltersChange?.();
     },
     hasActiveFilters: () =>
@@ -174,7 +184,8 @@ const normalizeIngestionItem = (
     engagement: item.engagement ?? null,
     fecha_publicacion: baseDate,
     created_at: baseDate,
-    estado_revisado: 'Pendiente',
+    estado_enviado: item.estado_enviado,
+    estado_revisado: item.estado_revisado,
     proyecto: item.proyecto || fallbackProjectId,
     proyecto_nombre:
       item.proyecto_nombre ||
@@ -241,11 +252,13 @@ const IngestionResultado: React.FC = () => {
     autor?: string;
     url?: string;
     estado_enviado?: string;
+    estado_revisado?: string;
   }>({
     proyecto_nombre: '',
     autor: '',
     url: '',
     estado_enviado: '',
+    estado_revisado: '',
   });
 
   const [pagination, setPagination] = useState({
@@ -443,6 +456,7 @@ const IngestionResultado: React.FC = () => {
         autor?: string;
         url?: string;
         estado_enviado?: string;
+        estado_revisado?: string;
       }
     ) => {
       return data.filter((item) => {
@@ -461,12 +475,26 @@ const IngestionResultado: React.FC = () => {
           : true;
         const matchesEstadoEnviado = filtersToApply.estado_enviado
           ? filtersToApply.estado_enviado === 'true'
-            ? item.estado_revisado === 'Enviado'
-            : item.estado_revisado !== 'Enviado'
+            ? item.estado_enviado === true || item.estado_enviado === 'Enviado'
+            : item.estado_enviado === false ||
+              item.estado_enviado === 'Pendiente' ||
+              !item.estado_enviado
+          : true;
+        const matchesEstadoRevisado = filtersToApply.estado_revisado
+          ? filtersToApply.estado_revisado === 'true'
+            ? item.estado_revisado === true ||
+              item.estado_revisado === 'Revisado'
+            : item.estado_revisado === false ||
+              item.estado_revisado === 'Pendiente' ||
+              !item.estado_revisado
           : true;
 
         return (
-          matchesProyecto && matchesAutor && matchesUrl && matchesEstadoEnviado
+          matchesProyecto &&
+          matchesAutor &&
+          matchesUrl &&
+          matchesEstadoEnviado &&
+          matchesEstadoRevisado
         );
       });
     },

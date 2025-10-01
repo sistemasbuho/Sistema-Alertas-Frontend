@@ -590,6 +590,8 @@ export interface IngestionResultItem {
   emojis?: string[];
   mensaje?: string | null;
   mensaje_formateado?: string | null;
+  estado_enviado?: boolean | string;
+  estado_revisado?: boolean | string;
 }
 
 export const getIngestionResults = async (
@@ -658,6 +660,7 @@ export interface MediosPaginationParams {
   autor?: string;
   url?: string;
   estado_enviado?: boolean;
+  estado_revisado?: boolean;
 }
 
 export const getMedios = async (
@@ -674,6 +677,8 @@ export const getMedios = async (
     if (params?.url) queryParams.append('url', params.url);
     if (params?.estado_enviado !== undefined)
       queryParams.append('estado_enviado', params.estado_enviado.toString());
+    if (params?.estado_revisado !== undefined)
+      queryParams.append('estado_revisado', params.estado_revisado.toString());
 
     const url = `/api/medios/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''
@@ -720,6 +725,7 @@ export interface RedesPaginationParams {
   autor?: string;
   url?: string;
   estado_enviado?: boolean;
+  estado_revisado?: boolean;
 }
 
 export const getRedes = async (
@@ -736,6 +742,8 @@ export const getRedes = async (
     if (params?.url) queryParams.append('url', params.url);
     if (params?.estado_enviado !== undefined)
       queryParams.append('estado_enviado', params.estado_enviado.toString());
+    if (params?.estado_revisado !== undefined)
+      queryParams.append('estado_revisado', params.estado_revisado.toString());
 
     const url = `/api/redes/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''

@@ -10,6 +10,7 @@ interface FilterState {
     autor?: string;
     url?: string;
     estado_enviado?: string;
+    estado_revisado?: string;
   };
   updateFilters: (newFilters: any) => void;
   clearFilters: () => void;
@@ -50,7 +51,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {activeTab === 'medios' ? (
           <>
             <div>
@@ -100,6 +101,42 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 placeholder="Ej: https://eltiempo.com/noticia/123"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estado Enviado
+              </label>
+              <select
+                value={mediosFilters.filters.estado_enviado || ''}
+                onChange={(e) =>
+                  mediosFilters.updateFilters({
+                    estado_enviado: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Todos</option>
+                <option value="true">Enviado</option>
+                <option value="false">No Enviado</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estado Revisado
+              </label>
+              <select
+                value={mediosFilters.filters.estado_revisado || ''}
+                onChange={(e) =>
+                  mediosFilters.updateFilters({
+                    estado_revisado: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Todos</option>
+                <option value="true">Revisado</option>
+                <option value="false">Pendiente</option>
+              </select>
             </div>
           </>
         ) : (
@@ -151,6 +188,42 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 placeholder="Ej: https://twitter.com/post/123"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estado Enviado
+              </label>
+              <select
+                value={redesFilters.filters.estado_enviado || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    estado_enviado: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Todos</option>
+                <option value="true">Enviado</option>
+                <option value="false">No Enviado</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estado Revisado
+              </label>
+              <select
+                value={redesFilters.filters.estado_revisado || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    estado_revisado: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Todos</option>
+                <option value="true">Revisado</option>
+                <option value="false">Pendiente</option>
+              </select>
             </div>
           </>
         )}

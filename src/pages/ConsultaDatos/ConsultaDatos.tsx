@@ -73,13 +73,15 @@ const ConsultaDatos: React.FC = () => {
     autor: '',
     url: '',
     estado_enviado: '',
+    estado_revisado: '',
   });
 
   const redesFilters = useUrlFilters({
     proyecto_nombre: '',
     autor: '',
     url: '',
-    estado_enviado: '', // No default filter - shows all items
+    estado_enviado: '',
+    estado_revisado: '',
   });
 
   const [isInitializing, setIsInitializing] = useState(true);
@@ -176,6 +178,8 @@ const ConsultaDatos: React.FC = () => {
             activeFilters.proyecto = value;
           } else if (key === 'estado_enviado') {
             activeFilters.estado_enviado = value === 'true';
+          } else if (key === 'estado_revisado') {
+            activeFilters.estado_revisado = value === 'true';
           } else {
             (activeFilters as any)[key] = value;
           }
@@ -207,6 +211,8 @@ const ConsultaDatos: React.FC = () => {
             activeFilters.proyecto = value;
           } else if (key === 'estado_enviado') {
             activeFilters.estado_enviado = value === 'true';
+          } else if (key === 'estado_revisado') {
+            activeFilters.estado_revisado = value === 'true';
           } else {
             (activeFilters as any)[key] = value;
           }
