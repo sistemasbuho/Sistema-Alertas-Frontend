@@ -466,6 +466,9 @@ const Ingestion: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error al enviar archivo(s) de ingestión:', error);
+      console.error('Error response data:', error?.response?.data);
+      console.error('Error response status:', error?.response?.status);
+
       const tituloError =
         selectedFiles.length === 1
           ? 'Error al enviar el archivo'
@@ -473,16 +476,23 @@ const Ingestion: React.FC = () => {
 
       const status = error?.response?.status;
       const errorData = error?.response?.data;
-      const backendMessage =
+
+      let backendMessage =
+        errorData?.mensaje ||
         errorData?.message ||
         errorData?.detail ||
         errorData?.error ||
         error?.message;
 
+      if (typeof errorData === 'string') {
+        backendMessage = errorData;
+      }
+
       if (status === 400) {
         showError(
           tituloError,
-          backendMessage || 'La URL ya existe para este proyecto'
+          backendMessage ||
+            'Error al procesar el archivo. Verifica el formato y contenido.'
         );
       } else if (status === 404) {
         showError(
