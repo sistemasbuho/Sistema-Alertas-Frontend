@@ -441,11 +441,32 @@ const Ingestion: React.FC = () => {
             : `${successCount} de ${selectedFiles.length} archivos enviados correctamente. ${failureCount} archivo(s) fallaron.`;
         showWarning('Ingestión parcial', mensaje);
       } else {
-        const mensaje =
+        let mensajeError =
           selectedFiles.length === 1
             ? 'No se pudo enviar el archivo.'
             : `No se pudo enviar ninguno de los ${selectedFiles.length} archivos.`;
-        showError('Error en la ingestión', mensaje);
+
+        if (results.length > 0 && results[0]) {
+          const firstResult = results[0] as any;
+          const errorObj = firstResult.error;
+
+          if (errorObj) {
+            const errorData = errorObj?.response?.data;
+
+            const backendMessage =
+              errorData?.mensaje ||
+              errorData?.message ||
+              errorData?.detail ||
+              errorData?.error ||
+              errorObj?.message;
+
+            if (backendMessage) {
+              mensajeError = backendMessage;
+            }
+          }
+        }
+
+        showError('Error en la ingestión', mensajeError);
         return;
       }
 
@@ -469,13 +490,13 @@ const Ingestion: React.FC = () => {
       console.error('Error response data:', error?.response?.data);
       console.error('Error response status:', error?.response?.status);
 
+      const status = error?.response?.status;
+      const errorData = error?.response?.data;
+
       const tituloError =
         selectedFiles.length === 1
           ? 'Error al enviar el archivo'
           : 'Error al enviar los archivos';
-
-      const status = error?.response?.status;
-      const errorData = error?.response?.data;
 
       let backendMessage =
         errorData?.mensaje ||
