@@ -679,7 +679,10 @@ const ConsultaDatos: React.FC = () => {
           url: item.url,
           contenido: item.contenido,
           fecha:
-            item.fecha_publicacion || item.fecha || new Date().toISOString(),
+            item.fecha_publicacion ||
+            item.fecha ||
+            item.created_at ||
+            new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
           reach: item.reach ?? null,

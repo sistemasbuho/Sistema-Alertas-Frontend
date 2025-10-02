@@ -165,10 +165,7 @@ const normalizeIngestionItem = (
   item: IngestionResultItem,
   fallbackProjectId: string
 ): MediosItem => {
-  const parsedDate = item.fecha ? new Date(item.fecha) : new Date();
-  const baseDate = Number.isNaN(parsedDate.getTime())
-    ? new Date().toISOString()
-    : parsedDate.toISOString();
+  const baseDate = item.fecha || new Date().toISOString();
 
   return {
     id: item.id,
@@ -874,7 +871,10 @@ const IngestionResultado: React.FC = () => {
           id: item.id,
           url: item.url,
           contenido: item.contenido,
-          fecha: item.fecha_publicacion || new Date().toISOString(),
+          fecha:
+            item.fecha_publicacion ||
+            item.created_at ||
+            new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
           reach: item.reach ?? null,
