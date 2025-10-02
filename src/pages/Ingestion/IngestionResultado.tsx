@@ -246,11 +246,6 @@ const IngestionResultado: React.FC = () => {
   const [editingAlert, setEditingAlert] = useState<any>(null);
   const [isAlertLoading, setIsAlertLoading] = useState(false);
   const [isEnviandoAlertas, setIsEnviandoAlertas] = useState(false);
-  const [alertProgress, setAlertProgress] = useState({
-    current: 0,
-    total: 0,
-    message: '',
-  });
   const [showSummaryCards, setShowSummaryCards] = useState(false);
 
   const [filtersValues, setFiltersValues] = useState<{
@@ -864,11 +859,6 @@ const IngestionResultado: React.FC = () => {
 
     try {
       setIsEnviandoAlertas(true);
-      setAlertProgress({
-        current: 0,
-        total: selectedData.length,
-        message: 'Preparando alertas...',
-      });
 
       const projectKeywords =
         selectedData.length > 0
@@ -893,28 +883,11 @@ const IngestionResultado: React.FC = () => {
         })),
       };
 
-      setAlertProgress((prev) => ({
-        ...prev,
-        message: 'Enviando alertas al servidor...',
-      }));
-
       const result = await enviarAlertasAPI(payload);
 
       const totalEnviadas = selectedData.length;
 
-      setAlertProgress((prev) => ({
-        ...prev,
-        current: totalEnviadas,
-        message: 'Finalizando envío...',
-      }));
-
       if (result.success) {
-        setAlertProgress((prev) => ({
-          ...prev,
-          current: prev.total,
-          message: 'Alertas enviadas correctamente',
-        }));
-
         showSuccess(
           'Alertas enviadas correctamente',
           `Total enviadas: ${totalEnviadas}`
@@ -926,11 +899,6 @@ const IngestionResultado: React.FC = () => {
           navigate('/ingestion');
         }, 2000);
       } else {
-        setAlertProgress((prev) => ({
-          ...prev,
-          message: 'Error en el envío',
-        }));
-
         showError(
           'Error al enviar',
           result.message || 'No se pudieron enviar las alertas'
@@ -939,20 +907,12 @@ const IngestionResultado: React.FC = () => {
     } catch (error: any) {
       console.error('Error enviando alertas:', error);
 
-      setAlertProgress((prev) => ({
-        ...prev,
-        message: 'Error en el envío',
-      }));
-
       showError(
         'Error al enviar',
         error.message || 'No se pudieron enviar las alertas'
       );
     } finally {
       setIsEnviandoAlertas(false);
-      setTimeout(() => {
-        setAlertProgress({ current: 0, total: 0, message: '' });
-      }, 2000);
     }
   };
 
@@ -1268,27 +1228,10 @@ const IngestionResultado: React.FC = () => {
                           )}
                         </Button>
 
-                        {isEnviandoAlertas && alertProgress.total > 0 && (
-                          <div className="w-full">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs text-gray-600 dark:text-gray-400">
-                                {alertProgress.message}
-                              </span>
-                              <span className="text-xs text-gray-600 dark:text-gray-400">
-                                {alertProgress.current}/{alertProgress.total}
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                              <div
-                                className="bg-green-600 h-2 rounded-full transition-all duration-300 ease-out"
-                                style={{
-                                  width: `${
-                                    (alertProgress.current /
-                                      alertProgress.total) *
-                                    100
-                                  }%`,
-                                }}
-                              ></div>
+                        {isEnviandoAlertas && (
+                          <div className="w-full min-w-[200px]">
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                              <div className="h-full bg-green-600 animate-progress-loading"></div>
                             </div>
                           </div>
                         )}
