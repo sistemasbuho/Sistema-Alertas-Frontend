@@ -672,7 +672,7 @@ const Ingestion: React.FC = () => {
                           </p>
                         </div>
                         {selectedProject?.tipo_envio === 'automatico' && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-xs font-medium whitespace-nowrap">
                             <svg
                               className="w-3.5 h-3.5"
                               fill="none"
