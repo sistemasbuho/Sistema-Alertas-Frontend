@@ -682,8 +682,8 @@ const ConsultaDatos: React.FC = () => {
             item.fecha_publicacion || item.fecha || new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
-          reach: item.reach || null,
-          engagement: item.engagement || null,
+          reach: item.reach ?? null,
+          engagement: item.engagement ?? null,
           emojis: (item as any).emojis_only || '',
         })),
       };

@@ -877,8 +877,8 @@ const IngestionResultado: React.FC = () => {
           fecha: item.fecha_publicacion || new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
-          reach: item.reach || null,
-          engagement: item.engagement || null,
+          reach: item.reach ?? null,
+          engagement: item.engagement ?? null,
           emojis: item.emojis_only || '',
         })),
       };

@@ -278,8 +278,10 @@ const DataTable: React.FC<DataTableProps> = ({
                     </td>
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
-                        {item.engagement !== null
-                          ? formatNumber(item.engagement)
+                        {item.engagement !== null &&
+                        item.engagement !== undefined &&
+                        !isNaN(Number(item.engagement))
+                          ? formatNumber(Number(item.engagement))
                           : 'N/A'}
                       </span>
                     </td>
@@ -439,7 +441,11 @@ const DataTable: React.FC<DataTableProps> = ({
                     </td>
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                        {formatNumber(item.engagement || 0)}
+                        {item.engagement !== null &&
+                        item.engagement !== undefined &&
+                        !isNaN(Number(item.engagement))
+                          ? formatNumber(Number(item.engagement))
+                          : formatNumber(0)}
                       </span>
                     </td>
                     <td className="px-4 py-4 w-32">
