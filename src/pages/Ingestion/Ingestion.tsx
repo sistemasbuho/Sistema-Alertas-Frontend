@@ -30,6 +30,7 @@ const Ingestion: React.FC = () => {
   );
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedProjectName, setSelectedProjectName] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<Proyecto | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fileInputKey, setFileInputKey] = useState<number>(0);
@@ -189,6 +190,7 @@ const Ingestion: React.FC = () => {
     setProjectSearchTerm(value);
     setSelectedProjectId('');
     setSelectedProjectName('');
+    setSelectedProject(null);
     setHasSearchedProjects(false);
     setProjectSearchError(null);
 
@@ -203,6 +205,7 @@ const Ingestion: React.FC = () => {
   const handleSelectProject = (project: Proyecto) => {
     setSelectedProjectId(project.id);
     setSelectedProjectName(project.nombre);
+    setSelectedProject(project);
     setProjectSearchTerm(project.nombre);
     setProjects([]);
     setHasSearchedProjects(false);
@@ -428,12 +431,21 @@ const Ingestion: React.FC = () => {
         }
       }
 
+      const esAutomatico = selectedProject?.tipo_envio === 'automatico';
+
       if (successCount === selectedFiles.length) {
-        const mensaje =
-          selectedFiles.length === 1
-            ? 'El archivo se ha enviado correctamente para su procesamiento.'
-            : `Los ${successCount} archivos se han enviado correctamente para su procesamiento.`;
-        showSuccess('Ingestión iniciada', mensaje);
+        if (esAutomatico) {
+          showSuccess(
+            'Alertas enviándose automáticamente',
+            'Las alertas se están enviando automáticamente a WhatsApp.'
+          );
+        } else {
+          const mensaje =
+            selectedFiles.length === 1
+              ? 'El archivo se ha enviado correctamente para su procesamiento.'
+              : `Los ${successCount} archivos se han enviado correctamente para su procesamiento.`;
+          showSuccess('Ingestión iniciada', mensaje);
+        }
       } else if (successCount > 0) {
         const mensaje =
           selectedFiles.length === 1
@@ -473,7 +485,7 @@ const Ingestion: React.FC = () => {
       setSelectedFiles([]);
       setFileInputKey((prev) => prev + 1);
 
-      if (successCount > 0) {
+      if (!esAutomatico && successCount > 0) {
         navigate('/ingestion/resultados', {
           state: {
             ingestionResponse:
@@ -484,6 +496,11 @@ const Ingestion: React.FC = () => {
             isMultipleFiles: selectedFiles.length > 1,
           },
         });
+      } else if (esAutomatico) {
+        setSelectedProjectId('');
+        setSelectedProjectName('');
+        setSelectedProject(null);
+        setProjectSearchTerm('');
       }
     } catch (error: any) {
       console.error('Error al enviar archivo(s) de ingestión:', error);
@@ -644,13 +661,35 @@ const Ingestion: React.FC = () => {
 
                   {selectedProjectId && selectedProjectName && (
                     <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200">
-                      <p className="font-medium">Proyecto seleccionado</p>
-                      <p className="mt-1 break-all">
-                        {selectedProjectName}
-                        <span className="ml-2 text-xs font-normal text-emerald-600 dark:text-emerald-300">
-                          ID: {selectedProjectId}
-                        </span>
-                      </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="font-medium">Proyecto seleccionado</p>
+                          <p className="mt-1 break-all">
+                            {selectedProjectName}
+                            <span className="ml-2 text-xs font-normal text-emerald-600 dark:text-emerald-300">
+                              ID: {selectedProjectId}
+                            </span>
+                          </p>
+                        </div>
+                        {selectedProject?.tipo_envio === 'automatico' && (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium whitespace-nowrap">
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 10V3L4 14h7v7l9-11h-7z"
+                              />
+                            </svg>
+                            Envío automático
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
