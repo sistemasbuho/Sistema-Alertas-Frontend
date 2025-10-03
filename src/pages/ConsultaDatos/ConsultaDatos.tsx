@@ -41,7 +41,7 @@ const ConsultaDatos: React.FC = () => {
   // const [captureLoading, setCaptureLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   // const [showResultModal, setShowResultModal] = useState(false);
   // const [captureResult, setCaptureResult] = useState<{
