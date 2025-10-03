@@ -315,7 +315,7 @@ const IngestionResultado: React.FC = () => {
     const sortedData = normalizedData?.sort((a, b) => {
       const dateA = new Date(a.fecha_publicacion).getTime();
       const dateB = new Date(b.fecha_publicacion).getTime();
-      return dateB - dateA;
+      return dateA - dateB;
     });
 
     setMedios(sortedData ?? []);
@@ -363,10 +363,11 @@ const IngestionResultado: React.FC = () => {
           normalizeIngestionItem(item, projectId)
         );
 
+        // Ordenar por fecha de publicación (más antiguas primero)
         const sortedData = normalizedData.sort((a, b) => {
           const dateA = new Date(a.fecha_publicacion).getTime();
           const dateB = new Date(b.fecha_publicacion).getTime();
-          return dateB - dateA;
+          return dateA - dateB; // Orden ascendente (más antigua primero)
         });
 
         setMedios(sortedData);
