@@ -312,7 +312,13 @@ const IngestionResultado: React.FC = () => {
       return normalized;
     });
 
-    setMedios(normalizedData ?? []);
+    const sortedData = normalizedData?.sort((a, b) => {
+      const dateA = new Date(a.fecha_publicacion).getTime();
+      const dateB = new Date(b.fecha_publicacion).getTime();
+      return dateB - dateA;
+    });
+
+    setMedios(sortedData ?? []);
     setSelectedItems([]);
     setSearchTerm('');
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -357,7 +363,13 @@ const IngestionResultado: React.FC = () => {
           normalizeIngestionItem(item, projectId)
         );
 
-        setMedios(normalizedData);
+        const sortedData = normalizedData.sort((a, b) => {
+          const dateA = new Date(a.fecha_publicacion).getTime();
+          const dateB = new Date(b.fecha_publicacion).getTime();
+          return dateB - dateA;
+        });
+
+        setMedios(sortedData);
         setSelectedItems([]);
         setSearchTerm('');
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -408,6 +420,7 @@ const IngestionResultado: React.FC = () => {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+        hour12: true,
       });
     } catch (error) {
       console.error('Error formateando fecha:', dateString, error);
