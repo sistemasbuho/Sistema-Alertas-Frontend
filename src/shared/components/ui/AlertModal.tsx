@@ -129,9 +129,39 @@ const AlertModal: React.FC<AlertModalProps> = ({
     }
 
     try {
+      const buildFechaIsoString = () => {
+        if (!formData.fecha) {
+          return editingAlert?.fecha || new Date().toISOString();
+        }
+
+        if (editingAlert?.fecha) {
+          const originalDate = new Date(editingAlert.fecha)
+            .toISOString()
+            .slice(0, 10);
+
+          if (originalDate === formData.fecha) {
+            return editingAlert.fecha;
+          }
+        }
+
+        const [year, month, day] = formData.fecha
+          .split('-')
+          .map((value) => Number.parseInt(value, 10));
+
+        if (
+          Number.isNaN(year) ||
+          Number.isNaN(month) ||
+          Number.isNaN(day)
+        ) {
+          return new Date(formData.fecha).toISOString();
+        }
+
+        return new Date(year, month - 1, day).toISOString();
+      };
+
       const alertaToSave: AlertaData = {
         ...formData,
-        fecha: new Date(formData.fecha).toISOString(),
+        fecha: buildFechaIsoString(),
         id: editingAlert?.id,
       };
 
