@@ -240,7 +240,7 @@ const IngestionResultado: React.FC = () => {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewItem, setPreviewItem] = useState<MediosItem | null>(null);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [editingAlert, setEditingAlert] = useState<any>(null);
+  const [editingAlert, setEditingAlert] = useState<AlertaData | null>(null);
   const [isAlertLoading, setIsAlertLoading] = useState(false);
   const [isEnviandoAlertas, setIsEnviandoAlertas] = useState(false);
   const [showSummaryCards, setShowSummaryCards] = useState(false);
@@ -762,7 +762,19 @@ const IngestionResultado: React.FC = () => {
   };
 
   const handleEditItem = (item: MediosItem) => {
-    setEditingAlert(item);
+    setEditingAlert({
+      id: item.id,
+      url: item.url,
+      contenido: item.contenido,
+      fecha: item.fecha_publicacion,
+      titulo: item.titulo,
+      autor: item.autor,
+      reach: item.reach,
+      engagement:
+        typeof item.engagement === 'number' ? item.engagement : undefined,
+      emojis: item.emojis,
+      mensaje_formateado: item.mensaje_formateado || undefined,
+    });
     setIsAlertModalOpen(true);
   };
 
@@ -776,10 +788,20 @@ const IngestionResultado: React.FC = () => {
 
     try {
       if (editingAlert) {
-        const currentData = medios;
-        const updatedData = currentData.map((item) =>
-          item.id === editingAlert.id ? { ...item, ...alertData } : item
-        );
+        const updatedData = medios.map((item) => {
+          if (item.id !== editingAlert.id) {
+            return item;
+          }
+
+          const updatedPublicationDate = alertData.fecha || item.fecha_publicacion;
+
+          return {
+            ...item,
+            ...alertData,
+            fecha_publicacion: updatedPublicationDate,
+            mensaje: alertData.contenido ?? item.mensaje,
+          };
+        });
 
         setMedios(updatedData);
 
