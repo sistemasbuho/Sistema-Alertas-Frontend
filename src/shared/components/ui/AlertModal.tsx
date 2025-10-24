@@ -144,9 +144,15 @@ const AlertModal: React.FC<AlertModalProps> = ({
           }
         }
 
-        const [year, month, day] = formData.fecha
-          .split('-')
-          .map((value) => Number.parseInt(value, 10));
+        const [yearStr, monthStr, dayStr] = formData.fecha.split('-');
+
+        if (!yearStr || !monthStr || !dayStr) {
+          return new Date(formData.fecha).toISOString();
+        }
+
+        const year = Number.parseInt(yearStr, 10);
+        const month = Number.parseInt(monthStr, 10);
+        const day = Number.parseInt(dayStr, 10);
 
         if (
           Number.isNaN(year) ||
