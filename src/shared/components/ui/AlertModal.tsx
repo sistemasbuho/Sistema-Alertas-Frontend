@@ -129,23 +129,6 @@ const AlertModal: React.FC<AlertModalProps> = ({
     }
 
     try {
-      const buildIsoDateFromParts = (year: number, month: number, day: number) =>
-        new Date(Date.UTC(year, month - 1, day)).toISOString();
-
-      const buildIsoDateFromInput = (input: string) => {
-        const parsedDate = new Date(input);
-
-        if (Number.isNaN(parsedDate.getTime())) {
-          return new Date().toISOString();
-        }
-
-        return buildIsoDateFromParts(
-          parsedDate.getUTCFullYear(),
-          parsedDate.getUTCMonth() + 1,
-          parsedDate.getUTCDate()
-        );
-      };
-
       const buildFechaIsoString = () => {
         if (!formData.fecha) {
           return editingAlert?.fecha || new Date().toISOString();
@@ -164,7 +147,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         const [yearStr, monthStr, dayStr] = formData.fecha.split('-');
 
         if (!yearStr || !monthStr || !dayStr) {
-          return buildIsoDateFromInput(formData.fecha);
+          return new Date(formData.fecha).toISOString();
         }
 
         const year = Number.parseInt(yearStr, 10);
@@ -176,10 +159,10 @@ const AlertModal: React.FC<AlertModalProps> = ({
           Number.isNaN(month) ||
           Number.isNaN(day)
         ) {
-          return buildIsoDateFromInput(formData.fecha);
+          return new Date(formData.fecha).toISOString();
         }
 
-        return buildIsoDateFromParts(year, month, day);
+        return new Date(year, month - 1, day).toISOString();
       };
 
       const alertaToSave: AlertaData = {
