@@ -129,9 +129,62 @@ const AlertModal: React.FC<AlertModalProps> = ({
     }
 
     try {
+      const buildIsoDateFromParts = (year: number, month: number, day: number) =>
+        new Date(Date.UTC(year, month - 1, day)).toISOString();
+
+      const buildIsoDateFromInput = (input: string) => {
+        const parsedDate = new Date(input);
+
+        if (Number.isNaN(parsedDate.getTime())) {
+          return new Date().toISOString();
+        }
+
+        return buildIsoDateFromParts(
+          parsedDate.getUTCFullYear(),
+          parsedDate.getUTCMonth() + 1,
+          parsedDate.getUTCDate()
+        );
+      };
+
+      const buildFechaIsoString = () => {
+        if (!formData.fecha) {
+          return editingAlert?.fecha || new Date().toISOString();
+        }
+
+        if (editingAlert?.fecha) {
+          const originalDate = new Date(editingAlert.fecha)
+            .toISOString()
+            .slice(0, 10);
+
+          if (originalDate === formData.fecha) {
+            return editingAlert.fecha;
+          }
+        }
+
+        const [yearStr, monthStr, dayStr] = formData.fecha.split('-');
+
+        if (!yearStr || !monthStr || !dayStr) {
+          return buildIsoDateFromInput(formData.fecha);
+        }
+
+        const year = Number.parseInt(yearStr, 10);
+        const month = Number.parseInt(monthStr, 10);
+        const day = Number.parseInt(dayStr, 10);
+
+        if (
+          Number.isNaN(year) ||
+          Number.isNaN(month) ||
+          Number.isNaN(day)
+        ) {
+          return buildIsoDateFromInput(formData.fecha);
+        }
+
+        return buildIsoDateFromParts(year, month, day);
+      };
+
       const alertaToSave: AlertaData = {
         ...formData,
-        fecha: new Date(formData.fecha).toISOString(),
+        fecha: buildFechaIsoString(),
         id: editingAlert?.id,
       };
 
