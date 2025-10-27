@@ -17,6 +17,10 @@ export interface AlertaData {
   mensaje_formateado?: string;
 }
 
+type AlertFormData = AlertaData & {
+  hora: string;
+};
+
 interface AlertModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,49 +37,52 @@ const AlertModal: React.FC<AlertModalProps> = ({
   isLoading = false,
 }) => {
   const { showError } = useToast();
-  const [formData, setFormData] = useState<AlertaData>({
-    url: '',
-    contenido: '',
-    fecha: new Date().toISOString().slice(0, 10),
-    titulo: '',
-    autor: '',
-    reach: 0,
-    engagement: 0,
-    emojis: [],
-  });
+  const createDefaultFormData = (): AlertFormData => {
+    const nowIso = new Date().toISOString();
+
+    return {
+      url: '',
+      contenido: '',
+      fecha: nowIso.slice(0, 10),
+      hora: nowIso.slice(11, 16),
+      titulo: '',
+      autor: '',
+      reach: 0,
+      engagement: 0,
+      emojis: [],
+    };
+  };
+
+  const [formData, setFormData] = useState<AlertFormData>(createDefaultFormData);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isOpen) {
       if (editingAlert) {
+        const editingDateIso = editingAlert.fecha
+          ? new Date(editingAlert.fecha).toISOString()
+          : null;
+        const defaultData = createDefaultFormData();
+
         setFormData({
+          ...defaultData,
           ...editingAlert,
-          fecha: editingAlert.fecha
-            ? new Date(editingAlert.fecha).toISOString().slice(0, 10)
-            : new Date().toISOString().slice(0, 10),
+          fecha: editingDateIso?.slice(0, 10) || defaultData.fecha,
+          hora: editingDateIso?.slice(11, 16) || defaultData.hora,
           reach: editingAlert.reach || 0,
           engagement: editingAlert.engagement || 0,
           emojis: editingAlert.emojis || [],
         });
       } else {
-        setFormData({
-          url: '',
-          contenido: '',
-          fecha: new Date().toISOString().slice(0, 10),
-          titulo: '',
-          autor: '',
-          reach: 0,
-          engagement: 0,
-          emojis: [],
-        });
+        setFormData(createDefaultFormData());
       }
       setErrors({});
     }
   }, [isOpen, editingAlert]);
 
   const handleInputChange =
-    (field: keyof AlertaData) =>
+    (field: keyof AlertFormData) =>
     (
       e: React.ChangeEvent<
         HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -135,16 +142,21 @@ const AlertModal: React.FC<AlertModalProps> = ({
         }
 
         if (editingAlert?.fecha) {
-          const originalDate = new Date(editingAlert.fecha)
-            .toISOString()
-            .slice(0, 10);
+          const originalDateIso = new Date(editingAlert.fecha)
+            .toISOString();
+          const originalDate = originalDateIso.slice(0, 10);
+          const originalTime = originalDateIso.slice(11, 16);
 
-          if (originalDate === formData.fecha) {
+          if (
+            originalDate === formData.fecha &&
+            originalTime === (formData.hora || '')
+          ) {
             return editingAlert.fecha;
           }
         }
 
         const [yearStr, monthStr, dayStr] = formData.fecha.split('-');
+        const [hourStr = '0', minuteStr = '0'] = (formData.hora || '').split(':');
 
         if (!yearStr || !monthStr || !dayStr) {
           return new Date(formData.fecha).toISOString();
@@ -153,20 +165,26 @@ const AlertModal: React.FC<AlertModalProps> = ({
         const year = Number.parseInt(yearStr, 10);
         const month = Number.parseInt(monthStr, 10);
         const day = Number.parseInt(dayStr, 10);
+        const hours = Number.parseInt(hourStr, 10);
+        const minutes = Number.parseInt(minuteStr, 10);
 
         if (
           Number.isNaN(year) ||
           Number.isNaN(month) ||
-          Number.isNaN(day)
+          Number.isNaN(day) ||
+          Number.isNaN(hours) ||
+          Number.isNaN(minutes)
         ) {
           return new Date(formData.fecha).toISOString();
         }
 
-        return new Date(year, month - 1, day).toISOString();
+        return new Date(year, month - 1, day, hours, minutes).toISOString();
       };
 
+      const { hora, ...formDataWithoutHora } = formData;
+
       const alertaToSave: AlertaData = {
-        ...formData,
+        ...formDataWithoutHora,
         fecha: buildFechaIsoString(),
         id: editingAlert?.id,
       };
@@ -249,6 +267,14 @@ const AlertModal: React.FC<AlertModalProps> = ({
           value={formData.fecha}
           onChange={handleInputChange('fecha')}
           error={errors.fecha}
+          disabled={isLoading}
+        />
+
+        <Input
+          label="Hora"
+          type="time"
+          value={formData.hora}
+          onChange={handleInputChange('hora')}
           disabled={isLoading}
         />
 
