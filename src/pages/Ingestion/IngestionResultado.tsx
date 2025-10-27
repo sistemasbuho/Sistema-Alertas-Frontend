@@ -803,7 +803,34 @@ const IngestionResultado: React.FC = () => {
           };
         });
 
-        setMedios(updatedData);
+        const parseDate = (primary?: string, fallback?: string) => {
+          if (primary) {
+            const primaryTimestamp = new Date(primary).getTime();
+
+            if (!Number.isNaN(primaryTimestamp)) {
+              return primaryTimestamp;
+            }
+          }
+
+          if (fallback) {
+            const fallbackTimestamp = new Date(fallback).getTime();
+
+            if (!Number.isNaN(fallbackTimestamp)) {
+              return fallbackTimestamp;
+            }
+          }
+
+          return Number.MAX_SAFE_INTEGER;
+        };
+
+        const sortedData = [...updatedData].sort((a, b) => {
+          const dateA = parseDate(a.fecha_publicacion, a.created_at);
+          const dateB = parseDate(b.fecha_publicacion, b.created_at);
+
+          return dateA - dateB;
+        });
+
+        setMedios(sortedData);
 
         showSuccess(
           'Elemento actualizado',
