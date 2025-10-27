@@ -61,6 +61,7 @@ type MediosItem = {
   engagement: number | null;
   fecha_publicacion: string;
   created_at: string;
+  fecha?: string | null;
   estado_enviado?: boolean | string;
   estado_revisado?: boolean | string;
   proyecto: string;
@@ -181,6 +182,7 @@ const normalizeIngestionItem = (
     engagement: item.engagement ?? null,
     fecha_publicacion: baseDate,
     created_at: baseDate,
+    fecha: item.fecha ?? null,
     estado_enviado: item.estado_enviado,
     estado_revisado: item.estado_revisado,
     proyecto: item.proyecto || fallbackProjectId,
@@ -799,23 +801,34 @@ const IngestionResultado: React.FC = () => {
             ...item,
             ...alertData,
             fecha_publicacion: updatedPublicationDate,
+            fecha: alertData.fecha ?? item.fecha ?? updatedPublicationDate,
             mensaje: alertData.contenido ?? item.mensaje,
           };
         });
 
-        const parseDate = (dateString?: string) => {
-          if (!dateString) {
-            return Number.MAX_SAFE_INTEGER;
+        const getSortableTimestamp = (item: MediosItem) => {
+          const candidates = [
+            item.fecha_publicacion,
+            item.created_at,
+            item.fecha ?? undefined,
+          ];
+
+          for (const candidate of candidates) {
+            if (candidate) {
+              const timestamp = new Date(candidate).getTime();
+
+              if (!Number.isNaN(timestamp)) {
+                return timestamp;
+              }
+            }
           }
 
-          const timestamp = new Date(dateString).getTime();
-
-          return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+          return Number.MAX_SAFE_INTEGER;
         };
 
         const sortedData = [...updatedData].sort((a, b) => {
-          const dateA = parseDate(a.fecha_publicacion || a.fecha);
-          const dateB = parseDate(b.fecha_publicacion || b.fecha);
+          const dateA = getSortableTimestamp(a);
+          const dateB = getSortableTimestamp(b);
 
           return dateA - dateB;
         });
