@@ -803,29 +803,19 @@ const IngestionResultado: React.FC = () => {
           };
         });
 
-        const parseDate = (primary?: string, fallback?: string) => {
-          if (primary) {
-            const primaryTimestamp = new Date(primary).getTime();
-
-            if (!Number.isNaN(primaryTimestamp)) {
-              return primaryTimestamp;
-            }
+        const parseDate = (dateString?: string) => {
+          if (!dateString) {
+            return Number.MAX_SAFE_INTEGER;
           }
 
-          if (fallback) {
-            const fallbackTimestamp = new Date(fallback).getTime();
+          const timestamp = new Date(dateString).getTime();
 
-            if (!Number.isNaN(fallbackTimestamp)) {
-              return fallbackTimestamp;
-            }
-          }
-
-          return Number.MAX_SAFE_INTEGER;
+          return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
         };
 
         const sortedData = [...updatedData].sort((a, b) => {
-          const dateA = parseDate(a.fecha_publicacion, a.created_at);
-          const dateB = parseDate(b.fecha_publicacion, b.created_at);
+          const dateA = parseDate(a.fecha_publicacion || a.fecha);
+          const dateB = parseDate(b.fecha_publicacion || b.fecha);
 
           return dateA - dateB;
         });
