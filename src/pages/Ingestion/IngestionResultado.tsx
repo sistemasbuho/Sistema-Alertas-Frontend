@@ -803,7 +803,24 @@ const IngestionResultado: React.FC = () => {
           };
         });
 
-        setMedios(updatedData);
+        const parseDate = (dateString?: string) => {
+          if (!dateString) {
+            return Number.MAX_SAFE_INTEGER;
+          }
+
+          const timestamp = new Date(dateString).getTime();
+
+          return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+        };
+
+        const sortedData = [...updatedData].sort((a, b) => {
+          const dateA = parseDate(a.fecha_publicacion || a.fecha);
+          const dateB = parseDate(b.fecha_publicacion || b.fecha);
+
+          return dateA - dateB;
+        });
+
+        setMedios(sortedData);
 
         showSuccess(
           'Elemento actualizado',
