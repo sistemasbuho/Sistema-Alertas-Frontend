@@ -1034,6 +1034,7 @@ export const apiService = {
   updateAlerta,
   getPlantillaCampos,
   guardarCamposPlantilla,
+  buscarArticulosCalidad,
 };
 
 export const getHistorialEnvios = async (
@@ -1234,6 +1235,14 @@ export interface MarcarRevisadoResponse {
   success: boolean;
 }
 
+export interface CalidadArticulo {
+  id: string;
+  titulo?: string;
+  url?: string;
+  medio?: string;
+  autor?: string;
+}
+
 export const enviarAlertasAPI = async (
   data: EnvioAlertaRequest
 ): Promise<EnvioAlertaResponse> => {
@@ -1246,6 +1255,34 @@ export const enviarAlertasAPI = async (
     return response.data;
   } catch (error) {
     console.error('Error enviando alertas:', error);
+    throw error;
+  }
+};
+
+export const buscarArticulosCalidad = async (
+  search: string
+): Promise<CalidadArticulo[]> => {
+  try {
+    const params = new URLSearchParams();
+
+    if (search.trim()) {
+      params.append('search', search.trim());
+    }
+
+    const query = params.toString();
+    const url = `/api/calidad/evaluaciones/articulos/${
+      query ? `?${query}` : ''
+    }`;
+
+    const response = await apiClient.get(url);
+    const data = response.data?.data ?? response.data;
+
+    if (Array.isArray(data?.results)) return data.results;
+    if (Array.isArray(data)) return data;
+
+    return [];
+  } catch (error) {
+    console.error('Error buscando artículos para calidad:', error);
     throw error;
   }
 };
