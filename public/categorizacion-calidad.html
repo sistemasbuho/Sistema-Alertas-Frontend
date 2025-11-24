@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Categorización de Calidad</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #f6f7fb;
+        color: #111827;
+        padding: 24px;
+        line-height: 1.6;
+      }
+
+      .card {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 28px;
+      }
+
+      h2 {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        font-size: 20px;
+      }
+
+      #contenido {
+        white-space: pre-wrap;
+        padding: 12px 16px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+      }
+
+      ul {
+        padding-left: 18px;
+      }
+
+      .error {
+        margin-top: 16px;
+        color: #b91c1c;
+        font-weight: 600;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-size: 15px;
+      }
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+      }
+
+      button:hover {
+        background: #1e40af;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Categorización de Calidad</h1>
+      <p>Ingresa el endpoint que devuelve el JSON para cargar la información.</p>
+
+      <label for="endpoint">Endpoint</label>
+      <input
+        id="endpoint"
+        type="url"
+        placeholder="https://tu-api.com/categorizacion"
+        autocomplete="off"
+      />
+      <button id="cargar">Cargar datos</button>
+
+      <div id="mensaje" class="error" aria-live="polite"></div>
+
+      <h2>Título</h2>
+      <div id="titulo">—</div>
+
+      <h2>Contenido</h2>
+      <div id="contenido">—</div>
+
+      <h2>Tags</h2>
+      <ul id="lista-tags"></ul>
+
+      <h2>Tonos</h2>
+      <ul id="lista-tonos"></ul>
+
+      <h2>Temas</h2>
+      <ul id="lista-temas"></ul>
+    </div>
+
+    <script type="module" src="./categorizacion-calidad.js"></script>
+  </body>
+</html>
