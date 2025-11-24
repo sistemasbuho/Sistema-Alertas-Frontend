@@ -956,6 +956,36 @@ export interface Plantilla {
   };
 }
 
+export interface ConteoMuestrasCalidadPorFecha {
+  fecha: string;
+  total: number;
+}
+
+export const getConteoMuestrasCalidadPorFecha = async (): Promise<
+  ConteoMuestrasCalidadPorFecha[]
+> => {
+  try {
+    // Se consulta al ingresar al módulo de generación de calidad para poblar
+    // los gráficos/estadísticas iniciales.
+    const response = await apiClient.get(
+      '/api/muestras-generadas-calidad/conteo-por-fecha/'
+    );
+
+    const data = response.data?.data ?? response.data;
+
+    if (Array.isArray(data?.results)) return data.results;
+    if (Array.isArray(data)) return data;
+
+    return [];
+  } catch (error) {
+    console.error(
+      'Error obteniendo conteo de muestras generadas para calidad:',
+      error
+    );
+    throw error;
+  }
+};
+
 export const getPlantillaCampos = async (
   proyectoId: string
 ): Promise<Plantilla[]> => {
@@ -1034,6 +1064,7 @@ export const apiService = {
   updateAlerta,
   getPlantillaCampos,
   guardarCamposPlantilla,
+  getConteoMuestrasCalidadPorFecha,
   buscarArticulosCalidad,
 };
 
