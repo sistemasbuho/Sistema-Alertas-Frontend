@@ -1066,6 +1066,8 @@ export const apiService = {
   guardarCamposPlantilla,
   getConteoMuestrasCalidadPorFecha,
   buscarArticulosCalidad,
+  buscarPasivosCalidad,
+  buscarActivosCalidad,
 };
 
 export const getHistorialEnvios = async (
@@ -1290,7 +1292,10 @@ export const enviarAlertasAPI = async (
   }
 };
 
-export const buscarArticulosCalidad = async (
+type CategoriaFragmentoTipo = 'autor' | 'pasivos' | 'activos';
+
+const buscarCategoriaFragmento = async (
+  tipo: CategoriaFragmentoTipo,
   search: string
 ): Promise<CalidadArticulo[]> => {
   try {
@@ -1299,6 +1304,8 @@ export const buscarArticulosCalidad = async (
     if (search.trim()) {
       params.append('search', search.trim());
     }
+
+    params.append('tipo', tipo);
 
     const query = params.toString();
     const url = `/api/calidad/evaluaciones/articulos/${
@@ -1317,6 +1324,18 @@ export const buscarArticulosCalidad = async (
     throw error;
   }
 };
+
+export const buscarArticulosCalidad = async (
+  search: string
+): Promise<CalidadArticulo[]> => buscarCategoriaFragmento('autor', search);
+
+export const buscarPasivosCalidad = async (
+  search: string
+): Promise<CalidadArticulo[]> => buscarCategoriaFragmento('pasivos', search);
+
+export const buscarActivosCalidad = async (
+  search: string
+): Promise<CalidadArticulo[]> => buscarCategoriaFragmento('activos', search);
 
 export const marcarRevisadoAPI = async (
   data: MarcarRevisadoRequest
