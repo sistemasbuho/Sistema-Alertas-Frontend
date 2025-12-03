@@ -550,6 +550,15 @@ const IngestionResultado: React.FC = () => {
     [filteredMedios.length, pagination]
   );
 
+  // Detectar automáticamente si los datos son de tipo "redes" o "medios"
+  const activeTab = useMemo(() => {
+    // Si hay al menos un item con red_social o tipo "redes", considerarlo como redes
+    const hasRedes = medios.some(
+      (item) => item.red_social || item.tipo?.toLowerCase() === 'redes'
+    );
+    return hasRedes ? 'redes' : 'medios';
+  }, [medios]);
+
   const ingestionSummary: IngestionSummary = useMemo(() => {
     const totalItems = medios.length;
     const totalRedes = medios.filter(
@@ -772,6 +781,8 @@ const IngestionResultado: React.FC = () => {
         typeof item.engagement === 'number' ? item.engagement : undefined,
       emojis: item.emojis,
       mensaje_formateado: item.mensaje_formateado || undefined,
+      tipo: item.tipo || undefined,
+      red_social: item.red_social || undefined,
     });
     setIsAlertModalOpen(true);
   };
@@ -786,6 +797,31 @@ const IngestionResultado: React.FC = () => {
 
     try {
       if (editingAlert) {
+        // Determinar si es medio o red
+        const itemToUpdate = medios.find(item => item.id === editingAlert.id);
+        const isMedio = activeTab === 'medios';
+
+        // Preparar datos para el backend
+        const updateData = {
+          titulo: alertData.titulo,
+          contenido: alertData.contenido,
+          url: alertData.url,
+          autor: alertData.autor,
+          reach: alertData.reach,
+          engagement: alertData.engagement,
+          fecha_publicacion: alertData.fecha,
+        };
+
+        // Llamar al endpoint correspondiente
+        if (isMedio) {
+          const { updateMedio } = await import('@shared/services/api');
+          await updateMedio(editingAlert.id, updateData);
+        } else {
+          const { updateRed } = await import('@shared/services/api');
+          await updateRed(editingAlert.id, updateData);
+        }
+
+        // Actualizar el estado local después de la actualización exitosa en el backend
         const updatedData = medios.map((item) => {
           if (item.id !== editingAlert.id) {
             return item;
@@ -813,7 +849,7 @@ const IngestionResultado: React.FC = () => {
 
         showSuccess(
           'Elemento actualizado',
-          'El elemento se ha actualizado y ordenado cronológicamente'
+          'El elemento se ha actualizado correctamente en el servidor'
         );
 
         handleCloseAlertModal();
@@ -903,7 +939,7 @@ const IngestionResultado: React.FC = () => {
     selectedData.forEach((item) => {
       const missing: string[] = [];
 
-      // Validar campos comunes para medios y redes
+      // Campos comunes obligatorios para medios y redes
       if (!item.fecha_publicacion || item.fecha_publicacion.trim() === '') {
         missing.push('Fecha');
       }
@@ -913,19 +949,23 @@ const IngestionResultado: React.FC = () => {
       if (!item.autor || item.autor.trim() === '') {
         missing.push('Autor');
       }
-      if (!item.contenido || item.contenido.trim() === '') {
-        missing.push('Contenido');
-      }
       if (item.reach === null || item.reach === undefined) {
         missing.push('Alcance');
       }
-      if (item.engagement === null || item.engagement === undefined) {
-        missing.push('Interacciones');
-      }
 
-      // Validar título solo para medios
-      if (tipoAlerta === 'medios' && (!item.titulo || item.titulo.trim() === '')) {
-        missing.push('Título');
+      // Para medios: título es obligatorio, interacciones NO es obligatorio
+      // Para redes: contenido es obligatorio, interacciones es obligatorio
+      if (tipoAlerta === 'medios') {
+        if (!item.titulo || item.titulo.trim() === '') {
+          missing.push('Título');
+        }
+      } else if (tipoAlerta === 'redes') {
+        if (!item.contenido || item.contenido.trim() === '') {
+          missing.push('Contenido');
+        }
+        if (item.engagement === null || item.engagement === undefined) {
+          missing.push('Interacciones');
+        }
       }
 
       if (missing.length > 0) {
@@ -975,8 +1015,12 @@ const IngestionResultado: React.FC = () => {
             new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
-          reach: item.reach ?? null,
-          engagement: item.engagement ?? null,
+          reach: item.reach !== null && item.reach !== undefined
+            ? formatNumber(item.reach)
+            : null,
+          engagement: item.engagement !== null && item.engagement !== undefined
+            ? formatNumber(item.engagement)
+            : null,
           emojis: item.emojis_only || '',
         })),
       };
@@ -1385,7 +1429,7 @@ const IngestionResultado: React.FC = () => {
 
               {showFilters && (
                 <DataFilters
-                  activeTab="medios"
+                  activeTab={activeTab}
                   mediosFilters={filters}
                   redesFilters={filters}
                 />
@@ -1409,7 +1453,7 @@ const IngestionResultado: React.FC = () => {
                 </div>
               ) : (
                 <DataTable
-                  activeTab="medios"
+                  activeTab={activeTab}
                   filteredData={paginatedMedios}
                   selectedItems={selectedItems}
                   onSelectItem={handleSelectItem}
@@ -1425,7 +1469,7 @@ const IngestionResultado: React.FC = () => {
               )}
 
               <DataPagination
-                activeTab="medios"
+                activeTab={activeTab}
                 currentData={paginatedMedios}
                 pagination={paginationState}
                 onPreviousPage={handlePreviousPage}

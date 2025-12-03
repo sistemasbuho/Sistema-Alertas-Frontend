@@ -1262,4 +1262,53 @@ export const marcarRevisadoAPI = async (
   }
 };
 
+export interface UpdateMedioRequest {
+  titulo?: string;
+  contenido?: string;
+  url?: string;
+  autor?: string;
+  reach?: number | null;
+  engagement?: number | null;
+  fecha_publicacion?: string;
+}
+
+export interface UpdateRedRequest {
+  contenido?: string;
+  url?: string;
+  autor?: string;
+  reach?: number | null;
+  engagement?: number | null;
+  fecha_publicacion?: string;
+}
+
+export const updateMedio = async (
+  id: string,
+  data: UpdateMedioRequest
+): Promise<any> => {
+  try {
+    console.log(`📝 Actualizando medio ${id}:`, data);
+    const response = await apiClient.patch(`/api/medios/${id}/`, data);
+    console.log('Respuesta del servidor:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error actualizando medio:', error);
+    throw error;
+  }
+};
+
+export const updateRed = async (
+  id: string,
+  data: UpdateRedRequest
+): Promise<any> => {
+  try {
+    console.log(`📝 Actualizando red ${id}:`, data);
+    const response = await apiClient.patch(`/api/redes/${id}/`, data);
+    console.log('Respuesta del servidor:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error actualizando red:', error);
+    throw error;
+  }
+};
+
 export default apiService;

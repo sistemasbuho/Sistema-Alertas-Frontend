@@ -64,7 +64,7 @@ const DataTable: React.FC<DataTableProps> = ({
   showEditActions = true,
 }) => {
   const isFieldEmpty = (value: any, fieldName: string) => {
-    if (fieldName === 'autor' || fieldName === 'contenido') {
+    if (fieldName === 'titulo' || fieldName === 'autor' || fieldName === 'contenido') {
       return !value || value.trim() === '';
     }
     if (fieldName === 'reach' || fieldName === 'engagement') {
@@ -82,11 +82,13 @@ const DataTable: React.FC<DataTableProps> = ({
   const renderFieldWithWarning = (content: React.ReactNode, item: any, fieldName: string) => {
     const isEmpty = isFieldEmpty(item[fieldName], fieldName);
 
-    // Para medios, validar todos los campos incluyendo título
-    // Para redes, validar todos los campos excepto título
+    // Para medios, campos obligatorios: fecha, titulo, url, autor, alcance
+    // Para redes, campos obligatorios: fecha, url, autor, contenido, alcance, interacciones
     const shouldShowWarning = activeTab === 'medios'
-      ? isEmpty
-      : activeTab === 'redes' && fieldName !== 'titulo' && isEmpty;
+      ? (fieldName === 'fecha_publicacion' || fieldName === 'titulo' || fieldName === 'url' || fieldName === 'autor' || fieldName === 'reach') && isEmpty
+      : activeTab === 'redes'
+        ? (fieldName === 'fecha_publicacion' || fieldName === 'url' || fieldName === 'autor' || fieldName === 'contenido' || fieldName === 'reach' || fieldName === 'engagement') && isEmpty
+        : false;
 
     if (shouldShowWarning) {
       return (
@@ -169,6 +171,12 @@ const DataTable: React.FC<DataTableProps> = ({
                 </>
               ) : (
                 <>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    style={{ minWidth: '320px' }}
+                  >
+                    Título
+                  </th>
                   <th
                     className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                     style={{ minWidth: '480px' }}
@@ -432,6 +440,22 @@ const DataTable: React.FC<DataTableProps> = ({
                   </>
                 ) : (
                   <>
+                    <td className="px-4 py-4" style={{ minWidth: '320px' }}>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                        {renderFieldWithWarning(
+                          <span
+                            dangerouslySetInnerHTML={{
+                              __html: highlightKeywords(
+                                item.titulo || '',
+                                item.proyecto_keywords || []
+                              ),
+                            }}
+                          />,
+                          item,
+                          'titulo'
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-4" style={{ minWidth: '480px' }}>
                       {renderFieldWithWarning(
                         <div
