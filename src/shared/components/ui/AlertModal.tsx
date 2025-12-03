@@ -297,11 +297,11 @@ const AlertModal: React.FC<AlertModalProps> = ({
           </label>
           <div className="flex gap-2">
             <select
-              value={formData.hora ? parseInt(formData.hora.split(':')[0]) % 12 || 12 : 12}
+              value={formData.hora ? parseInt((formData.hora || '00:00').split(':')[0]) % 12 || 12 : 12}
               onChange={(e) => {
                 const hour12 = parseInt(e.target.value);
-                const currentMinutes = formData.hora ? formData.hora.split(':')[1] : '00';
-                const isPM = formData.hora ? parseInt(formData.hora.split(':')[0]) >= 12 : false;
+                const currentMinutes = formData.hora ? (formData.hora || '00:00').split(':')[1] : '00';
+                const isPM = formData.hora ? parseInt((formData.hora || '00:00').split(':')[0]) >= 12 : false;
                 const hour24 = isPM ? (hour12 === 12 ? 12 : hour12 + 12) : (hour12 === 12 ? 0 : hour12);
                 setFormData((prev) => ({
                   ...prev,
@@ -316,9 +316,9 @@ const AlertModal: React.FC<AlertModalProps> = ({
               ))}
             </select>
             <select
-              value={formData.hora ? formData.hora.split(':')[1] : '00'}
+              value={formData.hora ? (formData.hora || '00:00').split(':')[1] : '00'}
               onChange={(e) => {
-                const currentHour = formData.hora ? formData.hora.split(':')[0] : '00';
+                const currentHour = formData.hora ? (formData.hora || '00:00').split(':')[0] : '00';
                 setFormData((prev) => ({
                   ...prev,
                   hora: `${currentHour}:${e.target.value}`
@@ -334,10 +334,11 @@ const AlertModal: React.FC<AlertModalProps> = ({
               ))}
             </select>
             <select
-              value={formData.hora && parseInt(formData.hora.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+              value={parseInt((formData.hora || '00:00').split(':')[0]) >= 12 ? 'PM' : 'AM'}
               onChange={(e) => {
-                const hour12 = formData.hora ? parseInt(formData.hora.split(':')[0]) % 12 || 12 : 12;
-                const currentMinutes = formData.hora ? formData.hora.split(':')[1] : '00';
+                const currentHora = formData.hora || '00:00';
+                const hour12 = parseInt(currentHora.split(':')[0]) % 12 || 12;
+                const currentMinutes = currentHora.split(':')[1];
                 const isPM = e.target.value === 'PM';
                 const hour24 = isPM ? (hour12 === 12 ? 12 : hour12 + 12) : (hour12 === 12 ? 0 : hour12);
                 setFormData((prev) => ({
