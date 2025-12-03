@@ -806,30 +806,10 @@ const IngestionResultado: React.FC = () => {
           };
         });
 
-        const getSortableTimestamp = (item: MediosItem) => {
-          const candidates = [
-            item.fecha_publicacion,
-            item.created_at,
-            item.fecha ?? undefined,
-          ];
-
-          for (const candidate of candidates) {
-            if (candidate) {
-              const timestamp = new Date(candidate).getTime();
-
-              if (!Number.isNaN(timestamp)) {
-                return timestamp;
-              }
-            }
-          }
-
-          return Number.MAX_SAFE_INTEGER;
-        };
-
+        // Ordenar cronológicamente del más antiguo al más reciente
         const sortedData = [...updatedData].sort((a, b) => {
-          const dateA = getSortableTimestamp(a);
-          const dateB = getSortableTimestamp(b);
-
+          const dateA = new Date(a.fecha_publicacion).getTime();
+          const dateB = new Date(b.fecha_publicacion).getTime();
           return dateA - dateB;
         });
 
@@ -837,7 +817,7 @@ const IngestionResultado: React.FC = () => {
 
         showSuccess(
           'Elemento actualizado',
-          'El elemento se ha actualizado correctamente'
+          'El elemento se ha actualizado y ordenado cronológicamente'
         );
 
         handleCloseAlertModal();

@@ -60,16 +60,31 @@ const AlertModal: React.FC<AlertModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (editingAlert) {
-        const editingDateIso = editingAlert.fecha
-          ? new Date(editingAlert.fecha).toISOString()
-          : null;
         const defaultData = createDefaultFormData();
+
+        let fecha = defaultData.fecha;
+        let hora = defaultData.hora;
+
+        if (editingAlert.fecha) {
+          const date = new Date(editingAlert.fecha);
+
+          // Formatear fecha en hora local (YYYY-MM-DD)
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          fecha = `${year}-${month}-${day}`;
+
+          // Formatear hora en hora local (HH:MM)
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          hora = `${hours}:${minutes}`;
+        }
 
         setFormData({
           ...defaultData,
           ...editingAlert,
-          fecha: editingDateIso?.slice(0, 10) || defaultData.fecha,
-          hora: editingDateIso?.slice(11, 16) || defaultData.hora,
+          fecha,
+          hora,
           reach: editingAlert.reach || 0,
           engagement: editingAlert.engagement || 0,
           emojis: editingAlert.emojis || [],
