@@ -170,15 +170,11 @@ const normalizeIngestionItem = (
 
   return {
     id: item.id,
-    titulo:
-      item.titulo?.trim() ||
-      (item.contenido
-        ? `${item.contenido.slice(0, 80)}…`
-        : 'Sin título disponible'),
+    titulo: item.titulo?.trim() || '',
     contenido: item.contenido || '',
     url: item.url || '',
-    autor: item.autor || 'Sin autor',
-    reach: item.reach ?? 0,
+    autor: item.autor || '',
+    reach: item.reach ?? null,
     engagement: item.engagement ?? null,
     fecha_publicacion: baseDate,
     created_at: baseDate,
@@ -432,7 +428,7 @@ const IngestionResultado: React.FC = () => {
   };
 
   const formatNumber = (num: number) =>
-    new Intl.NumberFormat('es-ES', { notation: 'compact' }).format(num);
+    new Intl.NumberFormat('es-ES').format(num);
 
   const highlightKeywords = (
     text: string | null | undefined,
@@ -895,10 +891,59 @@ const IngestionResultado: React.FC = () => {
       return;
     }
 
+    // Validar campos requeridos para medios
     const hasRedSocial = selectedData.some(
       (item) => item.tipo?.toLowerCase() === 'redes'
     );
     const tipoAlerta = hasRedSocial ? 'redes' : 'medios';
+
+    if (tipoAlerta === 'medios') {
+      const itemsWithMissingFields: string[] = [];
+      const missingFieldsByItem: Record<string, string[]> = {};
+
+      selectedData.forEach((item) => {
+        const missing: string[] = [];
+
+        if (!item.fecha_publicacion || item.fecha_publicacion.trim() === '') {
+          missing.push('Fecha de Publicación');
+        }
+        if (!item.titulo || item.titulo.trim() === '') {
+          missing.push('Título');
+        }
+        if (!item.url || item.url.trim() === '') {
+          missing.push('URL');
+        }
+        if (!item.autor || item.autor.trim() === '') {
+          missing.push('Autor');
+        }
+        if (item.reach === null || item.reach === undefined) {
+          missing.push('Reach');
+        }
+
+        if (missing.length > 0) {
+          const itemIdentifier = item.titulo && item.titulo.trim() !== ''
+            ? item.titulo
+            : item.contenido.substring(0, 50) + '...';
+          itemsWithMissingFields.push(itemIdentifier);
+          missingFieldsByItem[itemIdentifier] = missing;
+        }
+      });
+
+      if (itemsWithMissingFields.length > 0) {
+        const errorDetails = itemsWithMissingFields
+          .map((itemName) => {
+            const fields = missingFieldsByItem[itemName]?.join(', ') || '';
+            return `• ${itemName}: ${fields}`;
+          })
+          .join('\n');
+
+        showError(
+          'Campos incompletos',
+          `Las siguientes alertas tienen campos vacíos que deben ser completados:\n\n${errorDetails}\n\nPor favor, edita estos registros antes de enviar.`
+        );
+        return;
+      }
+    }
 
     try {
       setIsEnviandoAlertas(true);

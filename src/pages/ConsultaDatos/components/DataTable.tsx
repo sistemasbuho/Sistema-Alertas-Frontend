@@ -63,6 +63,31 @@ const DataTable: React.FC<DataTableProps> = ({
   showEmojiActions = true,
   showEditActions = true,
 }) => {
+  const isFieldEmpty = (value: any, fieldName: string, item: any) => {
+    if (fieldName === 'autor') {
+      return !value || value.trim() === '';
+    }
+    if (fieldName === 'reach') {
+      return value === null || value === undefined;
+    }
+    return !value || value.toString().trim() === '';
+  };
+
+  const renderFieldWithWarning = (content: React.ReactNode, item: any, fieldName: string) => {
+    const isEmpty = isFieldEmpty(item[fieldName], fieldName, item);
+
+    if (isEmpty && activeTab === 'medios') {
+      return (
+        <span className="inline-flex items-center gap-1">
+          <span className="text-red-500 text-lg" title="Campo requerido vacío">⚠️</span>
+          <span className="text-red-600 dark:text-red-400 text-xs font-semibold">Campo obligatorio</span>
+          {content}
+        </span>
+      );
+    }
+    return content;
+  };
+
   return (
     <>
       <style>{scrollbarStyles}</style>
@@ -190,14 +215,18 @@ const DataTable: React.FC<DataTableProps> = ({
                   <>
                     <td className="px-4 py-4" style={{ minWidth: '320px' }}>
                       <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: highlightKeywords(
-                              item.titulo || '',
-                              item.proyecto_keywords || []
-                            ),
-                          }}
-                        />
+                        {renderFieldWithWarning(
+                          <span
+                            dangerouslySetInnerHTML={{
+                              __html: highlightKeywords(
+                                item.titulo || '',
+                                item.proyecto_keywords || []
+                              ),
+                            }}
+                          />,
+                          item,
+                          'titulo'
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4" style={{ minWidth: '480px' }}>
@@ -254,26 +283,38 @@ const DataTable: React.FC<DataTableProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
-                        title={item.url}
-                      >
-                        {item.url?.length > 20
-                          ? `${item.url.substring(0, 20)}...`
-                          : item.url}
-                      </a>
+                      {renderFieldWithWarning(
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
+                          title={item.url}
+                        >
+                          {item.url?.length > 20
+                            ? `${item.url.substring(0, 20)}...`
+                            : item.url}
+                        </a>,
+                        item,
+                        'url'
+                      )}
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="text-sm text-gray-900 dark:text-white truncate">
-                        {item.autor || 'Sin autor'}
+                        {renderFieldWithWarning(
+                          item.autor || <span className="text-gray-400 italic">Sin autor</span>,
+                          item,
+                          'autor'
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                        {formatNumber(item.reach || 0)}
+                        {renderFieldWithWarning(
+                          item.reach !== null && item.reach !== undefined ? formatNumber(item.reach) : <span className="text-gray-400 italic">-</span>,
+                          item,
+                          'reach'
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-4 w-24">
@@ -287,7 +328,11 @@ const DataTable: React.FC<DataTableProps> = ({
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {formatDate(item.fecha_publicacion)}
+                        {renderFieldWithWarning(
+                          formatDate(item.fecha_publicacion),
+                          item,
+                          'fecha_publicacion'
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
@@ -417,26 +462,38 @@ const DataTable: React.FC<DataTableProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
-                        title={item.url}
-                      >
-                        {item.url?.length > 20
-                          ? `${item.url.substring(0, 20)}...`
-                          : item.url}
-                      </a>
+                      {renderFieldWithWarning(
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
+                          title={item.url}
+                        >
+                          {item.url?.length > 20
+                            ? `${item.url.substring(0, 20)}...`
+                            : item.url}
+                        </a>,
+                        item,
+                        'url'
+                      )}
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="text-sm text-gray-900 dark:text-white truncate">
-                        {item.autor || 'Sin autor'}
+                        {renderFieldWithWarning(
+                          item.autor || <span className="text-gray-400 italic">Sin autor</span>,
+                          item,
+                          'autor'
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                        {formatNumber(item.reach || 0)}
+                        {renderFieldWithWarning(
+                          item.reach !== null && item.reach !== undefined ? formatNumber(item.reach) : <span className="text-gray-400 italic">-</span>,
+                          item,
+                          'reach'
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-4 w-24">
