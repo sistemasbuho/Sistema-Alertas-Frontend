@@ -57,7 +57,7 @@ type MediosItem = {
   contenido: string;
   url: string;
   autor: string;
-  reach: number;
+  reach: number | null;
   engagement: number | null;
   fecha_publicacion: string;
   created_at: string;
@@ -767,7 +767,7 @@ const IngestionResultado: React.FC = () => {
       fecha: item.fecha_publicacion,
       titulo: item.titulo,
       autor: item.autor,
-      reach: item.reach,
+      reach: typeof item.reach === 'number' ? item.reach : undefined,
       engagement:
         typeof item.engagement === 'number' ? item.engagement : undefined,
       emojis: item.emojis,
@@ -891,58 +891,65 @@ const IngestionResultado: React.FC = () => {
       return;
     }
 
-    // Validar campos requeridos para medios
+    // Validar campos requeridos para medios y redes
     const hasRedSocial = selectedData.some(
       (item) => item.tipo?.toLowerCase() === 'redes'
     );
     const tipoAlerta = hasRedSocial ? 'redes' : 'medios';
 
-    if (tipoAlerta === 'medios') {
-      const itemsWithMissingFields: string[] = [];
-      const missingFieldsByItem: Record<string, string[]> = {};
+    const itemsWithMissingFields: string[] = [];
+    const missingFieldsByItem: Record<string, string[]> = {};
 
-      selectedData.forEach((item) => {
-        const missing: string[] = [];
+    selectedData.forEach((item) => {
+      const missing: string[] = [];
 
-        if (!item.fecha_publicacion || item.fecha_publicacion.trim() === '') {
-          missing.push('Fecha de Publicación');
-        }
-        if (!item.titulo || item.titulo.trim() === '') {
-          missing.push('Título');
-        }
-        if (!item.url || item.url.trim() === '') {
-          missing.push('URL');
-        }
-        if (!item.autor || item.autor.trim() === '') {
-          missing.push('Autor');
-        }
-        if (item.reach === null || item.reach === undefined) {
-          missing.push('Reach');
-        }
-
-        if (missing.length > 0) {
-          const itemIdentifier = item.titulo && item.titulo.trim() !== ''
-            ? item.titulo
-            : item.contenido.substring(0, 50) + '...';
-          itemsWithMissingFields.push(itemIdentifier);
-          missingFieldsByItem[itemIdentifier] = missing;
-        }
-      });
-
-      if (itemsWithMissingFields.length > 0) {
-        const errorDetails = itemsWithMissingFields
-          .map((itemName) => {
-            const fields = missingFieldsByItem[itemName]?.join(', ') || '';
-            return `• ${itemName}: ${fields}`;
-          })
-          .join('\n');
-
-        showError(
-          'Campos incompletos',
-          `Las siguientes alertas tienen campos vacíos que deben ser completados:\n\n${errorDetails}\n\nPor favor, edita estos registros antes de enviar.`
-        );
-        return;
+      // Validar campos comunes para medios y redes
+      if (!item.fecha_publicacion || item.fecha_publicacion.trim() === '') {
+        missing.push('Fecha');
       }
+      if (!item.url || item.url.trim() === '') {
+        missing.push('URL');
+      }
+      if (!item.autor || item.autor.trim() === '') {
+        missing.push('Autor');
+      }
+      if (!item.contenido || item.contenido.trim() === '') {
+        missing.push('Contenido');
+      }
+      if (item.reach === null || item.reach === undefined) {
+        missing.push('Alcance');
+      }
+      if (item.engagement === null || item.engagement === undefined) {
+        missing.push('Interacciones');
+      }
+
+      // Validar título solo para medios
+      if (tipoAlerta === 'medios' && (!item.titulo || item.titulo.trim() === '')) {
+        missing.push('Título');
+      }
+
+      if (missing.length > 0) {
+        const itemIdentifier = item.titulo && item.titulo.trim() !== ''
+          ? item.titulo
+          : item.contenido.substring(0, 50) + '...';
+        itemsWithMissingFields.push(itemIdentifier);
+        missingFieldsByItem[itemIdentifier] = missing;
+      }
+    });
+
+    if (itemsWithMissingFields.length > 0) {
+      const errorDetails = itemsWithMissingFields
+        .map((itemName) => {
+          const fields = missingFieldsByItem[itemName]?.join(', ') || '';
+          return `• ${itemName}: ${fields}`;
+        })
+        .join('\n');
+
+      showError(
+        'Campos incompletos',
+        `Las siguientes alertas tienen campos vacíos que deben ser completados:\n\n${errorDetails}\n\nPor favor, edita estos registros antes de enviar.`
+      );
+      return;
     }
 
     try {

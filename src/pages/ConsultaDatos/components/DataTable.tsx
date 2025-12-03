@@ -63,25 +63,41 @@ const DataTable: React.FC<DataTableProps> = ({
   showEmojiActions = true,
   showEditActions = true,
 }) => {
-  const isFieldEmpty = (value: any, fieldName: string, item: any) => {
-    if (fieldName === 'autor') {
+  const isFieldEmpty = (value: any, fieldName: string) => {
+    if (fieldName === 'autor' || fieldName === 'contenido') {
       return !value || value.trim() === '';
     }
-    if (fieldName === 'reach') {
+    if (fieldName === 'reach' || fieldName === 'engagement') {
       return value === null || value === undefined;
+    }
+    if (fieldName === 'url') {
+      return !value || value.trim() === '';
+    }
+    if (fieldName === 'fecha_publicacion') {
+      return !value || value.trim() === '';
     }
     return !value || value.toString().trim() === '';
   };
 
   const renderFieldWithWarning = (content: React.ReactNode, item: any, fieldName: string) => {
-    const isEmpty = isFieldEmpty(item[fieldName], fieldName, item);
+    const isEmpty = isFieldEmpty(item[fieldName], fieldName);
 
-    if (isEmpty && activeTab === 'medios') {
+    // Para medios, validar todos los campos incluyendo título
+    // Para redes, validar todos los campos excepto título
+    const shouldShowWarning = activeTab === 'medios'
+      ? isEmpty
+      : activeTab === 'redes' && fieldName !== 'titulo' && isEmpty;
+
+    if (shouldShowWarning) {
       return (
-        <span className="inline-flex items-center gap-1">
-          <span className="text-red-500 text-lg" title="Campo requerido vacío">⚠️</span>
-          <span className="text-red-600 dark:text-red-400 text-xs font-semibold">Campo obligatorio</span>
-          {content}
+        <span className="inline-flex flex-col gap-1">
+          <span className="inline-flex items-center gap-1">
+            <span className="text-red-500 text-lg" title="Campo requerido vacío">⚠️</span>
+            <span className="text-red-600 dark:text-red-400 text-xs font-semibold">Campo obligatorio</span>
+          </span>
+          <span className="border-b-2 border-red-500 pb-1">
+            {content}
+          </span>
         </span>
       );
     }
@@ -230,49 +246,53 @@ const DataTable: React.FC<DataTableProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-4" style={{ minWidth: '480px' }}>
-                      <div
-                        className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
-                        title={
-                          item.mensaje_formateado ||
-                          (item.emojis && item.emojis.length > 0
-                            ? `${item.emojis.join(' ')} ${item.contenido}`
-                            : item.contenido)
-                        }
-                        style={{
-                          scrollbarWidth: 'thin',
-                          scrollbarColor:
-                            'rgba(156, 163, 175, 0.3) transparent',
-                        }}
-                      >
-                        {item.emojis && item.emojis.length > 0 && (
-                          <span className="inline-flex items-center gap-1 mr-2">
-                            {item.emojis.map((emoji: string, index: number) =>
-                              showEmojiActions ? (
-                                <button
-                                  key={index}
-                                  onClick={() => onRemoveEmoji(item.id, index)}
-                                  className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
-                                  title="Clic para remover emoji"
-                                >
-                                  {emoji}
-                                </button>
-                              ) : (
-                                <span key={index} className="px-1">
-                                  {emoji}
-                                </span>
-                              )
-                            )}
-                          </span>
-                        )}
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: highlightKeywords(
-                              item.contenido,
-                              item.proyecto_keywords || []
-                            ),
+                      {renderFieldWithWarning(
+                        <div
+                          className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
+                          title={
+                            item.mensaje_formateado ||
+                            (item.emojis && item.emojis.length > 0
+                              ? `${item.emojis.join(' ')} ${item.contenido}`
+                              : item.contenido)
+                          }
+                          style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor:
+                              'rgba(156, 163, 175, 0.3) transparent',
                           }}
-                        />
-                      </div>
+                        >
+                          {item.emojis && item.emojis.length > 0 && (
+                            <span className="inline-flex items-center gap-1 mr-2">
+                              {item.emojis.map((emoji: string, index: number) =>
+                                showEmojiActions ? (
+                                  <button
+                                    key={index}
+                                    onClick={() => onRemoveEmoji(item.id, index)}
+                                    className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
+                                    title="Clic para remover emoji"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ) : (
+                                  <span key={index} className="px-1">
+                                    {emoji}
+                                  </span>
+                                )
+                              )}
+                            </span>
+                          )}
+                          <span
+                            dangerouslySetInnerHTML={{
+                              __html: highlightKeywords(
+                                item.contenido,
+                                item.proyecto_keywords || []
+                              ),
+                            }}
+                          />
+                        </div>,
+                        item,
+                        'contenido'
+                      )}
                     </td>
                     <td className="px-4 py-4 w-40">
                       <div
@@ -319,11 +339,15 @@ const DataTable: React.FC<DataTableProps> = ({
                     </td>
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
-                        {item.engagement !== null &&
-                        item.engagement !== undefined &&
-                        !isNaN(Number(item.engagement))
-                          ? formatNumber(Number(item.engagement))
-                          : 'N/A'}
+                        {renderFieldWithWarning(
+                          item.engagement !== null &&
+                          item.engagement !== undefined &&
+                          !isNaN(Number(item.engagement))
+                            ? formatNumber(Number(item.engagement))
+                            : <span className="text-gray-400 italic">-</span>,
+                          item,
+                          'engagement'
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-4 w-32">
@@ -409,49 +433,53 @@ const DataTable: React.FC<DataTableProps> = ({
                 ) : (
                   <>
                     <td className="px-4 py-4" style={{ minWidth: '480px' }}>
-                      <div
-                        className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
-                        title={
-                          item.mensaje_formateado ||
-                          (item.emojis && item.emojis.length > 0
-                            ? `${item.emojis.join(' ')} ${item.contenido}`
-                            : item.contenido)
-                        }
-                        style={{
-                          scrollbarWidth: 'thin',
-                          scrollbarColor:
-                            'rgba(156, 163, 175, 0.3) transparent',
-                        }}
-                      >
-                        {item.emojis && item.emojis.length > 0 && (
-                          <span className="inline-flex items-center gap-1 mr-2">
-                            {item.emojis.map((emoji: string, index: number) =>
-                              showEmojiActions ? (
-                                <button
-                                  key={index}
-                                  onClick={() => onRemoveEmoji(item.id, index)}
-                                  className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
-                                  title="Clic para remover emoji"
-                                >
-                                  {emoji}
-                                </button>
-                              ) : (
-                                <span key={index} className="px-1">
-                                  {emoji}
-                                </span>
-                              )
-                            )}
-                          </span>
-                        )}
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: highlightKeywords(
-                              item.contenido,
-                              item.proyecto_keywords || []
-                            ),
+                      {renderFieldWithWarning(
+                        <div
+                          className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
+                          title={
+                            item.mensaje_formateado ||
+                            (item.emojis && item.emojis.length > 0
+                              ? `${item.emojis.join(' ')} ${item.contenido}`
+                              : item.contenido)
+                          }
+                          style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor:
+                              'rgba(156, 163, 175, 0.3) transparent',
                           }}
-                        />
-                      </div>
+                        >
+                          {item.emojis && item.emojis.length > 0 && (
+                            <span className="inline-flex items-center gap-1 mr-2">
+                              {item.emojis.map((emoji: string, index: number) =>
+                                showEmojiActions ? (
+                                  <button
+                                    key={index}
+                                    onClick={() => onRemoveEmoji(item.id, index)}
+                                    className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
+                                    title="Clic para remover emoji"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ) : (
+                                  <span key={index} className="px-1">
+                                    {emoji}
+                                  </span>
+                                )
+                              )}
+                            </span>
+                          )}
+                          <span
+                            dangerouslySetInnerHTML={{
+                              __html: highlightKeywords(
+                                item.contenido,
+                                item.proyecto_keywords || []
+                              ),
+                            }}
+                          />
+                        </div>,
+                        item,
+                        'contenido'
+                      )}
                     </td>
                     <td className="px-4 py-4 w-40">
                       <div
@@ -498,16 +526,24 @@ const DataTable: React.FC<DataTableProps> = ({
                     </td>
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                        {item.engagement !== null &&
-                        item.engagement !== undefined &&
-                        !isNaN(Number(item.engagement))
-                          ? formatNumber(Number(item.engagement))
-                          : formatNumber(0)}
+                        {renderFieldWithWarning(
+                          item.engagement !== null &&
+                          item.engagement !== undefined &&
+                          !isNaN(Number(item.engagement))
+                            ? formatNumber(Number(item.engagement))
+                            : <span className="text-gray-400 italic">-</span>,
+                          item,
+                          'engagement'
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {formatDate(item.fecha_publicacion || item.fecha)}
+                        {renderFieldWithWarning(
+                          formatDate(item.fecha_publicacion || item.fecha),
+                          item,
+                          'fecha_publicacion'
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
