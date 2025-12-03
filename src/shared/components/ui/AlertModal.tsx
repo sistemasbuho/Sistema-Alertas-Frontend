@@ -15,6 +15,8 @@ export interface AlertaData {
   engagement?: number;
   emojis?: string[];
   mensaje_formateado?: string;
+  tipo?: string;
+  red_social?: string;
 }
 
 type AlertFormData = AlertaData & {
@@ -127,7 +129,9 @@ const AlertModal: React.FC<AlertModalProps> = ({
         'La URL debe ser válida (debe empezar con http:// o https://)';
     }
 
-    if (!formData.contenido.trim()) {
+    // El contenido NO es obligatorio cuando se edita una alerta desde ingestion
+    // (tanto para medios como para redes)
+    if (!editingAlert && !formData.contenido.trim()) {
       newErrors.contenido = 'El contenido es requerido';
     }
 
@@ -193,7 +197,9 @@ const AlertModal: React.FC<AlertModalProps> = ({
           return new Date(formData.fecha).toISOString();
         }
 
-        return new Date(year, month - 1, day, hours, minutes).toISOString();
+        // Construir ISO string manteniendo la hora exacta ingresada (sin conversión de zona horaria)
+        const isoString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00Z`;
+        return isoString;
       };
 
       const { hora, ...formDataWithoutHora } = formData;
@@ -247,7 +253,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
         <div className="w-full">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contenido *
+            Contenido {!editingAlert && '*'}
           </label>
           <textarea
             value={formData.contenido}
@@ -285,13 +291,68 @@ const AlertModal: React.FC<AlertModalProps> = ({
           disabled={isLoading}
         />
 
-        <Input
-          label="Hora"
-          type="time"
-          value={formData.hora}
-          onChange={handleInputChange('hora')}
-          disabled={isLoading}
-        />
+        <div className="w-full">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Hora
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={formData.hora ? parseInt(formData.hora.split(':')[0]) % 12 || 12 : 12}
+              onChange={(e) => {
+                const hour12 = parseInt(e.target.value);
+                const currentMinutes = formData.hora ? formData.hora.split(':')[1] : '00';
+                const isPM = formData.hora ? parseInt(formData.hora.split(':')[0]) >= 12 : false;
+                const hour24 = isPM ? (hour12 === 12 ? 12 : hour12 + 12) : (hour12 === 12 ? 0 : hour12);
+                setFormData((prev) => ({
+                  ...prev,
+                  hora: `${String(hour24).padStart(2, '0')}:${currentMinutes}`
+                }));
+              }}
+              disabled={isLoading}
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(hour => (
+                <option key={hour} value={hour}>{hour}</option>
+              ))}
+            </select>
+            <select
+              value={formData.hora ? formData.hora.split(':')[1] : '00'}
+              onChange={(e) => {
+                const currentHour = formData.hora ? formData.hora.split(':')[0] : '00';
+                setFormData((prev) => ({
+                  ...prev,
+                  hora: `${currentHour}:${e.target.value}`
+                }));
+              }}
+              disabled={isLoading}
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+            >
+              {Array.from({ length: 60 }, (_, i) => i).map(minute => (
+                <option key={minute} value={String(minute).padStart(2, '0')}>
+                  {String(minute).padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <select
+              value={formData.hora && parseInt(formData.hora.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+              onChange={(e) => {
+                const hour12 = formData.hora ? parseInt(formData.hora.split(':')[0]) % 12 || 12 : 12;
+                const currentMinutes = formData.hora ? formData.hora.split(':')[1] : '00';
+                const isPM = e.target.value === 'PM';
+                const hour24 = isPM ? (hour12 === 12 ? 12 : hour12 + 12) : (hour12 === 12 ? 0 : hour12);
+                setFormData((prev) => ({
+                  ...prev,
+                  hora: `${String(hour24).padStart(2, '0')}:${currentMinutes}`
+                }));
+              }}
+              disabled={isLoading}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+            >
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+          </div>
+        </div>
 
         <Input
           label="Autor"
@@ -306,10 +367,21 @@ const AlertModal: React.FC<AlertModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Alcance (Reach)"
-            type="number"
-            min="0"
-            value={formData.reach || ''}
-            onChange={handleInputChange('reach')}
+            type="text"
+            value={formData.reach !== undefined && formData.reach !== null && formData.reach !== 0
+              ? new Intl.NumberFormat('es-ES').format(Number(formData.reach))
+              : formData.reach === 0 ? '0' : ''}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\./g, '');
+              const numValue = value === '' ? 0 : Number(value);
+              setFormData((prev) => ({
+                ...prev,
+                reach: isNaN(numValue) ? 0 : numValue,
+              }));
+              if (errors.reach) {
+                setErrors((prev) => ({ ...prev, reach: '' }));
+              }
+            }}
             error={errors.reach}
             placeholder="0"
             disabled={isLoading}
@@ -317,10 +389,21 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
           <Input
             label="Interacción (Engagement)"
-            type="number"
-            min="0"
-            value={formData.engagement || ''}
-            onChange={handleInputChange('engagement')}
+            type="text"
+            value={formData.engagement !== undefined && formData.engagement !== null && formData.engagement !== 0
+              ? new Intl.NumberFormat('es-ES').format(Number(formData.engagement))
+              : formData.engagement === 0 ? '0' : ''}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\./g, '');
+              const numValue = value === '' ? 0 : Number(value);
+              setFormData((prev) => ({
+                ...prev,
+                engagement: isNaN(numValue) ? 0 : numValue,
+              }));
+              if (errors.engagement) {
+                setErrors((prev) => ({ ...prev, engagement: '' }));
+              }
+            }}
             error={errors.engagement}
             placeholder="0"
             disabled={isLoading}
