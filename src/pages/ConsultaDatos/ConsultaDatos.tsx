@@ -913,7 +913,7 @@ const ConsultaDatos: React.FC = () => {
   };
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('es-ES').format(num);
+    return new Intl.NumberFormat('es-CO').format(num);
   };
 
   const highlightKeywords = (

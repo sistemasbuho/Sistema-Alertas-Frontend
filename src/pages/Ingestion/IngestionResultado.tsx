@@ -451,7 +451,7 @@ const IngestionResultado: React.FC = () => {
   };
 
   const formatNumber = (num: number) =>
-    new Intl.NumberFormat('es-ES').format(num);
+    new Intl.NumberFormat('es-CO').format(num);
 
   const highlightKeywords = (
     text: string | null | undefined,

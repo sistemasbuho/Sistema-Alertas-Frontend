@@ -307,7 +307,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
             label="Alcance (Reach)"
             type="text"
             value={formData.reach !== undefined && formData.reach !== null && formData.reach !== 0
-              ? new Intl.NumberFormat('es-ES').format(Number(formData.reach))
+              ? new Intl.NumberFormat('es-CO').format(Number(formData.reach))
               : formData.reach === 0 ? '0' : ''}
             onChange={(e) => {
               const value = e.target.value.replace(/\./g, '');
@@ -329,7 +329,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
             label="Interacción (Engagement)"
             type="text"
             value={formData.engagement !== undefined && formData.engagement !== null && formData.engagement !== 0
-              ? new Intl.NumberFormat('es-ES').format(Number(formData.engagement))
+              ? new Intl.NumberFormat('es-CO').format(Number(formData.engagement))
               : formData.engagement === 0 ? '0' : ''}
             onChange={(e) => {
               const value = e.target.value.replace(/\./g, '');
