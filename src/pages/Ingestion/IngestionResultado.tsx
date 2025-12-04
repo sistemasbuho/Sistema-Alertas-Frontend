@@ -821,8 +821,12 @@ const IngestionResultado: React.FC = () => {
     try {
       if (editingAlert) {
         // Determinar si es medio o red
-        const itemToUpdate = medios.find(item => item.id === editingAlert.id);
         const isMedio = activeTab === 'medios';
+
+        // Validar que existe el ID
+        if (!editingAlert.id) {
+          throw new Error('ID de alerta no disponible');
+        }
 
         // Preparar datos para el backend
         const updateData = {
@@ -1049,12 +1053,8 @@ const IngestionResultado: React.FC = () => {
             new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
-          reach: item.reach !== null && item.reach !== undefined
-            ? formatNumber(item.reach)
-            : null,
-          engagement: item.engagement !== null && item.engagement !== undefined
-            ? formatNumber(item.engagement)
-            : null,
+          reach: item.reach ?? null,
+          engagement: item.engagement ?? null,
           emojis: item.emojis_only || '',
         })),
       };
