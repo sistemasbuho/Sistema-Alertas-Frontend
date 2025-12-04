@@ -1209,8 +1209,8 @@ export interface EnvioAlertaRequest {
     fecha: string;
     titulo?: string;
     autor?: string;
-    reach?: number | null;
-    engagement?: number | null;
+    reach?: number | string | null;
+    engagement?: number | string | null;
     emojis?: string;
   }>;
 }

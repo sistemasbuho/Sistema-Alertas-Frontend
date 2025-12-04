@@ -1053,8 +1053,12 @@ const IngestionResultado: React.FC = () => {
             new Date().toISOString(),
           titulo: item.titulo || '',
           autor: item.autor || '',
-          reach: item.reach ?? null,
-          engagement: item.engagement ?? null,
+          reach: item.reach !== null && item.reach !== undefined
+            ? formatNumber(item.reach)
+            : null,
+          engagement: item.engagement !== null && item.engagement !== undefined
+            ? formatNumber(item.engagement)
+            : null,
           emojis: item.emojis_only || '',
         })),
       };
