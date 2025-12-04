@@ -20,7 +20,7 @@ export interface AlertaData {
 }
 
 type AlertFormData = AlertaData & {
-  hora: string;
+  fechaHora: string; // datetime-local format: YYYY-MM-DDTHH:mm
 };
 
 interface AlertModalProps {
@@ -40,13 +40,19 @@ const AlertModal: React.FC<AlertModalProps> = ({
 }) => {
   const { showError } = useToast();
   const createDefaultFormData = (): AlertFormData => {
-    const nowIso = new Date().toISOString();
+    // Formato para datetime-local: YYYY-MM-DDTHH:mm
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    const hours = String(now.getUTCHours()).padStart(2, '0');
+    const minutes = String(now.getUTCMinutes()).padStart(2, '0');
 
     return {
       url: '',
       contenido: '',
-      fecha: nowIso.slice(0, 10),
-      hora: nowIso.slice(11, 16),
+      fecha: now.toISOString(),
+      fechaHora: `${year}-${month}-${day}T${hours}:${minutes}`,
       titulo: '',
       autor: '',
       reach: 0,
@@ -64,29 +70,40 @@ const AlertModal: React.FC<AlertModalProps> = ({
       if (editingAlert) {
         const defaultData = createDefaultFormData();
 
-        let fecha = defaultData.fecha;
-        let hora = defaultData.hora;
+        let fechaHora = defaultData.fechaHora;
 
         if (editingAlert.fecha) {
           const date = new Date(editingAlert.fecha);
 
-          // Formatear fecha en hora local (YYYY-MM-DD)
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          fecha = `${year}-${month}-${day}`;
+          // Detectar si la fecha es UTC o local
+          const isUTC = editingAlert.fecha.endsWith('Z') ||
+                        (editingAlert.fecha.includes('T') && editingAlert.fecha.includes('+'));
 
-          // Formatear hora en hora local (HH:MM)
-          const hours = String(date.getHours()).padStart(2, '0');
-          const minutes = String(date.getMinutes()).padStart(2, '0');
-          hora = `${hours}:${minutes}`;
+          let year, month, day, hours, minutes;
+
+          if (isUTC) {
+            // Si es UTC, usar métodos UTC para mantener la hora exacta
+            year = date.getUTCFullYear();
+            month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            day = String(date.getUTCDate()).padStart(2, '0');
+            hours = String(date.getUTCHours()).padStart(2, '0');
+            minutes = String(date.getUTCMinutes()).padStart(2, '0');
+          } else {
+            // Si es hora local del backend, usar métodos locales
+            year = date.getFullYear();
+            month = String(date.getMonth() + 1).padStart(2, '0');
+            day = String(date.getDate()).padStart(2, '0');
+            hours = String(date.getHours()).padStart(2, '0');
+            minutes = String(date.getMinutes()).padStart(2, '0');
+          }
+
+          fechaHora = `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
         setFormData({
           ...defaultData,
           ...editingAlert,
-          fecha,
-          hora,
+          fechaHora,
           reach: editingAlert.reach || 0,
           engagement: editingAlert.engagement || 0,
           emojis: editingAlert.emojis || [],
@@ -155,58 +172,42 @@ const AlertModal: React.FC<AlertModalProps> = ({
     }
 
     try {
-      const buildFechaIsoString = () => {
-        if (!formData.fecha) {
-          return editingAlert?.fecha || new Date().toISOString();
-        }
+      // El datetime-local da formato YYYY-MM-DDTHH:mm en hora LOCAL del navegador
+      // Necesitamos convertirlo a ISO pero respetando que es hora local, no UTC
+      let fechaIso: string;
 
-        if (editingAlert?.fecha) {
-          const originalDateIso = new Date(editingAlert.fecha)
-            .toISOString();
-          const originalDate = originalDateIso.slice(0, 10);
-          const originalTime = originalDateIso.slice(11, 16);
+      if (formData.fechaHora) {
+        // Parsearlo como fecha local y luego generar el ISO en zona horaria local
+        const localDate = new Date(formData.fechaHora);
 
-          if (
-            originalDate === formData.fecha &&
-            originalTime === (formData.hora || '')
-          ) {
-            return editingAlert.fecha;
-          }
-        }
+        // Obtener el offset de zona horaria en minutos
+        const offset = localDate.getTimezoneOffset();
+        const offsetHours = Math.abs(Math.floor(offset / 60));
+        const offsetMinutes = Math.abs(offset % 60);
+        const offsetSign = offset <= 0 ? '+' : '-';
 
-        const [yearStr, monthStr, dayStr] = formData.fecha.split('-');
-        const [hourStr = '0', minuteStr = '0'] = (formData.hora || '').split(':');
+        // Construir el string ISO con la zona horaria local
+        const year = localDate.getFullYear();
+        const month = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day = String(localDate.getDate()).padStart(2, '0');
+        const hours = String(localDate.getHours()).padStart(2, '0');
+        const minutes = String(localDate.getMinutes()).padStart(2, '0');
+        const seconds = '00';
 
-        if (!yearStr || !monthStr || !dayStr) {
-          return new Date(formData.fecha).toISOString();
-        }
+        fechaIso = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+      } else {
+        fechaIso = new Date().toISOString();
+      }
 
-        const year = Number.parseInt(yearStr, 10);
-        const month = Number.parseInt(monthStr, 10);
-        const day = Number.parseInt(dayStr, 10);
-        const hours = Number.parseInt(hourStr, 10);
-        const minutes = Number.parseInt(minuteStr, 10);
+      console.log('📅 AlertModal - Fecha original:', editingAlert?.fecha);
+      console.log('📅 AlertModal - fechaHora del input:', formData.fechaHora);
+      console.log('📅 AlertModal - fechaIso que se enviará:', fechaIso);
 
-        if (
-          Number.isNaN(year) ||
-          Number.isNaN(month) ||
-          Number.isNaN(day) ||
-          Number.isNaN(hours) ||
-          Number.isNaN(minutes)
-        ) {
-          return new Date(formData.fecha).toISOString();
-        }
-
-        // Construir ISO string manteniendo la hora exacta ingresada (sin conversión de zona horaria)
-        const isoString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00Z`;
-        return isoString;
-      };
-
-      const { hora, ...formDataWithoutHora } = formData;
+      const { fechaHora, ...formDataWithoutFechaHora } = formData;
 
       const alertaToSave: AlertaData = {
-        ...formDataWithoutHora,
-        fecha: buildFechaIsoString(),
+        ...formDataWithoutFechaHora,
+        fecha: fechaIso,
         id: editingAlert?.id,
       };
 
@@ -283,77 +284,13 @@ const AlertModal: React.FC<AlertModalProps> = ({
         </div>
 
         <Input
-          label="Fecha"
-          type="date"
-          value={formData.fecha}
-          onChange={handleInputChange('fecha')}
+          label="Fecha y Hora"
+          type="datetime-local"
+          value={formData.fechaHora}
+          onChange={handleInputChange('fechaHora')}
           error={errors.fecha}
           disabled={isLoading}
         />
-
-        <div className="w-full">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Hora
-          </label>
-          <div className="flex gap-2">
-            <select
-              value={formData.hora ? parseInt((formData.hora || '00:00').split(':')[0]) % 12 || 12 : 12}
-              onChange={(e) => {
-                const hour12 = parseInt(e.target.value);
-                const currentMinutes = formData.hora ? (formData.hora || '00:00').split(':')[1] : '00';
-                const isPM = formData.hora ? parseInt((formData.hora || '00:00').split(':')[0]) >= 12 : false;
-                const hour24 = isPM ? (hour12 === 12 ? 12 : hour12 + 12) : (hour12 === 12 ? 0 : hour12);
-                setFormData((prev) => ({
-                  ...prev,
-                  hora: `${String(hour24).padStart(2, '0')}:${currentMinutes}`
-                }));
-              }}
-              disabled={isLoading}
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(hour => (
-                <option key={hour} value={hour}>{hour}</option>
-              ))}
-            </select>
-            <select
-              value={formData.hora ? (formData.hora || '00:00').split(':')[1] : '00'}
-              onChange={(e) => {
-                const currentHour = formData.hora ? (formData.hora || '00:00').split(':')[0] : '00';
-                setFormData((prev) => ({
-                  ...prev,
-                  hora: `${currentHour}:${e.target.value}`
-                }));
-              }}
-              disabled={isLoading}
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              {Array.from({ length: 60 }, (_, i) => i).map(minute => (
-                <option key={minute} value={String(minute).padStart(2, '0')}>
-                  {String(minute).padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-            <select
-              value={parseInt((formData.hora || '00:00').split(':')[0]) >= 12 ? 'PM' : 'AM'}
-              onChange={(e) => {
-                const currentHora = formData.hora || '00:00';
-                const hour12 = parseInt(currentHora.split(':')[0]) % 12 || 12;
-                const currentMinutes = currentHora.split(':')[1];
-                const isPM = e.target.value === 'PM';
-                const hour24 = isPM ? (hour12 === 12 ? 12 : hour12 + 12) : (hour12 === 12 ? 0 : hour12);
-                setFormData((prev) => ({
-                  ...prev,
-                  hora: `${String(hour24).padStart(2, '0')}:${currentMinutes}`
-                }));
-              }}
-              disabled={isLoading}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
-        </div>
 
         <Input
           label="Autor"

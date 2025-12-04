@@ -408,19 +408,42 @@ const IngestionResultado: React.FC = () => {
     if (!dateString) return 'Fecha no disponible';
 
     try {
+      // Detectar si la fecha termina con 'Z' (UTC) o no
+      const isUTC = dateString.endsWith('Z') || dateString.includes('T') && dateString.includes('+');
+
       const date = new Date(dateString);
       if (Number.isNaN(date.getTime())) {
         return 'Fecha inválida';
       }
 
-      return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      });
+      let year, month, day, hours, minutes;
+
+      if (isUTC) {
+        // Si es UTC, usar métodos UTC para mantener la hora exacta
+        year = date.getUTCFullYear();
+        month = date.getUTCMonth();
+        day = date.getUTCDate();
+        hours = date.getUTCHours();
+        minutes = date.getUTCMinutes();
+      } else {
+        // Si es hora local (del backend), usar métodos locales
+        year = date.getFullYear();
+        month = date.getMonth();
+        day = date.getDate();
+        hours = date.getHours();
+        minutes = date.getMinutes();
+      }
+
+      // Convertir a formato 12 horas
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // 0 debería ser 12
+
+      // Nombres de meses en español
+      const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
+                          'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+      return `${day} ${monthNames[month]} ${year}, ${hours}:${String(minutes).padStart(2, '0')} ${ampm}`;
     } catch (error) {
       console.error('Error formateando fecha:', dateString, error);
       return 'Error en fecha';
@@ -812,28 +835,39 @@ const IngestionResultado: React.FC = () => {
           fecha_publicacion: alertData.fecha,
         };
 
-        // Llamar al endpoint correspondiente
+        console.log('📤 Enviando al servidor fecha:', alertData.fecha);
+
+        // Llamar al endpoint correspondiente y capturar la respuesta del servidor
+        let serverResponse;
         if (isMedio) {
           const { updateMedio } = await import('@shared/services/api');
-          await updateMedio(editingAlert.id, updateData);
+          serverResponse = await updateMedio(editingAlert.id, updateData);
         } else {
           const { updateRed } = await import('@shared/services/api');
-          await updateRed(editingAlert.id, updateData);
+          serverResponse = await updateRed(editingAlert.id, updateData);
         }
 
-        // Actualizar el estado local después de la actualización exitosa en el backend
+        console.log('📥 Respuesta del servidor con fecha actualizada:', serverResponse);
+
+        // Actualizar el estado local usando la fecha que devolvió el servidor
         const updatedData = medios.map((item) => {
           if (item.id !== editingAlert.id) {
             return item;
           }
 
-          const updatedPublicationDate = alertData.fecha || item.fecha_publicacion;
+          // Usar la fecha_publicacion del servidor si está disponible, sino usar la que enviamos
+          const updatedPublicationDate = serverResponse?.fecha_publicacion || alertData.fecha || item.fecha_publicacion;
 
           return {
             ...item,
-            ...alertData,
+            titulo: alertData.titulo ?? item.titulo,
+            contenido: alertData.contenido ?? item.contenido,
+            url: alertData.url ?? item.url,
+            autor: alertData.autor ?? item.autor,
+            reach: alertData.reach ?? item.reach,
+            engagement: alertData.engagement ?? item.engagement,
             fecha_publicacion: updatedPublicationDate,
-            fecha: alertData.fecha ?? item.fecha ?? updatedPublicationDate,
+            fecha: updatedPublicationDate,
             mensaje: alertData.contenido ?? item.mensaje,
           };
         });
