@@ -74,6 +74,11 @@ const ConsultaDatos: React.FC = () => {
     url: '',
     estado_enviado: '',
     estado_revisado: '',
+    medio_url: '',
+    medio_url_coincide: '',
+    red_social_nombre: '',
+    created_at_desde: '',
+    created_at_hasta: '',
   });
 
   const redesFilters = useUrlFilters({
@@ -82,6 +87,11 @@ const ConsultaDatos: React.FC = () => {
     url: '',
     estado_enviado: '',
     estado_revisado: '',
+    medio_url: '',
+    medio_url_coincide: '',
+    red_social_nombre: '',
+    created_at_desde: '',
+    created_at_hasta: '',
   });
 
   const [isInitializing, setIsInitializing] = useState(true);

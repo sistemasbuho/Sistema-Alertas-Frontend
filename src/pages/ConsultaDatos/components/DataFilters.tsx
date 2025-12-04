@@ -11,6 +11,11 @@ interface FilterState {
     url?: string;
     estado_enviado?: string;
     estado_revisado?: string;
+    medio_url?: string;
+    medio_url_coincide?: string;
+    red_social_nombre?: string;
+    created_at_desde?: string;
+    created_at_hasta?: string;
   };
   updateFilters: (newFilters: any) => void;
   clearFilters: () => void;
@@ -138,6 +143,68 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 <option value="false">Pendiente</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                URL exacta
+              </label>
+              <input
+                type="text"
+                value={mediosFilters.filters.medio_url || ''}
+                onChange={(e) =>
+                  mediosFilters.updateFilters({
+                    medio_url: e.target.value,
+                  })
+                }
+                placeholder="https://ejemplo.com/articulo/123"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                URL contiene
+              </label>
+              <input
+                type="text"
+                value={mediosFilters.filters.medio_url_coincide || ''}
+                onChange={(e) =>
+                  mediosFilters.updateFilters({
+                    medio_url_coincide: e.target.value,
+                  })
+                }
+                placeholder="ejemplo"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Fecha Creación (desde)
+              </label>
+              <input
+                type="datetime-local"
+                value={mediosFilters.filters.created_at_desde || ''}
+                onChange={(e) =>
+                  mediosFilters.updateFilters({
+                    created_at_desde: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Fecha Creación (hasta)
+              </label>
+              <input
+                type="datetime-local"
+                value={mediosFilters.filters.created_at_hasta || ''}
+                onChange={(e) =>
+                  mediosFilters.updateFilters({
+                    created_at_hasta: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
           </>
         ) : (
           <>
@@ -224,6 +291,84 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 <option value="true">Revisado</option>
                 <option value="false">Pendiente</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                URL exacta
+              </label>
+              <input
+                type="text"
+                value={redesFilters.filters.medio_url || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    medio_url: e.target.value,
+                  })
+                }
+                placeholder="https://twitter.com/user/status/123"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                URL contiene
+              </label>
+              <input
+                type="text"
+                value={redesFilters.filters.medio_url_coincide || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    medio_url_coincide: e.target.value,
+                  })
+                }
+                placeholder="twitter"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Red Social
+              </label>
+              <input
+                type="text"
+                value={redesFilters.filters.red_social_nombre || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    red_social_nombre: e.target.value,
+                  })
+                }
+                placeholder="twitter, facebook, instagram"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Fecha Creación (desde)
+              </label>
+              <input
+                type="datetime-local"
+                value={redesFilters.filters.created_at_desde || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    created_at_desde: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Fecha Creación (hasta)
+              </label>
+              <input
+                type="datetime-local"
+                value={redesFilters.filters.created_at_hasta || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    created_at_hasta: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
           </>
         )}
