@@ -229,6 +229,7 @@ const IngestionResultado: React.FC = () => {
   const [medios, setMedios] = useState<MediosItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const hasSelectedItems = selectedItems.length > 0;
   const [showFilters, setShowFilters] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | 'all'>(
@@ -1339,7 +1340,11 @@ const IngestionResultado: React.FC = () => {
           <Card.Content className="p-4">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex-1 relative w-full">
+                <div
+                  className={`relative w-full ${
+                    hasSelectedItems ? 'sm:max-w-xs sm:flex-none' : 'flex-1'
+                  }`}
+                >
                   <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -1370,7 +1375,7 @@ const IngestionResultado: React.FC = () => {
                       </span>
                     )}
                   </Button>
-                  {selectedItems.length > 0 && (
+                  {hasSelectedItems && (
                     <>
                       <Button
                         onClick={() => handleOpenEmojiPicker('all')}
@@ -1387,6 +1392,9 @@ const IngestionResultado: React.FC = () => {
                       >
                         <CheckCircleIcon className="h-4 w-4" />
                         Revisados
+                      </Button>
+                      <Button variant="outline" className="inline-flex items-center gap-2">
+                        BrightData
                       </Button>
                       <div className="flex flex-col gap-2">
                         <Button
