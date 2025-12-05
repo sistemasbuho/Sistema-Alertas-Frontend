@@ -579,6 +579,7 @@ export interface IngestionResultItem {
   titulo?: string | null;
   contenido: string;
   fecha?: string | null;
+  fecha_creacion?: string | null;
   autor?: string | null;
   reach?: number | null;
   engagement?: number | null;
@@ -1513,6 +1514,36 @@ export const updateRed = async (
   } catch (error) {
     console.error('Error actualizando red:', error);
     throw error;
+  }
+};
+
+export interface BrightDataSnapshotRequest {
+  red_social: string;
+  urls: string[];
+}
+
+export interface BrightDataSnapshotResponse {
+  success: boolean;
+  message?: string;
+  data?: any;
+}
+
+export const sendToBrightData = async (
+  payload: BrightDataSnapshotRequest
+): Promise<BrightDataSnapshotResponse> => {
+  try {
+    const response = await apiClient.post('/api/brightdata/snapshot/', payload);
+    return {
+      success: true,
+      message: response.data?.message || 'Solicitud enviada a BrightData correctamente',
+      data: response.data,
+    };
+  } catch (error: any) {
+    console.error('Error enviando a BrightData:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Error al enviar a BrightData',
+    };
   }
 };
 

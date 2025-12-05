@@ -32,6 +32,7 @@ import {
 import {
   getIngestionResults,
   enviarAlertasAPI,
+  sendToBrightData,
   type IngestionResultItem,
   type EnvioAlertaRequest,
 } from '@shared/services/api';
@@ -61,6 +62,7 @@ type MediosItem = {
   engagement: number | null;
   fecha_publicacion: string;
   created_at: string;
+  fecha_creacion?: string | null;
   fecha?: string | null;
   estado_enviado?: boolean | string;
   estado_revisado?: boolean | string;
@@ -178,6 +180,7 @@ const normalizeIngestionItem = (
     engagement: item.engagement ?? null,
     fecha_publicacion: baseDate,
     created_at: baseDate,
+    fecha_creacion: item.fecha_creacion ?? null,
     fecha: item.fecha ?? null,
     estado_enviado: item.estado_enviado,
     estado_revisado: item.estado_revisado,
@@ -242,6 +245,7 @@ const IngestionResultado: React.FC = () => {
   const [editingAlert, setEditingAlert] = useState<AlertaData | null>(null);
   const [isAlertLoading, setIsAlertLoading] = useState(false);
   const [isEnviandoAlertas, setIsEnviandoAlertas] = useState(false);
+  const [isEnviandoBrightData, setIsEnviandoBrightData] = useState(false);
   const [showSummaryCards, setShowSummaryCards] = useState(false);
 
   const [filtersValues, setFiltersValues] = useState<{
@@ -1108,6 +1112,63 @@ const IngestionResultado: React.FC = () => {
     }
   };
 
+  const handleEnviarBrightData = async () => {
+    if (selectedItems.length === 0) {
+      showError(
+        'Sin selección',
+        'Debes seleccionar al menos un item para enviar a BrightData'
+      );
+      return;
+    }
+
+    const selectedData = filteredMedios.filter((item) =>
+      selectedItems.includes(item.id)
+    );
+
+    // Validar que todas las URLs estén presentes
+    const itemsWithoutURL = selectedData.filter(item => !item.url || !item.url.trim());
+    if (itemsWithoutURL.length > 0) {
+      showError(
+        'URLs faltantes',
+        `${itemsWithoutURL.length} item(s) no tienen URL. Todos los items deben tener URL para enviar a BrightData.`
+      );
+      return;
+    }
+
+    // Determinar la red social (se puede mejorar si hay múltiples redes)
+    const redSocial = selectedData[0]?.red_social?.toLowerCase() || 'facebook';
+    const urls = selectedData.map(item => item.url).filter(url => url && url.trim()) as string[];
+
+    try {
+      setIsEnviandoBrightData(true);
+
+      const result = await sendToBrightData({
+        red_social: redSocial,
+        urls: urls,
+      });
+
+      if (result.success) {
+        showSuccess(
+          'Enviado a BrightData',
+          result.message || `${urls.length} URL(s) enviadas correctamente`
+        );
+      } else {
+        showError(
+          'Error al enviar a BrightData',
+          result.message || 'No se pudo completar la solicitud'
+        );
+      }
+    } catch (error: any) {
+      console.error('Error enviando a BrightData:', error);
+      showError(
+        'Error al enviar a BrightData',
+        error.message || 'Ocurrió un error inesperado'
+      );
+    } finally {
+      setIsEnviandoBrightData(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Resultados de ingestión">
       <div className="space-y-4">
@@ -1393,9 +1454,23 @@ const IngestionResultado: React.FC = () => {
                         <CheckCircleIcon className="h-4 w-4" />
                         Revisados
                       </Button>
-                      <Button variant="outline" className="inline-flex items-center gap-2">
-                        BrightData
-                      </Button>
+                      {activeTab === 'redes' && (
+                        <Button
+                          onClick={handleEnviarBrightData}
+                          disabled={isEnviandoBrightData}
+                          variant="outline"
+                          className="inline-flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/10 dark:hover:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+                        >
+                          {isEnviandoBrightData ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                              Enviando...
+                            </>
+                          ) : (
+                            'BrightData'
+                          )}
+                        </Button>
+                      )}
                       <div className="flex flex-col gap-2">
                         <Button
                           onClick={handleEnviarAlertasAPI}

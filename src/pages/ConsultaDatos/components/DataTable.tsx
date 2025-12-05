@@ -307,7 +307,7 @@ const DataTable: React.FC<DataTableProps> = ({
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {formatDate(item.created_at)}
+                        {formatDate(item.fecha_creacion || item.created_at)}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-28">
@@ -492,7 +492,7 @@ const DataTable: React.FC<DataTableProps> = ({
                     </td>
                     <td className="px-4 py-4 w-32">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {formatDate(item.created_at)}
+                        {formatDate(item.fecha_creacion || item.created_at)}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-28">
