@@ -11,12 +11,10 @@ import {
   // capturaAlertaRedes,
   // updateAlerta, // COMENTADO - NO VA POR AHORA
   // enviarAlertasWhatsApp,
-  enviarAlertasAPI,
   enviarAlertasIngestion,
   type MediosPaginationParams,
   type RedesPaginationParams,
   // type WhatsAppEnvioRequest,
-  type EnvioAlertaRequest,
   type EnviarAlertasIngestionRequest,
   MarcarRevisadoRequest,
   marcarRevisadoAPI,
