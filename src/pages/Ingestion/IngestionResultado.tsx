@@ -977,29 +977,40 @@ const IngestionResultado: React.FC = () => {
     selectedData.forEach((item) => {
       const missing: string[] = [];
 
-      // Campos comunes obligatorios para medios y redes
-      if (!item.fecha_publicacion || item.fecha_publicacion.trim() === '') {
-        missing.push('Fecha');
-      }
-      if (!item.url || item.url.trim() === '') {
-        missing.push('URL');
-      }
-      if (!item.autor || item.autor.trim() === '') {
-        missing.push('Autor');
-      }
-      if (item.reach === null || item.reach === undefined) {
-        missing.push('Alcance');
-      }
-
-      // Para medios: título es obligatorio, interacciones NO es obligatorio
-      // Para redes: contenido es obligatorio, interacciones es obligatorio
       if (tipoAlerta === 'medios') {
-        if (!item.titulo || item.titulo.trim() === '') {
-          missing.push('Título');
+        // Para medios: fecha, titular, url, medio y alcance
+        if (!item.fecha_publicacion || item.fecha_publicacion.trim() === '') {
+          missing.push('Fecha');
         }
-      } else if (tipoAlerta === 'redes') {
+        if (!item.titulo || item.titulo.trim() === '') {
+          missing.push('Titular');
+        }
+        if (!item.url || item.url.trim() === '') {
+          missing.push('URL');
+        }
+        // Validar medio (puede venir en diferentes propiedades)
+        if (!item.red_social && (!item.autor || item.autor.trim() === '')) {
+          missing.push('Medio');
+        }
+        if (item.reach === null || item.reach === undefined) {
+          missing.push('Alcance');
+        }
+      } else {
+        // Para redes: fecha, url, autor, contenido, alcance e interacciones
+        if (!item.fecha_publicacion || item.fecha_publicacion.trim() === '') {
+          missing.push('Fecha');
+        }
+        if (!item.url || item.url.trim() === '') {
+          missing.push('URL');
+        }
+        if (!item.autor || item.autor.trim() === '') {
+          missing.push('Autor');
+        }
         if (!item.contenido || item.contenido.trim() === '') {
           missing.push('Contenido');
+        }
+        if (item.reach === null || item.reach === undefined) {
+          missing.push('Alcance');
         }
         if (item.engagement === null || item.engagement === undefined) {
           missing.push('Interacciones');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Button from '@shared/components/ui/Button';
@@ -11,12 +12,16 @@ import {
   // updateAlerta, // COMENTADO - NO VA POR AHORA
   // enviarAlertasWhatsApp,
   enviarAlertasAPI,
+  enviarAlertasIngestion,
   type MediosPaginationParams,
   type RedesPaginationParams,
   // type WhatsAppEnvioRequest,
   type EnvioAlertaRequest,
+  type EnviarAlertasIngestionRequest,
   MarcarRevisadoRequest,
   marcarRevisadoAPI,
+  exportarMedios,
+  exportarRedes,
 } from '@shared/services/api';
 import useUrlFilters from '@shared/hooks/useUrlFilters';
 import {
@@ -24,6 +29,7 @@ import {
   FunnelIcon,
   EyeIcon,
   XMarkIcon,
+  ArrowDownTrayIcon,
   // PlusIcon, // COMENTADO - NO VA POR AHORA
 } from '@heroicons/react/24/outline';
 // import EmojiPicker, { EmojiClickData } from 'emoji-picker-react'; // COMENTADO - NO VA POR AHORA
@@ -33,6 +39,7 @@ import { DataTable, DataFilters, DataPagination } from './components';
 type TabType = 'medios' | 'redes';
 
 const ConsultaDatos: React.FC = () => {
+  const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('medios');
   const [medios, setMedios] = useState<any[]>([]);
@@ -43,6 +50,7 @@ const ConsultaDatos: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [downloadLoading, setDownloadLoading] = useState(false);
   // const [showResultModal, setShowResultModal] = useState(false);
   // const [captureResult, setCaptureResult] = useState<{
   //   procesadas: any[];
@@ -69,6 +77,7 @@ const ConsultaDatos: React.FC = () => {
   });
 
   const mediosFilters = useUrlFilters({
+    usuario_nombre: '',
     proyecto_nombre: '',
     autor: '',
     url: '',
@@ -82,6 +91,7 @@ const ConsultaDatos: React.FC = () => {
   });
 
   const redesFilters = useUrlFilters({
+    usuario_nombre: '',
     proyecto_nombre: '',
     autor: '',
     url: '',
@@ -274,6 +284,74 @@ const ConsultaDatos: React.FC = () => {
     if (currentPagination.previous) {
       const prevPage = currentPagination.currentPage - 1;
       handlePageChange(prevPage);
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      setDownloadLoading(true);
+
+      const currentFilters = getCurrentFilters();
+      const exportParams: MediosPaginationParams | RedesPaginationParams = {};
+
+      if (currentFilters.filters.usuario_nombre) {
+        exportParams.usuario_nombre = currentFilters.filters.usuario_nombre;
+      }
+      if (currentFilters.filters.proyecto_nombre) {
+        exportParams.proyecto_nombre = currentFilters.filters.proyecto_nombre;
+      }
+      if (currentFilters.filters.autor) {
+        exportParams.autor = currentFilters.filters.autor;
+      }
+      if (currentFilters.filters.url) {
+        exportParams.url = currentFilters.filters.url;
+      }
+      if (currentFilters.filters.estado_enviado) {
+        exportParams.estado_enviado = currentFilters.filters.estado_enviado === 'true';
+      }
+      if (currentFilters.filters.estado_revisado) {
+        exportParams.estado_revisado = currentFilters.filters.estado_revisado === 'true';
+      }
+      if (currentFilters.filters.medio_url) {
+        exportParams.medio_url = currentFilters.filters.medio_url;
+      }
+      if (currentFilters.filters.medio_url_coincide) {
+        exportParams.medio_url_coincide = currentFilters.filters.medio_url_coincide;
+      }
+      if (currentFilters.filters.created_at_desde) {
+        exportParams.created_at_desde = currentFilters.filters.created_at_desde;
+      }
+      if (currentFilters.filters.created_at_hasta) {
+        exportParams.created_at_hasta = currentFilters.filters.created_at_hasta;
+      }
+
+      if (activeTab === 'redes' && currentFilters.filters.red_social_nombre) {
+        (exportParams as RedesPaginationParams).red_social_nombre = currentFilters.filters.red_social_nombre;
+      }
+
+      const blob = activeTab === 'medios'
+        ? await exportarMedios(exportParams as MediosPaginationParams)
+        : await exportarRedes(exportParams as RedesPaginationParams);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      const now = new Date();
+      const timestamp = now.toISOString().split('T')[0];
+      link.download = `${activeTab}-${timestamp}.xlsx`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showSuccess(`${activeTab === 'medios' ? 'Medios' : 'Redes'} descargados correctamente`);
+    } catch (error) {
+      console.error('Error al descargar:', error);
+      showError('Error al descargar el archivo. Por favor, intenta nuevamente.');
+    } finally {
+      setDownloadLoading(false);
     }
   };
 
@@ -680,10 +758,9 @@ const ConsultaDatos: React.FC = () => {
         message: 'Preparando alertas...',
       });
 
-      const payload: EnvioAlertaRequest = {
+      const payload: EnviarAlertasIngestionRequest = {
         proyecto_id: selectedProjectId,
         tipo_alerta: activeTab === 'medios' ? 'medios' : 'redes',
-        enviar: true,
         alertas: selectedData.map((item) => ({
           id: item.id,
           url: item.url,
@@ -697,16 +774,16 @@ const ConsultaDatos: React.FC = () => {
           autor: item.autor || '',
           reach: item.reach ?? null,
           engagement: item.engagement ?? null,
-          emojis: (item as any).emojis_only || '',
+          red_social: activeTab === 'redes' ? (item.red_social_nombre || item.red_social || '') : undefined,
         })),
       };
 
       setAlertProgress((prev) => ({
         ...prev,
-        message: 'Enviando alertas al servidor...',
+        message: 'Enviando alertas a ingestion...',
       }));
 
-      const result = await enviarAlertasAPI(payload);
+      const result = await enviarAlertasIngestion(payload);
 
       const totalProcesadas = result.procesadas?.length || 0;
       const totalDuplicadas = result.duplicadas?.length || 0;
@@ -732,7 +809,23 @@ const ConsultaDatos: React.FC = () => {
         setSelectedItems([]);
         setSelectedProjectId('');
 
-        await loadData();
+        // Redirigir a la página de resultados con los datos
+        setTimeout(() => {
+          navigate('/ingestion/resultados', {
+            state: {
+              ingestionResponse: {
+                mensaje: result.message,
+                listado: result.procesadas || [],
+                errores: [],
+                duplicados: result.duplicadas?.length || 0,
+                descartados: 0,
+                proveedor: 'consulta_datos',
+              },
+              projectId: selectedProjectId,
+              projectName: getProjectName(),
+            },
+          });
+        }, 1500);
       } else {
         setAlertProgress((prev) => ({
           ...prev,
@@ -1008,7 +1101,7 @@ const ConsultaDatos: React.FC = () => {
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setShowFilters(!showFilters)}
                     variant="outline"
@@ -1026,26 +1119,74 @@ const ConsultaDatos: React.FC = () => {
                       </span>
                     )}
                   </Button>
-                  {selectedItems.length > 0 && (
-                    <>
-                      {/* <Button
-                        onClick={() => handleOpenEmojiPicker('all')}
-                        variant="outline"
-                        className="inline-flex items-center gap-2"
-                      >
-                        <PlusIcon className="h-4 w-4" />
-                        Agregar emoji
-                      </Button> */}
+
+                  <Button
+                    onClick={handleDownload}
+                    disabled={downloadLoading}
+                    variant="outline"
+                    className="inline-flex items-center gap-2"
+                    title={`Descargar ${activeTab === 'medios' ? 'medios' : 'redes'} (Excel)`}
+                  >
+                    {downloadLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <ArrowDownTrayIcon className="h-4 w-4" />
+                    )}
+                    {downloadLoading ? 'Descargando...' : 'Descargar'}
+                  </Button>
+
+                </div>
+
+                {selectedItems.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    {/* <Button
+                      onClick={() => handleOpenEmojiPicker('all')}
+                      variant="outline"
+                      className="inline-flex items-center gap-2"
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      Agregar emoji
+                    </Button> */}
+                    <Button
+                      onClick={handleMarcarRevisado}
+                      disabled={isMarcandoRevisado}
+                      variant="outline"
+                      className="inline-flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300 dark:bg-green-900/10 dark:hover:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                    >
+                      {isMarcandoRevisado ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                          Marcando...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Revisados
+                        </>
+                      )}
+                    </Button>
+                    <div className="flex flex-col gap-2">
                       <Button
-                        onClick={handleMarcarRevisado}
-                        disabled={isMarcandoRevisado}
-                        variant="outline"
-                        className="inline-flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300 dark:bg-green-900/10 dark:hover:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                        onClick={handleEnviarAlertasAPI}
+                        disabled={isEnviandoAlertas}
+                        className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                       >
-                        {isMarcandoRevisado ? (
+                        {isEnviandoAlertas ? (
                           <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-                            Marcando...
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            Enviando...
                           </>
                         ) : (
                           <>
@@ -1059,71 +1200,42 @@ const ConsultaDatos: React.FC = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M5 13l4 4L19 7"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                               />
                             </svg>
-                            Revisados
+                            Enviar Alertas
                           </>
                         )}
                       </Button>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          onClick={handleEnviarAlertasAPI}
-                          disabled={isEnviandoAlertas}
-                          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          {isEnviandoAlertas ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Enviando...
-                            </>
-                          ) : (
-                            <>
-                              <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                                />
-                              </svg>
-                              Enviar Alertas
-                            </>
-                          )}
-                        </Button>
 
-                        {isEnviandoAlertas && alertProgress.total > 0 && (
-                          <div className="w-full">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs text-gray-600 dark:text-gray-400">
-                                {alertProgress.message}
-                              </span>
-                              <span className="text-xs text-gray-600 dark:text-gray-400">
-                                {alertProgress.current}/{alertProgress.total}
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                              <div
-                                className="bg-green-600 h-2 rounded-full transition-all duration-300 ease-out"
-                                style={{
-                                  width: `${
-                                    (alertProgress.current /
-                                      alertProgress.total) *
-                                    100
-                                  }%`,
-                                }}
-                              ></div>
-                            </div>
+                      {isEnviandoAlertas && alertProgress.total > 0 && (
+                        <div className="w-full">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              {alertProgress.message}
+                            </span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              {alertProgress.current}/{alertProgress.total}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300 ease-out"
+                              style={{
+                                width: `${
+                                  (alertProgress.current /
+                                    alertProgress.total) *
+                                  100
+                                }%`,
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {selectedItems.length > 0 && (
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       {selectedItems.length} seleccionados
@@ -1134,7 +1246,7 @@ const ConsultaDatos: React.FC = () => {
                       </span>
                     )}
                   </div>
-                </div>
+                )}
               </div>
 
               {showFilters && (

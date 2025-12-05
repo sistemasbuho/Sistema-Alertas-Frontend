@@ -656,11 +656,17 @@ export const deleteProyecto = async (id: string): Promise<void> => {
 export interface MediosPaginationParams {
   page?: number;
   page_size?: number;
+  usuario_nombre?: string;
   proyecto?: string;
+  proyecto_nombre?: string;
   autor?: string;
   url?: string;
   estado_enviado?: boolean;
   estado_revisado?: boolean;
+  medio_url?: string;
+  medio_url_coincide?: string;
+  created_at_desde?: string;
+  created_at_hasta?: string;
 }
 
 export const getMedios = async (
@@ -672,6 +678,7 @@ export const getMedios = async (
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.page_size)
       queryParams.append('page_size', params.page_size.toString());
+    if (params?.usuario_nombre) queryParams.append('usuario_nombre', params.usuario_nombre);
     if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
     if (params?.autor) queryParams.append('autor', params.autor);
     if (params?.url) queryParams.append('url', params.url);
@@ -721,11 +728,18 @@ export const getMediosList = async (filters?: {
 export interface RedesPaginationParams {
   page?: number;
   page_size?: number;
+  usuario_nombre?: string;
   proyecto?: string;
+  proyecto_nombre?: string;
   autor?: string;
   url?: string;
   estado_enviado?: boolean;
   estado_revisado?: boolean;
+  medio_url?: string;
+  medio_url_coincide?: string;
+  red_social_nombre?: string;
+  created_at_desde?: string;
+  created_at_hasta?: string;
 }
 
 export const getRedes = async (
@@ -737,6 +751,7 @@ export const getRedes = async (
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.page_size)
       queryParams.append('page_size', params.page_size.toString());
+    if (params?.usuario_nombre) queryParams.append('usuario_nombre', params.usuario_nombre);
     if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
     if (params?.autor) queryParams.append('autor', params.autor);
     if (params?.url) queryParams.append('url', params.url);
@@ -1163,6 +1178,117 @@ export const exportarHistorial = async (
   }
 };
 
+export const exportarMedios = async (
+  params?: MediosPaginationParams
+): Promise<Blob> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    queryParams.append('tipo', 'medios');
+
+    if (params?.usuario_nombre) {
+      queryParams.append('usuario_nombre', params.usuario_nombre);
+    }
+    if (params?.proyecto_nombre) {
+      queryParams.append('proyecto_nombre', params.proyecto_nombre);
+    }
+    if (params?.autor) {
+      queryParams.append('autor', params.autor);
+    }
+    if (params?.url) {
+      queryParams.append('url', params.url);
+    }
+    if (params?.estado_enviado !== undefined) {
+      queryParams.append('estado_enviado', String(params.estado_enviado));
+    }
+    if (params?.estado_revisado !== undefined) {
+      queryParams.append('estado_revisado', String(params.estado_revisado));
+    }
+    if (params?.medio_url) {
+      queryParams.append('medio_url', params.medio_url);
+    }
+    if (params?.medio_url_coincide) {
+      queryParams.append('medio_url_coincide', params.medio_url_coincide);
+    }
+    if (params?.created_at_desde) {
+      queryParams.append('created_at_desde', params.created_at_desde);
+    }
+    if (params?.created_at_hasta) {
+      queryParams.append('created_at_hasta', params.created_at_hasta);
+    }
+
+    const url = `/api/exportar-historial/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+
+    const response = await apiClient.get(url, {
+      responseType: 'blob',
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error exportando medios:', error);
+    throw error;
+  }
+};
+
+export const exportarRedes = async (
+  params?: RedesPaginationParams
+): Promise<Blob> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    queryParams.append('tipo', 'redes');
+
+    if (params?.usuario_nombre) {
+      queryParams.append('usuario_nombre', params.usuario_nombre);
+    }
+    if (params?.proyecto_nombre) {
+      queryParams.append('proyecto_nombre', params.proyecto_nombre);
+    }
+    if (params?.autor) {
+      queryParams.append('autor', params.autor);
+    }
+    if (params?.url) {
+      queryParams.append('url', params.url);
+    }
+    if (params?.estado_enviado !== undefined) {
+      queryParams.append('estado_enviado', String(params.estado_enviado));
+    }
+    if (params?.estado_revisado !== undefined) {
+      queryParams.append('estado_revisado', String(params.estado_revisado));
+    }
+    if (params?.medio_url) {
+      queryParams.append('medio_url', params.medio_url);
+    }
+    if (params?.medio_url_coincide) {
+      queryParams.append('medio_url_coincide', params.medio_url_coincide);
+    }
+    if (params?.red_social_nombre) {
+      queryParams.append('red_social_nombre', params.red_social_nombre);
+    }
+    if (params?.created_at_desde) {
+      queryParams.append('created_at_desde', params.created_at_desde);
+    }
+    if (params?.created_at_hasta) {
+      queryParams.append('created_at_hasta', params.created_at_hasta);
+    }
+
+    const url = `/api/exportar-historial/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+
+    const response = await apiClient.get(url, {
+      responseType: 'blob',
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error exportando redes:', error);
+    throw error;
+  }
+};
+
 export interface WhatsAppAlerta {
   publicacion_id: string;
   mensaje: string;
@@ -1258,6 +1384,85 @@ export const marcarRevisadoAPI = async (
     return response.data;
   } catch (error) {
     console.error('Error marcando como revisado:', error);
+    throw error;
+  }
+};
+
+export interface EnviarAlertasIngestionRequest {
+  proyecto_id: string;
+  tipo_alerta: 'medios' | 'redes';
+  alertas: Array<{
+    id?: string;
+    url: string;
+    contenido: string;
+    fecha: string;
+    titulo?: string;
+    autor?: string;
+    reach?: number | null;
+    engagement?: number | null;
+    red_social?: string;
+  }>;
+}
+
+export interface EnviarAlertasIngestionResponse {
+  success: boolean;
+  message: string;
+  procesadas?: any[];
+  duplicadas?: any[];
+}
+
+export const enviarAlertasIngestion = async (
+  data: EnviarAlertasIngestionRequest
+): Promise<EnviarAlertasIngestionResponse> => {
+  try {
+    console.log('📤 Enviando alertas a procesar-alerta-existente:', data);
+
+    // Enviar cada alerta individualmente con el formato correcto
+    const resultados = {
+      procesadas: [] as any[],
+      duplicadas: [] as any[],
+      errores: [] as any[],
+    };
+
+    for (const alerta of data.alertas) {
+      try {
+        const payload = {
+          proyecto_id: data.proyecto_id,
+          tipo: data.tipo_alerta === 'medios' ? 'medio' : 'red',
+          alerta_id: alerta.id,
+        };
+
+        const response = await apiClient.post('/api/procesar-alerta-existente/', payload);
+
+        if (response.data && response.data.listado) {
+          resultados.procesadas.push(...response.data.listado);
+        }
+
+        // Agregar duplicados si existen
+        if (response.data && response.data.duplicados > 0) {
+          resultados.duplicadas.push(alerta);
+        }
+      } catch (error: any) {
+        // Si es un error de duplicado, agregar a duplicadas
+        if (error.response?.status === 409 || error.response?.data?.message?.includes('duplicad')) {
+          resultados.duplicadas.push(alerta);
+        } else {
+          resultados.errores.push({ alerta, error: error.message });
+        }
+      }
+    }
+
+    const response = {
+      success: resultados.procesadas.length > 0,
+      message: `Procesadas: ${resultados.procesadas.length}, Duplicadas: ${resultados.duplicadas.length}, Errores: ${resultados.errores.length}`,
+      procesadas: resultados.procesadas,
+      duplicadas: resultados.duplicadas,
+    };
+
+    console.log('Respuesta del servidor procesar-alerta-existente:', response);
+    return response;
+  } catch (error) {
+    console.error('Error enviando alertas a procesar-alerta-existente:', error);
     throw error;
   }
 };

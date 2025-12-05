@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Button from '@shared/components/ui/Button';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { getIngestionProjects, Proyecto } from '@shared/services/api';
 
 type TabType = 'medios' | 'redes';
 
 interface FilterState {
   filters: {
+    usuario_nombre?: string;
     proyecto_nombre?: string;
     autor?: string;
     url?: string;
@@ -28,11 +30,136 @@ interface DataFiltersProps {
   redesFilters: FilterState;
 }
 
+const redesSocialesComunes = [
+  'Twitter',
+  'Facebook',
+  'Instagram',
+  'LinkedIn',
+  'TikTok',
+  'YouTube',
+  'WhatsApp',
+  'Telegram',
+  'Reddit',
+  'Snapchat',
+];
+
 const DataFilters: React.FC<DataFiltersProps> = ({
   activeTab,
   mediosFilters,
   redesFilters,
 }) => {
+  const [proyectosMedios, setProyectosMedios] = useState<Proyecto[]>([]);
+  const [proyectosRedes, setProyectosRedes] = useState<Proyecto[]>([]);
+  const [showSuggestionsMedios, setShowSuggestionsMedios] = useState(false);
+  const [showSuggestionsRedes, setShowSuggestionsRedes] = useState(false);
+  const [redesSocialesFiltradas, setRedesSocialesFiltradas] = useState<string[]>([]);
+  const [showSuggestionsRedSocial, setShowSuggestionsRedSocial] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const suggestionsRefMedios = useRef<HTMLDivElement>(null);
+  const suggestionsRefRedes = useRef<HTMLDivElement>(null);
+  const suggestionsRefRedSocial = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRefMedios.current &&
+        !suggestionsRefMedios.current.contains(event.target as Node)
+      ) {
+        setShowSuggestionsMedios(false);
+      }
+      if (
+        suggestionsRefRedes.current &&
+        !suggestionsRefRedes.current.contains(event.target as Node)
+      ) {
+        setShowSuggestionsRedes(false);
+      }
+      if (
+        suggestionsRefRedSocial.current &&
+        !suggestionsRefRedSocial.current.contains(event.target as Node)
+      ) {
+        setShowSuggestionsRedSocial(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const searchProyectos = async (nombre: string, forTab: 'medios' | 'redes') => {
+    if (nombre.trim().length < 2) {
+      if (forTab === 'medios') {
+        setProyectosMedios([]);
+        setShowSuggestionsMedios(false);
+      } else {
+        setProyectosRedes([]);
+        setShowSuggestionsRedes(false);
+      }
+      return;
+    }
+
+    try {
+      const data = await getIngestionProjects(nombre);
+      if (forTab === 'medios') {
+        setProyectosMedios(data);
+        setShowSuggestionsMedios(data.length > 0);
+      } else {
+        setProyectosRedes(data);
+        setShowSuggestionsRedes(data.length > 0);
+      }
+    } catch (error) {
+      console.error('Error al buscar proyectos:', error);
+    }
+  };
+
+  const handleProyectoChange = (value: string, forTab: 'medios' | 'redes') => {
+    if (forTab === 'medios') {
+      mediosFilters.updateFilters({ proyecto_nombre: value });
+    } else {
+      redesFilters.updateFilters({ proyecto_nombre: value });
+    }
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      searchProyectos(value, forTab);
+    }, 300);
+  };
+
+  const handleProyectoSelect = (proyecto: Proyecto, forTab: 'medios' | 'redes') => {
+    if (forTab === 'medios') {
+      mediosFilters.updateFilters({ proyecto_nombre: proyecto.nombre });
+      setShowSuggestionsMedios(false);
+    } else {
+      redesFilters.updateFilters({ proyecto_nombre: proyecto.nombre });
+      setShowSuggestionsRedes(false);
+    }
+  };
+
+  const handleRedSocialChange = (value: string) => {
+    redesFilters.updateFilters({ red_social_nombre: value });
+
+    if (value.trim().length === 0) {
+      setRedesSocialesFiltradas([]);
+      setShowSuggestionsRedSocial(false);
+      return;
+    }
+
+    const filtradas = redesSocialesComunes.filter((red) =>
+      red.toLowerCase().includes(value.toLowerCase())
+    );
+    setRedesSocialesFiltradas(filtradas);
+    setShowSuggestionsRedSocial(filtradas.length > 0);
+  };
+
+  const handleRedSocialSelect = (redSocial: string) => {
+    redesFilters.updateFilters({ red_social_nombre: redSocial });
+    setShowSuggestionsRedSocial(false);
+  };
+
   const getCurrentFilters = () => {
     return activeTab === 'medios' ? mediosFilters : redesFilters;
   };
@@ -61,19 +188,49 @@ const DataFilters: React.FC<DataFiltersProps> = ({
           <>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Usuario
+              </label>
+              <input
+                type="text"
+                value={mediosFilters.filters.usuario_nombre || ''}
+                onChange={(e) =>
+                  mediosFilters.updateFilters({
+                    usuario_nombre: e.target.value,
+                  })
+                }
+                placeholder="Ej: tatiana"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="relative" ref={suggestionsRefMedios}>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Proyecto
               </label>
               <input
                 type="text"
                 value={mediosFilters.filters.proyecto_nombre || ''}
-                onChange={(e) =>
-                  mediosFilters.updateFilters({
-                    proyecto_nombre: e.target.value,
-                  })
-                }
-                placeholder="Nombre del proyecto"
+                onChange={(e) => handleProyectoChange(e.target.value, 'medios')}
+                onFocus={() => {
+                  if (mediosFilters.filters.proyecto_nombre && proyectosMedios.length > 0) {
+                    setShowSuggestionsMedios(true);
+                  }
+                }}
+                placeholder="Buscar proyecto..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
+              {showSuggestionsMedios && proyectosMedios.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {proyectosMedios.map((proyecto) => (
+                    <div
+                      key={proyecto.id}
+                      onClick={() => handleProyectoSelect(proyecto, 'medios')}
+                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-900 dark:text-white"
+                    >
+                      {proyecto.nombre}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -210,19 +367,49 @@ const DataFilters: React.FC<DataFiltersProps> = ({
           <>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Usuario
+              </label>
+              <input
+                type="text"
+                value={redesFilters.filters.usuario_nombre || ''}
+                onChange={(e) =>
+                  redesFilters.updateFilters({
+                    usuario_nombre: e.target.value,
+                  })
+                }
+                placeholder="Ej: tatiana"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="relative" ref={suggestionsRefRedes}>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Proyecto
               </label>
               <input
                 type="text"
                 value={redesFilters.filters.proyecto_nombre || ''}
-                onChange={(e) =>
-                  redesFilters.updateFilters({
-                    proyecto_nombre: e.target.value,
-                  })
-                }
-                placeholder="Nombre del proyecto"
+                onChange={(e) => handleProyectoChange(e.target.value, 'redes')}
+                onFocus={() => {
+                  if (redesFilters.filters.proyecto_nombre && proyectosRedes.length > 0) {
+                    setShowSuggestionsRedes(true);
+                  }
+                }}
+                placeholder="Buscar proyecto..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
+              {showSuggestionsRedes && proyectosRedes.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {proyectosRedes.map((proyecto) => (
+                    <div
+                      key={proyecto.id}
+                      onClick={() => handleProyectoSelect(proyecto, 'redes')}
+                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-900 dark:text-white"
+                    >
+                      {proyecto.nombre}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -324,21 +511,35 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
-            <div>
+            <div className="relative" ref={suggestionsRefRedSocial}>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Red Social
               </label>
               <input
                 type="text"
                 value={redesFilters.filters.red_social_nombre || ''}
-                onChange={(e) =>
-                  redesFilters.updateFilters({
-                    red_social_nombre: e.target.value,
-                  })
-                }
-                placeholder="twitter, facebook, instagram"
+                onChange={(e) => handleRedSocialChange(e.target.value)}
+                onFocus={() => {
+                  if (redesFilters.filters.red_social_nombre && redesSocialesFiltradas.length > 0) {
+                    setShowSuggestionsRedSocial(true);
+                  }
+                }}
+                placeholder="Twitter, Facebook, Instagram..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
+              {showSuggestionsRedSocial && redesSocialesFiltradas.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {redesSocialesFiltradas.map((redSocial) => (
+                    <div
+                      key={redSocial}
+                      onClick={() => handleRedSocialSelect(redSocial)}
+                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-900 dark:text-white"
+                    >
+                      {redSocial}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

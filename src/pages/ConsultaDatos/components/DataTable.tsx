@@ -63,48 +63,6 @@ const DataTable: React.FC<DataTableProps> = ({
   showEmojiActions = true,
   showEditActions = true,
 }) => {
-  const isFieldEmpty = (value: any, fieldName: string) => {
-    if (fieldName === 'titulo' || fieldName === 'autor' || fieldName === 'contenido') {
-      return !value || value.trim() === '';
-    }
-    if (fieldName === 'reach' || fieldName === 'engagement') {
-      return value === null || value === undefined;
-    }
-    if (fieldName === 'url') {
-      return !value || value.trim() === '';
-    }
-    if (fieldName === 'fecha_publicacion') {
-      return !value || value.trim() === '';
-    }
-    return !value || value.toString().trim() === '';
-  };
-
-  const renderFieldWithWarning = (content: React.ReactNode, item: any, fieldName: string) => {
-    const isEmpty = isFieldEmpty(item[fieldName], fieldName);
-
-    // Para medios, campos obligatorios: fecha, titulo, url, autor, alcance
-    // Para redes, campos obligatorios: fecha, url, autor, contenido, alcance, interacciones
-    const shouldShowWarning = activeTab === 'medios'
-      ? (fieldName === 'fecha_publicacion' || fieldName === 'titulo' || fieldName === 'url' || fieldName === 'autor' || fieldName === 'reach') && isEmpty
-      : activeTab === 'redes'
-        ? (fieldName === 'fecha_publicacion' || fieldName === 'url' || fieldName === 'autor' || fieldName === 'contenido' || fieldName === 'reach' || fieldName === 'engagement') && isEmpty
-        : false;
-
-    if (shouldShowWarning) {
-      return (
-        <span className="inline-flex flex-col gap-1">
-          <span className="inline-flex items-center gap-1">
-            <span className="text-red-500 text-lg" title="Campo requerido vacío">⚠️</span>
-            <span className="text-red-600 dark:text-red-400 text-xs font-semibold">Campo obligatorio</span>
-          </span>
-          <span className="border-b-2 border-red-500 pb-1">
-            {content}
-          </span>
-        </span>
-      );
-    }
-    return content;
-  };
 
   return (
     <>
@@ -237,70 +195,66 @@ const DataTable: React.FC<DataTableProps> = ({
                 </td>
                 {activeTab === 'medios' ? (
                   <>
-                    <td className="px-4 py-4" style={{ minWidth: '320px' }}>
+                    <td className={`px-4 py-4 ${!item.titulo || !item.titulo.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`} style={{ minWidth: '320px' }}>
                       <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
-                        {renderFieldWithWarning(
+                        {!item.titulo || !item.titulo.trim() ? (
+                          <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Titular vacío</span>
+                        ) : (
                           <span
                             dangerouslySetInnerHTML={{
                               __html: highlightKeywords(
-                                item.titulo || '',
-                                item.proyecto_keywords || []
-                              ),
-                            }}
-                          />,
-                          item,
-                          'titulo'
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4" style={{ minWidth: '480px' }}>
-                      {renderFieldWithWarning(
-                        <div
-                          className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
-                          title={
-                            item.mensaje_formateado ||
-                            (item.emojis && item.emojis.length > 0
-                              ? `${item.emojis.join(' ')} ${item.contenido}`
-                              : item.contenido)
-                          }
-                          style={{
-                            scrollbarWidth: 'thin',
-                            scrollbarColor:
-                              'rgba(156, 163, 175, 0.3) transparent',
-                          }}
-                        >
-                          {item.emojis && item.emojis.length > 0 && (
-                            <span className="inline-flex items-center gap-1 mr-2">
-                              {item.emojis.map((emoji: string, index: number) =>
-                                showEmojiActions ? (
-                                  <button
-                                    key={index}
-                                    onClick={() => onRemoveEmoji(item.id, index)}
-                                    className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
-                                    title="Clic para remover emoji"
-                                  >
-                                    {emoji}
-                                  </button>
-                                ) : (
-                                  <span key={index} className="px-1">
-                                    {emoji}
-                                  </span>
-                                )
-                              )}
-                            </span>
-                          )}
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: highlightKeywords(
-                                item.contenido,
+                                item.titulo,
                                 item.proyecto_keywords || []
                               ),
                             }}
                           />
-                        </div>,
-                        item,
-                        'contenido'
-                      )}
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4" style={{ minWidth: '480px' }}>
+                      <div
+                        className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
+                        title={
+                          item.mensaje_formateado ||
+                          (item.emojis && item.emojis.length > 0
+                            ? `${item.emojis.join(' ')} ${item.contenido}`
+                            : item.contenido)
+                        }
+                        style={{
+                          scrollbarWidth: 'thin',
+                          scrollbarColor:
+                            'rgba(156, 163, 175, 0.3) transparent',
+                        }}
+                      >
+                        {item.emojis && item.emojis.length > 0 && (
+                          <span className="inline-flex items-center gap-1 mr-2">
+                            {item.emojis.map((emoji: string, index: number) =>
+                              showEmojiActions ? (
+                                <button
+                                  key={index}
+                                  onClick={() => onRemoveEmoji(item.id, index)}
+                                  className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
+                                  title="Clic para remover emoji"
+                                >
+                                  {emoji}
+                                </button>
+                              ) : (
+                                <span key={index} className="px-1">
+                                  {emoji}
+                                </span>
+                              )
+                            )}
+                          </span>
+                        )}
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: highlightKeywords(
+                              item.contenido,
+                              item.proyecto_keywords || []
+                            ),
+                          }}
+                        />
+                      </div>
                     </td>
                     <td className="px-4 py-4 w-40">
                       <div
@@ -310,8 +264,10 @@ const DataTable: React.FC<DataTableProps> = ({
                         {item.proyecto_nombre || 'Sin proyecto'}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-32">
-                      {renderFieldWithWarning(
+                    <td className={`px-4 py-4 w-32 ${!item.url || !item.url.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
+                      {!item.url || !item.url.trim() ? (
+                        <span className="text-red-600 dark:text-red-400 font-semibold text-sm">⚠ URL vacía</span>
+                      ) : (
                         <a
                           href={item.url}
                           target="_blank"
@@ -319,52 +275,34 @@ const DataTable: React.FC<DataTableProps> = ({
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
                           title={item.url}
                         >
-                          {item.url?.length > 20
+                          {item.url.length > 20
                             ? `${item.url.substring(0, 20)}...`
                             : item.url}
-                        </a>,
-                        item,
-                        'url'
+                        </a>
                       )}
                     </td>
-                    <td className="px-4 py-4 w-32">
+                    <td className={`px-4 py-4 w-32 ${!item.autor || !item.autor.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <div className="text-sm text-gray-900 dark:text-white truncate">
-                        {renderFieldWithWarning(
-                          item.autor || <span className="text-gray-400 italic">Sin autor</span>,
-                          item,
-                          'autor'
-                        )}
+                        {item.autor && item.autor.trim() ? item.autor : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Medio vacío</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-24">
+                    <td className={`px-4 py-4 w-24 ${item.reach === null || item.reach === undefined ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                        {renderFieldWithWarning(
-                          item.reach !== null && item.reach !== undefined ? formatNumber(item.reach) : <span className="text-gray-400 italic">-</span>,
-                          item,
-                          'reach'
-                        )}
+                        {item.reach !== null && item.reach !== undefined ? formatNumber(item.reach) : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Vacío</span>}
                       </span>
                     </td>
                     <td className="px-4 py-4 w-24">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
-                        {renderFieldWithWarning(
-                          item.engagement !== null &&
-                          item.engagement !== undefined &&
-                          !isNaN(Number(item.engagement))
-                            ? formatNumber(Number(item.engagement))
-                            : <span className="text-gray-400 italic">-</span>,
-                          item,
-                          'engagement'
-                        )}
+                        {item.engagement !== null &&
+                        item.engagement !== undefined &&
+                        !isNaN(Number(item.engagement))
+                          ? formatNumber(Number(item.engagement))
+                          : <span className="text-gray-400 italic">-</span>}
                       </span>
                     </td>
-                    <td className="px-4 py-4 w-32">
+                    <td className={`px-4 py-4 w-32 ${!item.fecha_publicacion || !item.fecha_publicacion.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {renderFieldWithWarning(
-                          formatDate(item.fecha_publicacion),
-                          item,
-                          'fecha_publicacion'
-                        )}
+                        {item.fecha_publicacion && item.fecha_publicacion.trim() ? formatDate(item.fecha_publicacion) : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Fecha vacía</span>}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
@@ -442,68 +380,66 @@ const DataTable: React.FC<DataTableProps> = ({
                   <>
                     <td className="px-4 py-4" style={{ minWidth: '320px' }}>
                       <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
-                        {renderFieldWithWarning(
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: highlightKeywords(
-                                item.titulo || '',
-                                item.proyecto_keywords || []
-                              ),
-                            }}
-                          />,
-                          item,
-                          'titulo'
-                        )}
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: highlightKeywords(
+                              item.titulo || '',
+                              item.proyecto_keywords || []
+                            ),
+                          }}
+                        />
                       </div>
                     </td>
-                    <td className="px-4 py-4" style={{ minWidth: '480px' }}>
-                      {renderFieldWithWarning(
-                        <div
-                          className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
-                          title={
-                            item.mensaje_formateado ||
-                            (item.emojis && item.emojis.length > 0
-                              ? `${item.emojis.join(' ')} ${item.contenido}`
-                              : item.contenido)
-                          }
-                          style={{
-                            scrollbarWidth: 'thin',
-                            scrollbarColor:
-                              'rgba(156, 163, 175, 0.3) transparent',
-                          }}
-                        >
-                          {item.emojis && item.emojis.length > 0 && (
-                            <span className="inline-flex items-center gap-1 mr-2">
-                              {item.emojis.map((emoji: string, index: number) =>
-                                showEmojiActions ? (
-                                  <button
-                                    key={index}
-                                    onClick={() => onRemoveEmoji(item.id, index)}
-                                    className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
-                                    title="Clic para remover emoji"
-                                  >
-                                    {emoji}
-                                  </button>
-                                ) : (
-                                  <span key={index} className="px-1">
-                                    {emoji}
-                                  </span>
-                                )
-                              )}
-                            </span>
-                          )}
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: highlightKeywords(
-                                item.contenido,
-                                item.proyecto_keywords || []
-                              ),
-                            }}
-                          />
-                        </div>,
-                        item,
-                        'contenido'
-                      )}
+                    <td className={`px-4 py-4 ${!item.contenido || !item.contenido.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`} style={{ minWidth: '480px' }}>
+                      <div
+                        className="text-sm text-gray-900 dark:text-white max-h-20 overflow-y-auto overflow-x-hidden leading-tight subtle-scrollbar"
+                        title={
+                          item.mensaje_formateado ||
+                          (item.emojis && item.emojis.length > 0
+                            ? `${item.emojis.join(' ')} ${item.contenido}`
+                            : item.contenido)
+                        }
+                        style={{
+                          scrollbarWidth: 'thin',
+                          scrollbarColor:
+                            'rgba(156, 163, 175, 0.3) transparent',
+                        }}
+                      >
+                        {!item.contenido || !item.contenido.trim() ? (
+                          <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Contenido vacío</span>
+                        ) : (
+                          <>
+                            {item.emojis && item.emojis.length > 0 && (
+                              <span className="inline-flex items-center gap-1 mr-2">
+                                {item.emojis.map((emoji: string, index: number) =>
+                                  showEmojiActions ? (
+                                    <button
+                                      key={index}
+                                      onClick={() => onRemoveEmoji(item.id, index)}
+                                      className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 transition-colors"
+                                      title="Clic para remover emoji"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ) : (
+                                    <span key={index} className="px-1">
+                                      {emoji}
+                                    </span>
+                                  )
+                                )}
+                              </span>
+                            )}
+                            <span
+                              dangerouslySetInnerHTML={{
+                                __html: highlightKeywords(
+                                  item.contenido,
+                                  item.proyecto_keywords || []
+                                ),
+                              }}
+                            />
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 w-40">
                       <div
@@ -513,8 +449,10 @@ const DataTable: React.FC<DataTableProps> = ({
                         {item.proyecto_nombre || 'Sin proyecto'}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-32">
-                      {renderFieldWithWarning(
+                    <td className={`px-4 py-4 w-32 ${!item.url || !item.url.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
+                      {!item.url || !item.url.trim() ? (
+                        <span className="text-red-600 dark:text-red-400 font-semibold text-sm">⚠ URL vacía</span>
+                      ) : (
                         <a
                           href={item.url}
                           target="_blank"
@@ -522,52 +460,34 @@ const DataTable: React.FC<DataTableProps> = ({
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm truncate block"
                           title={item.url}
                         >
-                          {item.url?.length > 20
+                          {item.url.length > 20
                             ? `${item.url.substring(0, 20)}...`
                             : item.url}
-                        </a>,
-                        item,
-                        'url'
+                        </a>
                       )}
                     </td>
-                    <td className="px-4 py-4 w-32">
+                    <td className={`px-4 py-4 w-32 ${!item.autor || !item.autor.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <div className="text-sm text-gray-900 dark:text-white truncate">
-                        {renderFieldWithWarning(
-                          item.autor || <span className="text-gray-400 italic">Sin autor</span>,
-                          item,
-                          'autor'
-                        )}
+                        {item.autor && item.autor.trim() ? item.autor : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Autor vacío</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-24">
+                    <td className={`px-4 py-4 w-24 ${item.reach === null || item.reach === undefined ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                        {renderFieldWithWarning(
-                          item.reach !== null && item.reach !== undefined ? formatNumber(item.reach) : <span className="text-gray-400 italic">-</span>,
-                          item,
-                          'reach'
-                        )}
+                        {item.reach !== null && item.reach !== undefined ? formatNumber(item.reach) : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Vacío</span>}
                       </span>
                     </td>
-                    <td className="px-4 py-4 w-24">
+                    <td className={`px-4 py-4 w-24 ${item.engagement === null || item.engagement === undefined ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                        {renderFieldWithWarning(
-                          item.engagement !== null &&
-                          item.engagement !== undefined &&
-                          !isNaN(Number(item.engagement))
-                            ? formatNumber(Number(item.engagement))
-                            : <span className="text-gray-400 italic">-</span>,
-                          item,
-                          'engagement'
-                        )}
+                        {item.engagement !== null &&
+                        item.engagement !== undefined &&
+                        !isNaN(Number(item.engagement))
+                          ? formatNumber(Number(item.engagement))
+                          : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Vacío</span>}
                       </span>
                     </td>
-                    <td className="px-4 py-4 w-32">
+                    <td className={`px-4 py-4 w-32 ${(!item.fecha_publicacion || !item.fecha_publicacion.trim()) && (!item.fecha || !item.fecha.trim()) ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {renderFieldWithWarning(
-                          formatDate(item.fecha_publicacion || item.fecha),
-                          item,
-                          'fecha_publicacion'
-                        )}
+                        {(item.fecha_publicacion && item.fecha_publicacion.trim()) || (item.fecha && item.fecha.trim()) ? formatDate(item.fecha_publicacion || item.fecha) : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Fecha vacía</span>}
                       </div>
                     </td>
                     <td className="px-4 py-4 w-32">
