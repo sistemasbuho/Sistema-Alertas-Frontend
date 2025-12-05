@@ -1059,24 +1059,27 @@ const IngestionResultado: React.FC = () => {
         tipo_alerta: tipoAlerta,
         enviar: true,
         keywords: projectKeywords,
-        alertas: selectedData.map((item) => ({
-          id: item.id,
-          url: item.url,
-          contenido: item.contenido,
-          fecha:
-            item.fecha_publicacion ||
-            item.created_at ||
-            new Date().toISOString(),
-          titulo: item.titulo || '',
-          autor: item.autor || '',
-          reach: item.reach !== null && item.reach !== undefined
-            ? formatNumber(item.reach)
-            : null,
-          engagement: item.engagement !== null && item.engagement !== undefined
-            ? formatNumber(item.engagement)
-            : null,
-          emojis: item.emojis_only || '',
-        })),
+        alertas: selectedData.map((item) => {
+          // Asegurar que la fecha siempre esté en formato ISO 8601
+          const rawFecha = item.fecha_publicacion || item.created_at || new Date().toISOString();
+          const fechaISO = new Date(rawFecha).toISOString();
+
+          return {
+            id: item.id,
+            url: item.url,
+            contenido: item.contenido,
+            fecha: fechaISO,
+            titulo: item.titulo || '',
+            autor: item.autor || '',
+            reach: item.reach !== null && item.reach !== undefined
+              ? formatNumber(item.reach)
+              : null,
+            engagement: item.engagement !== null && item.engagement !== undefined
+              ? formatNumber(item.engagement)
+              : null,
+            emojis: item.emojis_only || '',
+          };
+        }),
       };
 
       const result = await enviarAlertasAPI(payload);
