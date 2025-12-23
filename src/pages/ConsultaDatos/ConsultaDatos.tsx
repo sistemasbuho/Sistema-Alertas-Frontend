@@ -77,6 +77,7 @@ const ConsultaDatos: React.FC = () => {
   const mediosFilters = useUrlFilters({
     usuario_nombre: '',
     proyecto_nombre: '',
+    proyecto_id: '',
     autor: '',
     url: '',
     url_coincide: '',
@@ -89,6 +90,7 @@ const ConsultaDatos: React.FC = () => {
   const redesFilters = useUrlFilters({
     usuario_nombre: '',
     proyecto_nombre: '',
+    proyecto_id: '',
     autor: '',
     url: '',
     url_coincide: '',
@@ -189,8 +191,11 @@ const ConsultaDatos: React.FC = () => {
         };
 
         Object.entries(rawFilters).forEach(([key, value]) => {
-          if (key === 'proyecto_nombre') {
+          if (key === 'proyecto_id') {
             activeFilters.proyecto = value;
+          } else if (key === 'proyecto_nombre') {
+            // Skip proyecto_nombre, we use proyecto_id instead
+            return;
           } else if (key === 'estado_enviado') {
             activeFilters.estado_enviado = value === 'true';
           } else if (key === 'estado_revisado') {
@@ -222,8 +227,11 @@ const ConsultaDatos: React.FC = () => {
         };
 
         Object.entries(rawFilters).forEach(([key, value]) => {
-          if (key === 'proyecto_nombre') {
+          if (key === 'proyecto_id') {
             activeFilters.proyecto = value;
+          } else if (key === 'proyecto_nombre') {
+            // Skip proyecto_nombre, we use proyecto_id instead
+            return;
           } else if (key === 'estado_enviado') {
             activeFilters.estado_enviado = value === 'true';
           } else if (key === 'estado_revisado') {
@@ -292,8 +300,8 @@ const ConsultaDatos: React.FC = () => {
       if (currentFilters.filters.usuario_nombre) {
         exportParams.usuario_nombre = currentFilters.filters.usuario_nombre;
       }
-      if (currentFilters.filters.proyecto_nombre) {
-        exportParams.proyecto = currentFilters.filters.proyecto_nombre;
+      if (currentFilters.filters.proyecto_id) {
+        exportParams.proyecto = currentFilters.filters.proyecto_id;
       }
       if (currentFilters.filters.autor) {
         exportParams.autor = currentFilters.filters.autor;

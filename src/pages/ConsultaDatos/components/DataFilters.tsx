@@ -9,6 +9,7 @@ interface FilterState {
   filters: {
     usuario_nombre?: string;
     proyecto_nombre?: string;
+    proyecto_id?: string;
     autor?: string;
     url?: string;
     url_coincide?: string;
@@ -130,10 +131,16 @@ const DataFilters: React.FC<DataFiltersProps> = ({
 
   const handleProyectoSelect = (proyecto: Proyecto, forTab: 'medios' | 'redes') => {
     if (forTab === 'medios') {
-      mediosFilters.updateFilters({ proyecto_nombre: proyecto.nombre });
+      mediosFilters.updateFilters({
+        proyecto_nombre: proyecto.nombre,
+        proyecto_id: proyecto.id
+      });
       setShowSuggestionsMedios(false);
     } else {
-      redesFilters.updateFilters({ proyecto_nombre: proyecto.nombre });
+      redesFilters.updateFilters({
+        proyecto_nombre: proyecto.nombre,
+        proyecto_id: proyecto.id
+      });
       setShowSuggestionsRedes(false);
     }
   };
