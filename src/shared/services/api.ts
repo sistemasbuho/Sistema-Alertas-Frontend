@@ -1207,8 +1207,8 @@ export const exportarMedios = async (
     if (params?.usuario_nombre) {
       queryParams.append('usuario_nombre', params.usuario_nombre);
     }
-    if (params?.proyecto_nombre) {
-      queryParams.append('proyecto_nombre', params.proyecto_nombre);
+    if (params?.proyecto) {
+      queryParams.append('proyecto', params.proyecto);
     }
     if (params?.autor) {
       queryParams.append('autor', params.autor);
@@ -1216,17 +1216,14 @@ export const exportarMedios = async (
     if (params?.url) {
       queryParams.append('url', params.url);
     }
+    if (params?.url_coincide) {
+      queryParams.append('url_coincide', params.url_coincide);
+    }
     if (params?.estado_enviado !== undefined) {
       queryParams.append('estado_enviado', String(params.estado_enviado));
     }
     if (params?.estado_revisado !== undefined) {
       queryParams.append('estado_revisado', String(params.estado_revisado));
-    }
-    if (params?.medio_url) {
-      queryParams.append('medio_url', params.medio_url);
-    }
-    if (params?.medio_url_coincide) {
-      queryParams.append('medio_url_coincide', params.medio_url_coincide);
     }
     if (params?.created_at_desde) {
       queryParams.append('created_at_desde', params.created_at_desde);
@@ -1261,8 +1258,8 @@ export const exportarRedes = async (
     if (params?.usuario_nombre) {
       queryParams.append('usuario_nombre', params.usuario_nombre);
     }
-    if (params?.proyecto_nombre) {
-      queryParams.append('proyecto_nombre', params.proyecto_nombre);
+    if (params?.proyecto) {
+      queryParams.append('proyecto', params.proyecto);
     }
     if (params?.autor) {
       queryParams.append('autor', params.autor);
@@ -1270,17 +1267,14 @@ export const exportarRedes = async (
     if (params?.url) {
       queryParams.append('url', params.url);
     }
+    if (params?.url_coincide) {
+      queryParams.append('url_coincide', params.url_coincide);
+    }
     if (params?.estado_enviado !== undefined) {
       queryParams.append('estado_enviado', String(params.estado_enviado));
     }
     if (params?.estado_revisado !== undefined) {
       queryParams.append('estado_revisado', String(params.estado_revisado));
-    }
-    if (params?.medio_url) {
-      queryParams.append('medio_url', params.medio_url);
-    }
-    if (params?.medio_url_coincide) {
-      queryParams.append('medio_url_coincide', params.medio_url_coincide);
     }
     if (params?.red_social_nombre) {
       queryParams.append('red_social_nombre', params.red_social_nombre);

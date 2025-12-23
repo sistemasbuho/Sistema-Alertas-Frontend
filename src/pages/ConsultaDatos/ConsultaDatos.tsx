@@ -293,7 +293,7 @@ const ConsultaDatos: React.FC = () => {
         exportParams.usuario_nombre = currentFilters.filters.usuario_nombre;
       }
       if (currentFilters.filters.proyecto_nombre) {
-        exportParams.proyecto_nombre = currentFilters.filters.proyecto_nombre;
+        exportParams.proyecto = currentFilters.filters.proyecto_nombre;
       }
       if (currentFilters.filters.autor) {
         exportParams.autor = currentFilters.filters.autor;
