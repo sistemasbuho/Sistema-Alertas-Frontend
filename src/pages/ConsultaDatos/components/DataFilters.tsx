@@ -178,11 +178,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
       const [datePart = '', timePartRaw = ''] = val.split('T');
       if (!datePart) return '';
 
-<<<<<<< HEAD
-      let timePart: string = timePartRaw || '';
-=======
-      let timePart = timePartRaw;
->>>>>>> 9ed4d958468703a836221722ff7a2102807ffe39
+      let timePart: string = timePartRaw ?? '';
       if (!timePart) {
         timePart = '00:00:00';
       } else if (/^\d{2}:\d{2}$/.test(timePart)) {
