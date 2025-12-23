@@ -184,7 +184,8 @@ const DataFilters: React.FC<DataFiltersProps> = ({
       } else if (/^\d{2}:\d{2}$/.test(timePart)) {
         timePart = `${timePart}:00`;
       } else if (/^\d{2}:\d{2}:\d{2}\.\d+/.test(timePart)) {
-        timePart = (timePart ?? '').split('.')[0];
+        const [mainPart = ''] = (timePart ?? '').split('.');
+        timePart = mainPart;
       }
 
       return `${datePart}T${timePart}`;
