@@ -689,6 +689,12 @@ export const getMedios = async (
       queryParams.append('estado_enviado', params.estado_enviado.toString());
     if (params?.estado_revisado !== undefined)
       queryParams.append('estado_revisado', params.estado_revisado.toString());
+    if (params?.created_at_desde) {
+      queryParams.append('created_at_desde', params.created_at_desde);
+    }
+    if (params?.created_at_hasta) {
+      queryParams.append('created_at_hasta', params.created_at_hasta);
+    }
 
     const url = `/api/medios/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''
@@ -765,6 +771,12 @@ export const getRedes = async (
     if (params?.estado_revisado !== undefined)
       queryParams.append('estado_revisado', params.estado_revisado.toString());
     if (params?.red_social_nombre) queryParams.append('red_social_nombre', params.red_social_nombre);
+    if (params?.created_at_desde) {
+      queryParams.append('created_at_desde', params.created_at_desde);
+    }
+    if (params?.created_at_hasta) {
+      queryParams.append('created_at_hasta', params.created_at_hasta);
+    }
 
     const url = `/api/redes/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''

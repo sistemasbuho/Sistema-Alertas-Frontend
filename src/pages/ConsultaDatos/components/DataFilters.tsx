@@ -159,6 +159,69 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     setShowSuggestionsRedSocial(false);
   };
 
+  const parseCreatedAtRange = (
+    value: string
+  ): { created_at_desde: string; created_at_hasta: string } => {
+    const [desdeRaw = '', hastaRaw = ''] = value.split(' - ').map((part) => part.trim());
+    return {
+      created_at_desde: desdeRaw,
+      created_at_hasta: hastaRaw,
+    };
+  };
+
+  const normalizeDateTimeUTC = (value: string) => {
+    const trimmed = value?.trim();
+    if (!trimmed) return '';
+
+    const normalizeWithoutZone = (val: string) => {
+      if (!val) return '';
+      const [datePart = '', timePartRaw = ''] = val.split('T');
+      if (!datePart) return '';
+
+      let timePart: string = timePartRaw || '';
+      if (!timePart) {
+        timePart = '00:00:00';
+      } else if (/^\d{2}:\d{2}$/.test(timePart)) {
+        timePart = `${timePart}:00`;
+      } else if (/^\d{2}:\d{2}:\d{2}\.\d+/.test(timePart)) {
+        timePart = timePart.split('.')[0];
+      }
+
+      return `${datePart}T${timePart}`;
+    };
+
+    if (trimmed.endsWith('Z')) {
+      const withoutZ = trimmed.slice(0, -1);
+      const normalized = normalizeWithoutZone(withoutZ);
+      return normalized ? `${normalized}Z` : trimmed;
+    }
+
+    const basicRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?)?$/;
+    if (!basicRegex.test(trimmed)) return trimmed;
+
+    const normalized = normalizeWithoutZone(trimmed);
+    return normalized ? `${normalized}Z` : trimmed;
+  };
+
+  const formatCreatedAtRange = (desde?: string, hasta?: string) => {
+    if (!desde && !hasta) return '';
+    if (desde && hasta) return `${desde} - ${hasta}`;
+    return desde || hasta || '';
+  };
+
+  const handleCreatedAtRangeChange = (value: string, forTab: 'medios' | 'redes') => {
+    const rangeValues = parseCreatedAtRange(value);
+    const normalizedRange = {
+      created_at_desde: normalizeDateTimeUTC(rangeValues.created_at_desde),
+      created_at_hasta: normalizeDateTimeUTC(rangeValues.created_at_hasta),
+    };
+    if (forTab === 'medios') {
+      mediosFilters.updateFilters(normalizedRange);
+    } else {
+      redesFilters.updateFilters(normalizedRange);
+    }
+  };
+
   const getCurrentFilters = () => {
     return activeTab === 'medios' ? mediosFilters : redesFilters;
   };
@@ -317,31 +380,16 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Fecha Creación (desde)
+                Rango Fecha Creación
               </label>
               <input
-                type="datetime-local"
-                value={mediosFilters.filters.created_at_desde || ''}
-                onChange={(e) =>
-                  mediosFilters.updateFilters({
-                    created_at_desde: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Fecha Creación (hasta)
-              </label>
-              <input
-                type="datetime-local"
-                value={mediosFilters.filters.created_at_hasta || ''}
-                onChange={(e) =>
-                  mediosFilters.updateFilters({
-                    created_at_hasta: e.target.value,
-                  })
-                }
+                type="text"
+                value={formatCreatedAtRange(
+                  mediosFilters.filters.created_at_desde,
+                  mediosFilters.filters.created_at_hasta
+                )}
+                onChange={(e) => handleCreatedAtRangeChange(e.target.value, 'medios')}
+                placeholder="2024-05-01T00:00:00Z - 2024-05-31T23:59:59Z"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -510,31 +558,16 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Fecha Creación (desde)
+                Rango Fecha Creación
               </label>
               <input
-                type="datetime-local"
-                value={redesFilters.filters.created_at_desde || ''}
-                onChange={(e) =>
-                  redesFilters.updateFilters({
-                    created_at_desde: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Fecha Creación (hasta)
-              </label>
-              <input
-                type="datetime-local"
-                value={redesFilters.filters.created_at_hasta || ''}
-                onChange={(e) =>
-                  redesFilters.updateFilters({
-                    created_at_hasta: e.target.value,
-                  })
-                }
+                type="text"
+                value={formatCreatedAtRange(
+                  redesFilters.filters.created_at_desde,
+                  redesFilters.filters.created_at_hasta
+                )}
+                onChange={(e) => handleCreatedAtRangeChange(e.target.value, 'redes')}
+                placeholder="2024-05-01T00:00:00Z - 2024-05-31T23:59:59Z"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
