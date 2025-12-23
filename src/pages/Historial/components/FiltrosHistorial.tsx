@@ -227,14 +227,14 @@ export const FiltrosHistorial = ({
                 onChange={(e) =>
                   filters.updateFilters({ medio_url: e.target.value })
                 }
-                placeholder="https://ejemplo.com/articulo/123"
+                placeholder="https://ejemplo.com/articulo/123 (URL completa)"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL contiene
+                URL coincidencia
               </label>
               <input
                 type="text"
@@ -244,7 +244,7 @@ export const FiltrosHistorial = ({
                     medio_url_coincide: e.target.value,
                   })
                 }
-                placeholder="ejemplo"
+                placeholder="ejemplo (busca en cualquier parte de la URL)"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>

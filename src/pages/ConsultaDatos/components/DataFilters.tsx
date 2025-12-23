@@ -11,10 +11,9 @@ interface FilterState {
     proyecto_nombre?: string;
     autor?: string;
     url?: string;
+    url_coincide?: string;
     estado_enviado?: string;
     estado_revisado?: string;
-    medio_url?: string;
-    medio_url_coincide?: string;
     red_social_nombre?: string;
     created_at_desde?: string;
     created_at_hasta?: string;
@@ -250,7 +249,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL
+                URL exacta
               </label>
               <input
                 type="text"
@@ -260,7 +259,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                     url: e.target.value,
                   })
                 }
-                placeholder="Ej: https://eltiempo.com/noticia/123"
+                placeholder="https://eltiempo.com/noticia/123 (busca URL completa)"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -302,33 +301,17 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL exacta
+                URL coincidencia
               </label>
               <input
                 type="text"
-                value={mediosFilters.filters.medio_url || ''}
+                value={mediosFilters.filters.url_coincide || ''}
                 onChange={(e) =>
                   mediosFilters.updateFilters({
-                    medio_url: e.target.value,
+                    url_coincide: e.target.value,
                   })
                 }
-                placeholder="https://ejemplo.com/articulo/123"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL contiene
-              </label>
-              <input
-                type="text"
-                value={mediosFilters.filters.medio_url_coincide || ''}
-                onChange={(e) =>
-                  mediosFilters.updateFilters({
-                    medio_url_coincide: e.target.value,
-                  })
-                }
-                placeholder="ejemplo"
+                placeholder="ejemplo (busca en cualquier parte de la URL)"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -429,7 +412,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL
+                URL exacta
               </label>
               <input
                 type="text"
@@ -439,7 +422,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                     url: e.target.value,
                   })
                 }
-                placeholder="Ej: https://twitter.com/post/123"
+                placeholder="https://twitter.com/post/123 (busca URL completa)"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -481,33 +464,17 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL exacta
+                URL coincidencia
               </label>
               <input
                 type="text"
-                value={redesFilters.filters.medio_url || ''}
+                value={redesFilters.filters.url_coincide || ''}
                 onChange={(e) =>
                   redesFilters.updateFilters({
-                    medio_url: e.target.value,
+                    url_coincide: e.target.value,
                   })
                 }
-                placeholder="https://twitter.com/user/status/123"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL contiene
-              </label>
-              <input
-                type="text"
-                value={redesFilters.filters.medio_url_coincide || ''}
-                onChange={(e) =>
-                  redesFilters.updateFilters({
-                    medio_url_coincide: e.target.value,
-                  })
-                }
-                placeholder="twitter"
+                placeholder="twitter (busca en cualquier parte de la URL)"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>

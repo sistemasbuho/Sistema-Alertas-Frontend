@@ -662,6 +662,7 @@ export interface MediosPaginationParams {
   proyecto_nombre?: string;
   autor?: string;
   url?: string;
+  url_coincide?: string;
   estado_enviado?: boolean;
   estado_revisado?: boolean;
   medio_url?: string;
@@ -683,6 +684,7 @@ export const getMedios = async (
     if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
     if (params?.autor) queryParams.append('autor', params.autor);
     if (params?.url) queryParams.append('url', params.url);
+    if (params?.url_coincide) queryParams.append('url_coincide', params.url_coincide);
     if (params?.estado_enviado !== undefined)
       queryParams.append('estado_enviado', params.estado_enviado.toString());
     if (params?.estado_revisado !== undefined)
@@ -734,6 +736,7 @@ export interface RedesPaginationParams {
   proyecto_nombre?: string;
   autor?: string;
   url?: string;
+  url_coincide?: string;
   estado_enviado?: boolean;
   estado_revisado?: boolean;
   medio_url?: string;
@@ -756,10 +759,12 @@ export const getRedes = async (
     if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
     if (params?.autor) queryParams.append('autor', params.autor);
     if (params?.url) queryParams.append('url', params.url);
+    if (params?.url_coincide) queryParams.append('url_coincide', params.url_coincide);
     if (params?.estado_enviado !== undefined)
       queryParams.append('estado_enviado', params.estado_enviado.toString());
     if (params?.estado_revisado !== undefined)
       queryParams.append('estado_revisado', params.estado_revisado.toString());
+    if (params?.red_social_nombre) queryParams.append('red_social_nombre', params.red_social_nombre);
 
     const url = `/api/redes/${
       queryParams.toString() ? `?${queryParams.toString()}` : ''

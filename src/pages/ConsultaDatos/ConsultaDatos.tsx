@@ -79,11 +79,9 @@ const ConsultaDatos: React.FC = () => {
     proyecto_nombre: '',
     autor: '',
     url: '',
+    url_coincide: '',
     estado_enviado: '',
     estado_revisado: '',
-    medio_url: '',
-    medio_url_coincide: '',
-    red_social_nombre: '',
     created_at_desde: '',
     created_at_hasta: '',
   });
@@ -93,10 +91,9 @@ const ConsultaDatos: React.FC = () => {
     proyecto_nombre: '',
     autor: '',
     url: '',
+    url_coincide: '',
     estado_enviado: '',
     estado_revisado: '',
-    medio_url: '',
-    medio_url_coincide: '',
     red_social_nombre: '',
     created_at_desde: '',
     created_at_hasta: '',
@@ -296,7 +293,7 @@ const ConsultaDatos: React.FC = () => {
         exportParams.usuario_nombre = currentFilters.filters.usuario_nombre;
       }
       if (currentFilters.filters.proyecto_nombre) {
-        exportParams.proyecto_nombre = currentFilters.filters.proyecto_nombre;
+        exportParams.proyecto = currentFilters.filters.proyecto_nombre;
       }
       if (currentFilters.filters.autor) {
         exportParams.autor = currentFilters.filters.autor;
@@ -304,17 +301,14 @@ const ConsultaDatos: React.FC = () => {
       if (currentFilters.filters.url) {
         exportParams.url = currentFilters.filters.url;
       }
+      if (currentFilters.filters.url_coincide) {
+        exportParams.url_coincide = currentFilters.filters.url_coincide;
+      }
       if (currentFilters.filters.estado_enviado) {
         exportParams.estado_enviado = currentFilters.filters.estado_enviado === 'true';
       }
       if (currentFilters.filters.estado_revisado) {
         exportParams.estado_revisado = currentFilters.filters.estado_revisado === 'true';
-      }
-      if (currentFilters.filters.medio_url) {
-        exportParams.medio_url = currentFilters.filters.medio_url;
-      }
-      if (currentFilters.filters.medio_url_coincide) {
-        exportParams.medio_url_coincide = currentFilters.filters.medio_url_coincide;
       }
       if (currentFilters.filters.created_at_desde) {
         exportParams.created_at_desde = currentFilters.filters.created_at_desde;
@@ -323,7 +317,7 @@ const ConsultaDatos: React.FC = () => {
         exportParams.created_at_hasta = currentFilters.filters.created_at_hasta;
       }
 
-      if (activeTab === 'redes' && currentFilters.filters.red_social_nombre) {
+      if (activeTab === 'redes' && 'red_social_nombre' in currentFilters.filters && currentFilters.filters.red_social_nombre) {
         (exportParams as RedesPaginationParams).red_social_nombre = currentFilters.filters.red_social_nombre;
       }
 
