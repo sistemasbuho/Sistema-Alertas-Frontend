@@ -159,41 +159,6 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     setShowSuggestionsRedSocial(false);
   };
 
-  const normalizeDateTimeUTC = (value: string) => {
-    const trimmed = value?.trim();
-    if (!trimmed) return '';
-
-    const normalizeWithoutZone = (val: string) => {
-      if (!val) return '';
-      const [datePart = '', timePartRaw = ''] = val.split('T');
-      if (!datePart) return '';
-
-      let timePart: string = timePartRaw ?? '';
-      if (!timePart) {
-        timePart = '00:00:00';
-      } else if (/^\d{2}:\d{2}$/.test(timePart)) {
-        timePart = `${timePart}:00`;
-      } else if (/^\d{2}:\d{2}:\d{2}\.\d+/.test(timePart)) {
-        const [mainPart = ''] = (timePart ?? '').split('.');
-        timePart = mainPart;
-      }
-
-      return `${datePart}T${timePart}`;
-    };
-
-    if (trimmed.endsWith('Z')) {
-      const withoutZ = trimmed.slice(0, -1);
-      const normalized = normalizeWithoutZone(withoutZ);
-      return normalized ? `${normalized}Z` : trimmed;
-    }
-
-    const basicRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?)?$/;
-    if (!basicRegex.test(trimmed)) return trimmed;
-
-    const normalized = normalizeWithoutZone(trimmed);
-    return normalized ? `${normalized}Z` : trimmed;
-  };
-
   const formatToLocalDateTimeInput = (value?: string) => {
     if (!value) return '';
     const date = new Date(value);
