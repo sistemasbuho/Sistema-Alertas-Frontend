@@ -1440,7 +1440,7 @@ export const enviarAlertasIngestion = async (
       try {
         const payload = {
           proyecto_id: data.proyecto_id,
-          tipo: data.tipo_alerta === 'medios' ? 'medio' : 'red',
+          tipo: data.tipo_alerta === 'medios' ? 'medio' : 'redes',
           alerta_id: alerta.id,
         };
 
