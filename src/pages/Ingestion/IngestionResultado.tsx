@@ -971,8 +971,9 @@ const IngestionResultado: React.FC = () => {
     }
 
     // Validar campos requeridos para medios y redes
+    // Detectar si tiene red_social (UUID) para determinar si es redes o medios
     const hasRedSocial = selectedData.some(
-      (item) => item.tipo?.toLowerCase() === 'redes'
+      (item) => item.red_social || item.red_social_nombre
     );
     const tipoAlerta = hasRedSocial ? 'redes' : 'medios';
 
