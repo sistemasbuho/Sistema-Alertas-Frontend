@@ -758,9 +758,13 @@ const ConsultaDatos: React.FC = () => {
         message: 'Preparando alertas...',
       });
 
+      // Determinar tipo_alerta desde los datos de la alerta, no desde el tab activo
+      const tipoDetectado = selectedData[0]?.tipo || (activeTab === 'medios' ? 'medio' : 'red');
+      const tipoAlerta = tipoDetectado === 'medio' ? 'medios' : 'redes';
+
       const payload: EnviarAlertasIngestionRequest = {
         proyecto_id: selectedProjectId,
-        tipo_alerta: activeTab === 'medios' ? 'medios' : 'redes',
+        tipo_alerta: tipoAlerta,
         alertas: selectedData.map((item) => ({
           id: item.id,
           url: item.url,
