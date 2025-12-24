@@ -75,6 +75,7 @@ type MediosItem = {
   emojis_only?: string;
   tipo?: string | null;
   red_social?: string | null;
+  red_social_nombre?: string | null;
 };
 
 type IngestionSummary = {
