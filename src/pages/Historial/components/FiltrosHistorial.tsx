@@ -43,6 +43,21 @@ export const FiltrosHistorial = ({
 }: FiltrosHistorialProps) => {
   const [downloadLoading, setDownloadLoading] = useState(false);
 
+  const formatToLocalDateTimeInput = (value?: string) => {
+    if (!value) return '';
+    // Si el valor termina en Z, remover la Z y los milisegundos para mostrarlo tal cual
+    // Esto mantiene la fecha/hora sin conversión de zona horaria
+    return value.replace(/:\d{2}\.\d{3}Z$/, '').replace(/Z$/, '');
+  };
+
+  const normalizeFromLocalInput = (value: string) => {
+    if (!value) return '';
+    // Mantener la fecha/hora tal como el usuario la seleccionó, sin conversión de zona horaria
+    // El input datetime-local devuelve formato "YYYY-MM-DDTHH:mm"
+    // Solo agregamos los segundos y la Z para formato ISO sin cambiar la hora
+    return value + ':00.000Z';
+  };
+
   const handleDownload = async () => {
     try {
       setDownloadLoading(true);
@@ -272,10 +287,10 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="datetime-local"
-                value={filters.filters.created_at_desde || ''}
+                value={formatToLocalDateTimeInput(filters.filters.created_at_desde)}
                 onChange={(e) =>
                   filters.updateFilters({
-                    created_at_desde: e.target.value,
+                    created_at_desde: normalizeFromLocalInput(e.target.value),
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -288,10 +303,10 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="datetime-local"
-                value={filters.filters.created_at_hasta || ''}
+                value={formatToLocalDateTimeInput(filters.filters.created_at_hasta)}
                 onChange={(e) =>
                   filters.updateFilters({
-                    created_at_hasta: e.target.value,
+                    created_at_hasta: normalizeFromLocalInput(e.target.value),
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -304,10 +319,10 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="datetime-local"
-                value={filters.filters.inicio_envio_desde || ''}
+                value={formatToLocalDateTimeInput(filters.filters.inicio_envio_desde)}
                 onChange={(e) =>
                   filters.updateFilters({
-                    inicio_envio_desde: e.target.value,
+                    inicio_envio_desde: normalizeFromLocalInput(e.target.value),
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
@@ -320,10 +335,10 @@ export const FiltrosHistorial = ({
               </label>
               <input
                 type="datetime-local"
-                value={filters.filters.fin_envio_hasta || ''}
+                value={formatToLocalDateTimeInput(filters.filters.fin_envio_hasta)}
                 onChange={(e) =>
                   filters.updateFilters({
-                    fin_envio_hasta: e.target.value,
+                    fin_envio_hasta: normalizeFromLocalInput(e.target.value),
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"

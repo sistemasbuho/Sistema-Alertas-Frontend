@@ -168,16 +168,17 @@ const DataFilters: React.FC<DataFiltersProps> = ({
 
   const formatToLocalDateTimeInput = (value?: string) => {
     if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+    // Si el valor termina en Z, remover la Z y los milisegundos para mostrarlo tal cual
+    // Esto mantiene la fecha/hora sin conversión de zona horaria
+    return value.replace(/:\d{2}\.\d{3}Z$/, '').replace(/Z$/, '');
   };
 
   const normalizeFromLocalInput = (value: string) => {
     if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+    // Mantener la fecha/hora tal como el usuario la seleccionó, sin conversión de zona horaria
+    // El input datetime-local devuelve formato "YYYY-MM-DDTHH:mm"
+    // Solo agregamos los segundos y la Z para formato ISO sin cambiar la hora
+    return value + ':00.000Z';
   };
 
   const handleCreatedAtChange = (
