@@ -52,6 +52,8 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   const [proyectosRedes, setProyectosRedes] = useState<Proyecto[]>([]);
   const [showSuggestionsMedios, setShowSuggestionsMedios] = useState(false);
   const [showSuggestionsRedes, setShowSuggestionsRedes] = useState(false);
+  const [searchTextMedios, setSearchTextMedios] = useState('');
+  const [searchTextRedes, setSearchTextRedes] = useState('');
   const [redesSocialesFiltradas, setRedesSocialesFiltradas] = useState<string[]>([]);
   const [showSuggestionsRedSocial, setShowSuggestionsRedSocial] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,10 +116,11 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   };
 
   const handleProyectoChange = (value: string, forTab: 'medios' | 'redes') => {
+    // Solo actualizar el texto de búsqueda local, NO los filtros
     if (forTab === 'medios') {
-      mediosFilters.updateFilters({ proyecto_nombre: value });
+      setSearchTextMedios(value);
     } else {
-      redesFilters.updateFilters({ proyecto_nombre: value });
+      setSearchTextRedes(value);
     }
 
     if (timeoutRef.current) {
@@ -131,12 +134,14 @@ const DataFilters: React.FC<DataFiltersProps> = ({
 
   const handleProyectoSelect = (proyecto: Proyecto, forTab: 'medios' | 'redes') => {
     if (forTab === 'medios') {
+      setSearchTextMedios(proyecto.nombre);
       mediosFilters.updateFilters({
         proyecto_nombre: proyecto.nombre,
         proyecto_id: proyecto.id
       });
       setShowSuggestionsMedios(false);
     } else {
+      setSearchTextRedes(proyecto.nombre);
       redesFilters.updateFilters({
         proyecto_nombre: proyecto.nombre,
         proyecto_id: proyecto.id
@@ -242,10 +247,10 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               </label>
               <input
                 type="text"
-                value={mediosFilters.filters.proyecto_nombre || ''}
+                value={searchTextMedios}
                 onChange={(e) => handleProyectoChange(e.target.value, 'medios')}
                 onFocus={() => {
-                  if (mediosFilters.filters.proyecto_nombre && proyectosMedios.length > 0) {
+                  if (searchTextMedios && proyectosMedios.length > 0) {
                     setShowSuggestionsMedios(true);
                   }
                 }}
@@ -403,10 +408,10 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               </label>
               <input
                 type="text"
-                value={redesFilters.filters.proyecto_nombre || ''}
+                value={searchTextRedes}
                 onChange={(e) => handleProyectoChange(e.target.value, 'redes')}
                 onFocus={() => {
-                  if (redesFilters.filters.proyecto_nombre && proyectosRedes.length > 0) {
+                  if (searchTextRedes && proyectosRedes.length > 0) {
                     setShowSuggestionsRedes(true);
                   }
                 }}
