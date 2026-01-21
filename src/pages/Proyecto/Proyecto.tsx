@@ -59,7 +59,6 @@ const ProyectoPage = () => {
     useState<Proyecto | null>(null);
   const [formData, setFormData] = useState<{
     nombre: string;
-    proveedor: string;
     codigo_acceso: string;
     estado: 'activo' | 'inactivo' | 'completado';
     tipo_envio: 'automatico' | 'manual' | 'medios';
@@ -69,7 +68,6 @@ const ProyectoPage = () => {
     criterios_aceptacion: string;
   }>({
     nombre: '',
-    proveedor: '',
     codigo_acceso: '',
     estado: 'activo',
     tipo_envio: 'automatico',
@@ -124,7 +122,6 @@ const ProyectoPage = () => {
   const handleOpenSlideOver = () => {
     setFormData({
       nombre: '',
-      proveedor: '',
       codigo_acceso: '',
       estado: 'activo',
       tipo_envio: 'automatico',
@@ -145,7 +142,6 @@ const ProyectoPage = () => {
     setEditingProyecto(proyecto);
     setFormData({
       nombre: proyecto.nombre,
-      proveedor: proyecto.proveedor,
       codigo_acceso: proyecto.nombre_grupo || proyecto.codigo_acceso || '',
       estado: proyecto.estado,
       tipo_envio: proyecto.tipo_envio,
@@ -177,7 +173,6 @@ const ProyectoPage = () => {
     e.preventDefault();
     if (
       !formData.nombre.trim() ||
-      !formData.proveedor.trim() ||
       !formData.codigo_acceso.trim()
     ) {
       showWarning(
@@ -261,7 +256,6 @@ const ProyectoPage = () => {
     e.preventDefault();
     if (
       !formData.nombre.trim() ||
-      !formData.proveedor.trim() ||
       !formData.codigo_acceso.trim() ||
       !editingProyecto
     ) {
@@ -752,21 +746,6 @@ const ProyectoPage = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Proveedor *
-              </label>
-              <Input
-                value={formData.proveedor}
-                onChange={(e) =>
-                  setFormData({ ...formData, proveedor: e.target.value })
-                }
-                placeholder="Ej: Proveedor XYZ"
-                required
-                disabled={isCreating}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Nombre del Grupo *
               </label>
               <Input
@@ -907,7 +886,6 @@ const ProyectoPage = () => {
                 disabled={
                   isCreating ||
                   !formData.nombre.trim() ||
-                  !formData.proveedor.trim() ||
                   !formData.codigo_acceso.trim()
                 }
                 className="flex-1"
@@ -942,21 +920,6 @@ const ProyectoPage = () => {
                   setFormData({ ...formData, nombre: e.target.value })
                 }
                 placeholder="Ej: Proyecto Alerta Redes"
-                required
-                disabled={isUpdating}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Proveedor *
-              </label>
-              <Input
-                value={formData.proveedor}
-                onChange={(e) =>
-                  setFormData({ ...formData, proveedor: e.target.value })
-                }
-                placeholder="Ej: Proveedor XYZ"
                 required
                 disabled={isUpdating}
               />
@@ -1108,7 +1071,6 @@ const ProyectoPage = () => {
                 disabled={
                   isUpdating ||
                   !formData.nombre.trim() ||
-                  !formData.proveedor.trim() ||
                   !formData.codigo_acceso.trim()
                 }
                 className="flex-1"
