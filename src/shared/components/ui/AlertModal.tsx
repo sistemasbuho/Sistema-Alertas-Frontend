@@ -139,6 +139,10 @@ const AlertModal: React.FC<AlertModalProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Determinar si es medio o red basado en el tipo
+    const isRed = formData.tipo?.toLowerCase() === 'redes' || formData.red_social;
+
+    // URL es obligatorio para ambos
     if (!formData.url.trim()) {
       newErrors.url = 'La URL es requerida';
     } else if (!/^https?:\/\/.+/.test(formData.url.trim())) {
@@ -146,14 +150,34 @@ const AlertModal: React.FC<AlertModalProps> = ({
         'La URL debe ser válida (debe empezar con http:// o https://)';
     }
 
-    // El contenido NO es obligatorio cuando se edita una alerta desde ingestion
-    // (tanto para medios como para redes)
-    if (!editingAlert && !formData.contenido.trim()) {
-      newErrors.contenido = 'El contenido es requerido';
-    }
-
+    // Fecha es obligatoria para ambos
     if (!formData.fecha) {
       newErrors.fecha = 'La fecha es requerida';
+    }
+
+    // Autor es obligatorio para ambos
+    if (!formData.autor?.trim()) {
+      newErrors.autor = 'El autor es requerido';
+    }
+
+    // Reach es obligatorio para ambos
+    if (formData.reach === null || formData.reach === undefined) {
+      newErrors.reach = 'El alcance es requerido';
+    }
+
+    if (isRed) {
+      // Para redes: contenido y engagement son obligatorios
+      if (!formData.contenido.trim()) {
+        newErrors.contenido = 'El contenido es requerido para redes';
+      }
+      if (formData.engagement === null || formData.engagement === undefined) {
+        newErrors.engagement = 'El engagement es requerido para redes';
+      }
+    } else {
+      // Para medios: título es obligatorio
+      if (!formData.titulo?.trim()) {
+        newErrors.titulo = 'El título es requerido para medios';
+      }
     }
 
     setErrors(newErrors);
@@ -243,7 +267,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         />
 
         <Input
-          label="Título"
+          label={`Título${!formData.red_social && formData.tipo?.toLowerCase() !== 'redes' ? ' *' : ''}`}
           type="text"
           value={formData.titulo || ''}
           onChange={handleInputChange('titulo')}
@@ -254,7 +278,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
         <div className="w-full">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contenido {!editingAlert && '*'}
+            Contenido{formData.red_social || formData.tipo?.toLowerCase() === 'redes' ? ' *' : ''}
           </label>
           <textarea
             value={formData.contenido}
@@ -284,7 +308,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         </div>
 
         <Input
-          label="Fecha y Hora"
+          label="Fecha y Hora *"
           type="datetime-local"
           value={formData.fechaHora}
           onChange={handleInputChange('fechaHora')}
@@ -293,7 +317,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         />
 
         <Input
-          label="Autor"
+          label="Autor *"
           type="text"
           value={formData.autor || ''}
           onChange={handleInputChange('autor')}
@@ -304,7 +328,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            label="Alcance (Reach)"
+            label="Alcance (Reach) *"
             type="text"
             value={formData.reach !== undefined && formData.reach !== null && formData.reach !== 0
               ? new Intl.NumberFormat('es-CO').format(Number(formData.reach))
@@ -326,7 +350,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
           />
 
           <Input
-            label="Interacción (Engagement)"
+            label={`Interacción (Engagement)${formData.red_social || formData.tipo?.toLowerCase() === 'redes' ? ' *' : ''}`}
             type="text"
             value={formData.engagement !== undefined && formData.engagement !== null && formData.engagement !== 0
               ? new Intl.NumberFormat('es-CO').format(Number(formData.engagement))
