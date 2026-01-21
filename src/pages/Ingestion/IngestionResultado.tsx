@@ -602,7 +602,7 @@ const IngestionResultado: React.FC = () => {
   const ingestionSummary: IngestionSummary = useMemo(() => {
     const totalItems = medios.length;
     const totalRedes = medios.filter(
-      (item) => item.red_social || item.tipo?.toLowerCase() === 'red'
+      (item) => item.red_social || item.tipo?.toLowerCase() === 'redes'
     ).length;
     const totalMedios = totalItems - totalRedes;
 
@@ -982,12 +982,8 @@ const IngestionResultado: React.FC = () => {
       return;
     }
 
-    // Validar campos requeridos para medios y redes
-    // Detectar si tiene red_social (UUID) para determinar si es redes o medios
-    const hasRedSocial = selectedData.some(
-      (item) => item.red_social || item.red_social_nombre
-    );
-    const tipoAlerta = hasRedSocial ? 'redes' : 'medios';
+    // Usar el activeTab que ya fue calculado correctamente
+    const tipoAlerta = activeTab;
 
     const itemsWithMissingFields: string[] = [];
     const missingFieldsByItem: Record<string, string[]> = {};
