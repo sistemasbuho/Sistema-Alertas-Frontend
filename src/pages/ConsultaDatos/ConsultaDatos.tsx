@@ -82,7 +82,6 @@ const ConsultaDatos: React.FC = () => {
     url: '',
     url_coincide: '',
     estado_enviado: '',
-    estado_revisado: '',
     created_at_desde: '',
     created_at_hasta: '',
   });
@@ -95,7 +94,6 @@ const ConsultaDatos: React.FC = () => {
     url: '',
     url_coincide: '',
     estado_enviado: '',
-    estado_revisado: '',
     red_social_nombre: '',
     created_at_desde: '',
     created_at_hasta: '',
@@ -198,8 +196,6 @@ const ConsultaDatos: React.FC = () => {
             return;
           } else if (key === 'estado_enviado') {
             activeFilters.estado_enviado = value === 'true';
-          } else if (key === 'estado_revisado') {
-            activeFilters.estado_revisado = value === 'true';
           } else {
             (activeFilters as any)[key] = value;
           }
@@ -234,8 +230,6 @@ const ConsultaDatos: React.FC = () => {
             return;
           } else if (key === 'estado_enviado') {
             activeFilters.estado_enviado = value === 'true';
-          } else if (key === 'estado_revisado') {
-            activeFilters.estado_revisado = value === 'true';
           } else {
             (activeFilters as any)[key] = value;
           }
@@ -314,9 +308,6 @@ const ConsultaDatos: React.FC = () => {
       }
       if (currentFilters.filters.estado_enviado) {
         exportParams.estado_enviado = currentFilters.filters.estado_enviado === 'true';
-      }
-      if (currentFilters.filters.estado_revisado) {
-        exportParams.estado_revisado = currentFilters.filters.estado_revisado === 'true';
       }
       if (currentFilters.filters.created_at_desde) {
         exportParams.created_at_desde = currentFilters.filters.created_at_desde;

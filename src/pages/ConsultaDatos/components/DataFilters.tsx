@@ -14,7 +14,6 @@ interface FilterState {
     url?: string;
     url_coincide?: string;
     estado_enviado?: string;
-    estado_revisado?: string;
     red_social_nombre?: string;
     created_at_desde?: string;
     created_at_hasta?: string;
@@ -323,24 +322,6 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Estado Revisado
-              </label>
-              <select
-                value={mediosFilters.filters.estado_revisado || ''}
-                onChange={(e) =>
-                  mediosFilters.updateFilters({
-                    estado_revisado: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Todos</option>
-                <option value="true">Revisado</option>
-                <option value="false">Pendiente</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 URL coincidencia
               </label>
               <input
@@ -480,24 +461,6 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 <option value="">Todos</option>
                 <option value="true">Enviado</option>
                 <option value="false">No Enviado</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Estado Revisado
-              </label>
-              <select
-                value={redesFilters.filters.estado_revisado || ''}
-                onChange={(e) =>
-                  redesFilters.updateFilters({
-                    estado_revisado: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Todos</option>
-                <option value="true">Revisado</option>
-                <option value="false">Pendiente</option>
               </select>
             </div>
             <div>
