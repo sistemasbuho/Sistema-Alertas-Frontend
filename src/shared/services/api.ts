@@ -30,7 +30,7 @@ export interface AuthResponse {
 export interface Proyecto {
   id: string;
   nombre: string;
-  proveedor: string;
+  proveedor?: string;
   codigo_acceso: string;
   nombre_grupo?: string;
   estado: 'activo' | 'inactivo' | 'completado';
