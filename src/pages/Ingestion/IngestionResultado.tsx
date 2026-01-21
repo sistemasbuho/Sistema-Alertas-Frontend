@@ -111,6 +111,7 @@ type IngestionNavigationState = {
     duplicados?: number;
     descartados?: number;
     proveedor?: string;
+    tipo?: string;
   };
   multipleResults?: Array<{
     file: string;
@@ -581,12 +582,22 @@ const IngestionResultado: React.FC = () => {
 
   // Detectar automáticamente si los datos son de tipo "redes" o "medios"
   const activeTab = useMemo(() => {
+    // Primero verificar si la respuesta del backend indicó el tipo
+    const tipoFromResponse = ingestionResponseFromState?.tipo?.toLowerCase();
+    if (tipoFromResponse === 'redes') {
+      return 'redes';
+    }
+    if (tipoFromResponse === 'medios') {
+      return 'medios';
+    }
+
+    // Si no hay tipo en la respuesta, verificar los items
     // Si hay al menos un item con red_social o tipo "redes", considerarlo como redes
     const hasRedes = medios.some(
       (item) => item.red_social || item.tipo?.toLowerCase() === 'redes'
     );
     return hasRedes ? 'redes' : 'medios';
-  }, [medios]);
+  }, [medios, ingestionResponseFromState]);
 
   const ingestionSummary: IngestionSummary = useMemo(() => {
     const totalItems = medios.length;
