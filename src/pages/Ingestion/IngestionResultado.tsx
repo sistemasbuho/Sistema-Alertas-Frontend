@@ -76,6 +76,7 @@ type MediosItem = {
   tipo?: string | null;
   red_social?: string | null;
   red_social_nombre?: string | null;
+  ubicacion?: string | null;
 };
 
 type IngestionSummary = {
@@ -200,6 +201,7 @@ const normalizeIngestionItem = (
     emojis_only: '',
     tipo: item.tipo || null,
     red_social: item.red_social || null,
+    ubicacion: item.ubicacion || null,
   };
 };
 

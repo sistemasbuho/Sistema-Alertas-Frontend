@@ -593,6 +593,7 @@ export interface IngestionResultItem {
   mensaje_formateado?: string | null;
   estado_enviado?: boolean | string;
   estado_revisado?: boolean | string;
+  ubicacion?: string | null;
 }
 
 export const getIngestionResults = async (

@@ -105,6 +105,9 @@ const DataTable: React.FC<DataTableProps> = ({
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Autor
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+                    Ubicación
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
                     Reach
                   </th>
@@ -146,6 +149,9 @@ const DataTable: React.FC<DataTableProps> = ({
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Autor
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+                    Ubicación
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
                     Reach
@@ -278,6 +284,11 @@ const DataTable: React.FC<DataTableProps> = ({
                     <td className={`px-4 py-4 w-32 ${!item.autor || !item.autor.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <div className="text-sm text-gray-900 dark:text-white truncate">
                         {item.autor && item.autor.trim() ? item.autor : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Medio vacío</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 w-32">
+                      <div className="text-sm text-gray-900 dark:text-white truncate" title={item.ubicacion || '-'}>
+                        {item.ubicacion || '-'}
                       </div>
                     </td>
                     <td className={`px-4 py-4 w-24 ${item.reach === null || item.reach === undefined ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
@@ -448,6 +459,11 @@ const DataTable: React.FC<DataTableProps> = ({
                     <td className={`px-4 py-4 w-32 ${!item.autor || !item.autor.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <div className="text-sm text-gray-900 dark:text-white truncate">
                         {item.autor && item.autor.trim() ? item.autor : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Autor vacío</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 w-32">
+                      <div className="text-sm text-gray-900 dark:text-white truncate" title={item.ubicacion || '-'}>
+                        {item.ubicacion || '-'}
                       </div>
                     </td>
                     <td className={`px-4 py-4 w-24 ${item.reach === null || item.reach === undefined ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
