@@ -176,15 +176,29 @@ const DataTable: React.FC<DataTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredData.map((item) => (
-              <tr
-                key={item.id}
-                className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                  selectedItems.includes(item.id)
-                    ? 'bg-blue-50 dark:bg-blue-900/20'
-                    : ''
-                }`}
-              >
+            {filteredData.map((item) => {
+              // Detectar si en redes sociales el alcance es menor que el engagement
+              const isReachLowerThanEngagement =
+                activeTab === 'redes' &&
+                item.reach !== null &&
+                item.reach !== undefined &&
+                item.engagement !== null &&
+                item.engagement !== undefined &&
+                !isNaN(Number(item.reach)) &&
+                !isNaN(Number(item.engagement)) &&
+                Number(item.reach) < Number(item.engagement);
+
+              return (
+                <tr
+                  key={item.id}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                    selectedItems.includes(item.id)
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : isReachLowerThanEngagement
+                      ? 'bg-orange-50 dark:bg-orange-900/20'
+                      : ''
+                  }`}
+                >
                 <td className="px-2 py-4 w-12">
                   <input
                     type="checkbox"
@@ -543,7 +557,8 @@ const DataTable: React.FC<DataTableProps> = ({
                   </>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
