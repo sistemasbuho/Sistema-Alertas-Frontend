@@ -825,6 +825,7 @@ const IngestionResultado: React.FC = () => {
       mensaje_formateado: item.mensaje_formateado || undefined,
       tipo: item.tipo || undefined,
       red_social: item.red_social || undefined,
+      ubicacion: item.ubicacion || undefined,
     });
     setIsAlertModalOpen(true);
   };
@@ -856,6 +857,7 @@ const IngestionResultado: React.FC = () => {
           reach: alertData.reach,
           engagement: alertData.engagement,
           fecha_publicacion: alertData.fecha,
+          ubicacion: alertData.ubicacion,
         };
 
         console.log('📤 Enviando al servidor fecha:', alertData.fecha);
@@ -892,6 +894,7 @@ const IngestionResultado: React.FC = () => {
             fecha_publicacion: updatedPublicationDate,
             fecha: updatedPublicationDate,
             mensaje: alertData.contenido ?? item.mensaje,
+            ubicacion: alertData.ubicacion ?? item.ubicacion,
           };
         });
 

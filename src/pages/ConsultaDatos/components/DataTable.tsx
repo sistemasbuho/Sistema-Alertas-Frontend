@@ -194,8 +194,6 @@ const DataTable: React.FC<DataTableProps> = ({
                   className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                     selectedItems.includes(item.id)
                       ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : isReachLowerThanEngagement
-                      ? 'bg-orange-50 dark:bg-orange-900/20'
                       : ''
                   }`}
                 >
@@ -480,12 +478,24 @@ const DataTable: React.FC<DataTableProps> = ({
                         {item.ubicacion || '-'}
                       </div>
                     </td>
-                    <td className={`px-4 py-4 w-24 ${item.reach === null || item.reach === undefined ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
+                    <td className={`px-4 py-4 w-24 ${
+                      item.reach === null || item.reach === undefined
+                        ? 'bg-red-50 dark:bg-red-900/20'
+                        : isReachLowerThanEngagement
+                        ? 'bg-orange-50 dark:bg-orange-900/20'
+                        : ''
+                    }`}>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
                         {item.reach !== null && item.reach !== undefined ? formatNumber(item.reach) : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Vacío</span>}
                       </span>
                     </td>
-                    <td className={`px-4 py-4 w-24 ${item.engagement === null || item.engagement === undefined ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
+                    <td className={`px-4 py-4 w-24 ${
+                      item.engagement === null || item.engagement === undefined
+                        ? 'bg-red-50 dark:bg-red-900/20'
+                        : isReachLowerThanEngagement
+                        ? 'bg-orange-50 dark:bg-orange-900/20'
+                        : ''
+                    }`}>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
                         {item.engagement !== null &&
                         item.engagement !== undefined &&

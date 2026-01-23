@@ -17,6 +17,7 @@ export interface AlertaData {
   mensaje_formateado?: string;
   tipo?: string;
   red_social?: string;
+  ubicacion?: string;
 }
 
 type AlertFormData = AlertaData & {
@@ -323,6 +324,15 @@ const AlertModal: React.FC<AlertModalProps> = ({
           onChange={handleInputChange('autor')}
           error={errors.autor}
           placeholder="Nombre del autor"
+          disabled={isLoading}
+        />
+
+        <Input
+          label="Ubicación"
+          type="text"
+          value={formData.ubicacion || ''}
+          onChange={handleInputChange('ubicacion')}
+          placeholder="Ciudad, País"
           disabled={isLoading}
         />
 
