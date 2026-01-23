@@ -770,6 +770,7 @@ const ConsultaDatos: React.FC = () => {
           reach: item.reach ?? null,
           engagement: item.engagement ?? null,
           red_social: activeTab === 'redes' ? (item.red_social_nombre || item.red_social || '') : undefined,
+          ubicacion: item.ubicacion || null,
         })),
       };
 

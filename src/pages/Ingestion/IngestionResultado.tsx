@@ -1089,6 +1089,7 @@ const IngestionResultado: React.FC = () => {
               ? formatNumber(item.engagement)
               : null,
             emojis: item.emojis_only || '',
+            ubicacion: item.ubicacion || null,
           };
         }),
       };
