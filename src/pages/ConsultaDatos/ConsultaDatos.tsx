@@ -174,7 +174,6 @@ const ConsultaDatos: React.FC = () => {
   const loadData = async (params?: { page?: number; pageSize?: number }) => {
     try {
       setLoading(true);
-      setSelectedItems([]);
 
       if (activeTab === 'medios') {
         const rawFilters = Object.fromEntries(
@@ -1135,6 +1134,21 @@ const ConsultaDatos: React.FC = () => {
 
                 {selectedItems.length > 0 && (
                   <div className="flex items-center gap-2">
+                    {/* Badge de seleccionados */}
+                    <div className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                      <span className="text-sm font-semibold">
+                        {selectedItems.length} seleccionado{selectedItems.length !== 1 ? 's' : ''}
+                      </span>
+                      {selectedProjectId && (
+                        <span className="ml-2 text-xs bg-blue-700 dark:bg-blue-600 px-2 py-0.5 rounded">
+                          📂 {getProjectName()}
+                        </span>
+                      )}
+                    </div>
+
                     {/* <Button
                       onClick={() => handleOpenEmojiPicker('all')}
                       variant="outline"
@@ -1229,18 +1243,6 @@ const ConsultaDatos: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
-                {selectedItems.length > 0 && (
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {selectedItems.length} seleccionados
-                    </span>
-                    {selectedProjectId && selectedItems.length > 0 && (
-                      <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
-                        📂 {getProjectName()}
-                      </span>
-                    )}
                   </div>
                 )}
               </div>
