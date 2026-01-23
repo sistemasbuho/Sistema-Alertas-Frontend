@@ -1615,6 +1615,9 @@ const IngestionResultado: React.FC = () => {
                   onEditItem={handleEditItem}
                   onPreviewItem={handlePreviewItem}
                   highlightKeywords={highlightKeywords}
+                  hideProjectColumn={true}
+                  hideCreationDateColumn={true}
+                  hideSentStatusColumn={true}
                 />
               )}
 

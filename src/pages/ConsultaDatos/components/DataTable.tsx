@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import Button from '@shared/components/ui/Button';
 import { PencilIcon, EyeIcon } from '@heroicons/react/24/outline';
 
@@ -45,6 +45,10 @@ interface DataTableProps {
   ) => string;
   showEmojiActions?: boolean;
   showEditActions?: boolean;
+  hideProjectColumn?: boolean;
+  hideCreationDateColumn?: boolean;
+  hideSentStatusColumn?: boolean;
+  hideTopScroll?: boolean;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -62,13 +66,98 @@ const DataTable: React.FC<DataTableProps> = ({
   highlightKeywords,
   showEmojiActions = true,
   showEditActions = true,
+  hideProjectColumn = false,
+  hideCreationDateColumn = false,
+  hideSentStatusColumn = false,
+  hideTopScroll = false,
 }) => {
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const bottomScrollRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  useEffect(() => {
+    if (hideTopScroll) return;
+
+    const topScroll = topScrollRef.current;
+    const bottomScroll = bottomScrollRef.current;
+
+    if (!topScroll || !bottomScroll) return;
+
+    const handleTopScroll = () => {
+      bottomScroll.scrollLeft = topScroll.scrollLeft;
+    };
+
+    const handleBottomScroll = () => {
+      topScroll.scrollLeft = bottomScroll.scrollLeft;
+    };
+
+    topScroll.addEventListener('scroll', handleTopScroll);
+    bottomScroll.addEventListener('scroll', handleBottomScroll);
+
+    return () => {
+      topScroll.removeEventListener('scroll', handleTopScroll);
+      bottomScroll.removeEventListener('scroll', handleBottomScroll);
+    };
+  }, [hideTopScroll]);
 
   return (
     <>
       <style>{scrollbarStyles}</style>
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-auto divide-y divide-gray-200 dark:divide-gray-700">
+      {/* Scroll superior */}
+      {!hideTopScroll && (
+        <div
+          ref={topScrollRef}
+          className="overflow-x-auto mb-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 dark:from-gray-800 dark:via-gray-750 dark:to-gray-800 shadow-sm"
+          style={{
+            overflowY: 'hidden',
+            height: '16px'
+          }}
+        >
+          <div style={{ height: '1px', minWidth: '100%', width: 'max-content' }}>
+            <table className="min-w-full table-auto" style={{ visibility: 'hidden', height: '0', tableLayout: 'auto' }}>
+              <thead>
+                <tr>
+                  <th className="px-2 py-0 w-12"></th>
+                  {activeTab === 'medios' ? (
+                    <>
+                      <th className="px-4 py-0" style={{ minWidth: '320px' }}></th>
+                      <th className="px-4 py-0" style={{ minWidth: '480px' }}></th>
+                      {!hideProjectColumn && <th className="px-4 py-0 w-40"></th>}
+                      <th className="px-4 py-0 w-32"></th>
+                      <th className="px-4 py-0 w-32"></th>
+                      <th className="px-4 py-0 w-32"></th>
+                      <th className="px-4 py-0 w-24"></th>
+                      <th className="px-4 py-0 w-24"></th>
+                      <th className="px-4 py-0 w-32"></th>
+                      {!hideCreationDateColumn && <th className="px-4 py-0 w-32"></th>}
+                      {!hideSentStatusColumn && <th className="px-4 py-0 w-28"></th>}
+                      <th className="px-4 py-0 w-32"></th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-4 py-0" style={{ minWidth: '320px' }}></th>
+                      <th className="px-4 py-0" style={{ minWidth: '480px' }}></th>
+                      {!hideProjectColumn && <th className="px-4 py-0 w-40"></th>}
+                      <th className="px-4 py-0 w-32"></th>
+                      <th className="px-4 py-0 w-32"></th>
+                      <th className="px-4 py-0 w-32"></th>
+                      <th className="px-4 py-0 w-24"></th>
+                      <th className="px-4 py-0 w-24"></th>
+                      <th className="px-4 py-0 w-32"></th>
+                      {!hideCreationDateColumn && <th className="px-4 py-0 w-32"></th>}
+                      {!hideSentStatusColumn && <th className="px-4 py-0 w-28"></th>}
+                      <th className="px-4 py-0 w-32"></th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+            </table>
+          </div>
+        </div>
+      )}
+      {/* Scroll inferior con la tabla real */}
+      <div ref={bottomScrollRef} className="overflow-x-auto">
+        <table ref={tableRef} className="min-w-full table-auto divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-2 py-3 text-left w-12">
@@ -96,9 +185,11 @@ const DataTable: React.FC<DataTableProps> = ({
                   >
                     Contenido
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
-                    Proyecto
-                  </th>
+                  {!hideProjectColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
+                      Proyecto
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     URL
                   </th>
@@ -117,12 +208,16 @@ const DataTable: React.FC<DataTableProps> = ({
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Fecha Pub.
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
-                    Fecha Creación
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
-                    Estado Enviado
-                  </th>
+                  {!hideCreationDateColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+                      Fecha Creación
+                    </th>
+                  )}
+                  {!hideSentStatusColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
+                      Estado Enviado
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Acciones
                   </th>
@@ -141,9 +236,11 @@ const DataTable: React.FC<DataTableProps> = ({
                   >
                     Contenido
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
-                    Proyecto
-                  </th>
+                  {!hideProjectColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-40">
+                      Proyecto
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     URL
                   </th>
@@ -162,12 +259,16 @@ const DataTable: React.FC<DataTableProps> = ({
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Fecha Pub.
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
-                    Fecha Creación
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
-                    Estado Enviado
-                  </th>
+                  {!hideCreationDateColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+                      Fecha Creación
+                    </th>
+                  )}
+                  {!hideSentStatusColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
+                      Estado Enviado
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Acciones
                   </th>
@@ -268,14 +369,16 @@ const DataTable: React.FC<DataTableProps> = ({
                         />
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-40">
-                      <div
-                        className="text-sm text-gray-900 dark:text-white truncate"
-                        title={item.proyecto_nombre || 'Sin proyecto'}
-                      >
-                        {item.proyecto_nombre || 'Sin proyecto'}
-                      </div>
-                    </td>
+                    {!hideProjectColumn && (
+                      <td className="px-4 py-4 w-40">
+                        <div
+                          className="text-sm text-gray-900 dark:text-white truncate"
+                          title={item.proyecto_nombre || 'Sin proyecto'}
+                        >
+                          {item.proyecto_nombre || 'Sin proyecto'}
+                        </div>
+                      </td>
+                    )}
                     <td className={`px-4 py-4 w-32 ${!item.url || !item.url.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       {!item.url || !item.url.trim() ? (
                         <span className="text-red-600 dark:text-red-400 font-semibold text-sm">⚠ URL vacía</span>
@@ -322,26 +425,30 @@ const DataTable: React.FC<DataTableProps> = ({
                         {item.fecha_publicacion && item.fecha_publicacion.trim() ? formatDate(item.fecha_publicacion) : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Fecha vacía</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-32">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {formatDate(item.fecha_creacion || item.created_at)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 w-28">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          item.estado_enviado === true ||
+                    {!hideCreationDateColumn && (
+                      <td className="px-4 py-4 w-32">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {formatDate(item.fecha_creacion || item.created_at)}
+                        </div>
+                      </td>
+                    )}
+                    {!hideSentStatusColumn && (
+                      <td className="px-4 py-4 w-28">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            item.estado_enviado === true ||
+                            item.estado_enviado === 'Enviado'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                          }`}
+                        >
+                          {item.estado_enviado === true ||
                           item.estado_enviado === 'Enviado'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                        }`}
-                      >
-                        {item.estado_enviado === true ||
-                        item.estado_enviado === 'Enviado'
-                          ? 'Enviado'
-                          : 'No Enviado'}
-                      </span>
-                    </td>
+                            ? 'Enviado'
+                            : 'No Enviado'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-4 py-4 w-32">
                       <div className="flex items-center justify-center gap-1">
                         <Button
@@ -443,14 +550,16 @@ const DataTable: React.FC<DataTableProps> = ({
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-40">
-                      <div
-                        className="text-sm text-gray-900 dark:text-white truncate"
-                        title={item.proyecto_nombre || 'Sin proyecto'}
-                      >
-                        {item.proyecto_nombre || 'Sin proyecto'}
-                      </div>
-                    </td>
+                    {!hideProjectColumn && (
+                      <td className="px-4 py-4 w-40">
+                        <div
+                          className="text-sm text-gray-900 dark:text-white truncate"
+                          title={item.proyecto_nombre || 'Sin proyecto'}
+                        >
+                          {item.proyecto_nombre || 'Sin proyecto'}
+                        </div>
+                      </td>
+                    )}
                     <td className={`px-4 py-4 w-32 ${!item.url || !item.url.trim() ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       {!item.url || !item.url.trim() ? (
                         <span className="text-red-600 dark:text-red-400 font-semibold text-sm">⚠ URL vacía</span>
@@ -509,26 +618,30 @@ const DataTable: React.FC<DataTableProps> = ({
                         {(item.fecha_publicacion && item.fecha_publicacion.trim()) || (item.fecha && item.fecha.trim()) ? formatDate(item.fecha_publicacion || item.fecha) : <span className="text-red-600 dark:text-red-400 font-semibold">⚠ Fecha vacía</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-4 w-32">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {formatDate(item.fecha_creacion || item.created_at)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 w-28">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          item.estado_enviado === true ||
+                    {!hideCreationDateColumn && (
+                      <td className="px-4 py-4 w-32">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {formatDate(item.fecha_creacion || item.created_at)}
+                        </div>
+                      </td>
+                    )}
+                    {!hideSentStatusColumn && (
+                      <td className="px-4 py-4 w-28">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            item.estado_enviado === true ||
+                            item.estado_enviado === 'Enviado'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                          }`}
+                        >
+                          {item.estado_enviado === true ||
                           item.estado_enviado === 'Enviado'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                        }`}
-                      >
-                        {item.estado_enviado === true ||
-                        item.estado_enviado === 'Enviado'
-                          ? 'Enviado'
-                          : 'No Enviado'}
-                      </span>
-                    </td>
+                            ? 'Enviado'
+                            : 'No Enviado'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-4 py-4 w-32">
                       <div className="flex items-center justify-center gap-1">
                         <Button
