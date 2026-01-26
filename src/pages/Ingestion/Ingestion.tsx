@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
 import Input from '@shared/components/ui/Input';
@@ -19,6 +19,7 @@ const ACCEPTED_EXTENSIONS = ['xlsx', 'csv'];
 
 const Ingestion: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showError, showSuccess, showWarning } = useToast();
   const [projectSearchTerm, setProjectSearchTerm] = useState<string>('');
   const [projects, setProjects] = useState<Proyecto[]>([]);
@@ -65,6 +66,26 @@ const Ingestion: React.FC = () => {
   useEffect(() => {
     setFileListKey((prev) => prev + 1);
   }, [selectedFiles]);
+
+  // Resetear estado cuando volvemos desde el envío de alertas
+  useEffect(() => {
+    const state = location.state as { fromAlertSend?: boolean } | null;
+    if (state?.fromAlertSend) {
+      // Resetear todos los estados a sus valores iniciales
+      setProjectSearchTerm('');
+      setProjects([]);
+      setHasSearchedProjects(false);
+      setProjectSearchError(null);
+      setSelectedProjectId('');
+      setSelectedProjectName('');
+      setSelectedProject(null);
+      setSelectedFiles([]);
+      setFileInputKey((prev) => prev + 1);
+
+      // Limpiar el estado de navegación
+      navigate('/ingestion', { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     const trimmedTerm = projectSearchTerm.trim();

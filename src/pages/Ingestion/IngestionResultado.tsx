@@ -874,27 +874,54 @@ const IngestionResultado: React.FC = () => {
 
         console.log('📥 Respuesta del servidor con fecha actualizada:', serverResponse);
 
-        // Actualizar el estado local usando la fecha que devolvió el servidor
+        // Actualizar el estado local usando los datos que devolvió el servidor
         const updatedData = medios.map((item) => {
           if (item.id !== editingAlert.id) {
             return item;
           }
 
           // Usar la fecha_publicacion del servidor si está disponible, sino usar la que enviamos
-          const updatedPublicationDate = serverResponse?.fecha_publicacion || alertData.fecha || item.fecha_publicacion;
+          const updatedPublicationDate =
+            serverResponse?.fecha_publicacion ||
+            alertData.fecha ||
+            item.fecha_publicacion;
+
+          // Preferir contenido procesado del backend si existe
+          const updatedContenido =
+            serverResponse?.contenido ?? alertData.contenido ?? item.contenido;
+          const updatedEmojis = serverResponse?.emojis ?? item.emojis ?? [];
+          const updatedMensaje =
+            serverResponse?.mensaje ?? updatedContenido ?? item.mensaje;
+
+          const shouldRebuildFormatted =
+            serverResponse?.mensaje_formateado === undefined &&
+            (serverResponse?.contenido !== undefined ||
+              alertData.contenido !== undefined);
+
+          const updatedMensajeFormateado = shouldRebuildFormatted
+            ? updatedEmojis.length > 0
+              ? `${updatedEmojis.join(' ')} ${updatedMensaje}`
+              : updatedMensaje
+            : serverResponse?.mensaje_formateado ?? item.mensaje_formateado;
 
           return {
             ...item,
-            titulo: alertData.titulo ?? item.titulo,
-            contenido: alertData.contenido ?? item.contenido,
-            url: alertData.url ?? item.url,
-            autor: alertData.autor ?? item.autor,
-            reach: alertData.reach ?? item.reach,
-            engagement: alertData.engagement ?? item.engagement,
+            titulo: serverResponse?.titulo ?? alertData.titulo ?? item.titulo,
+            contenido: updatedContenido,
+            url: serverResponse?.url ?? alertData.url ?? item.url,
+            autor: serverResponse?.autor ?? alertData.autor ?? item.autor,
+            reach: serverResponse?.reach ?? alertData.reach ?? item.reach,
+            engagement:
+              serverResponse?.engagement ??
+              alertData.engagement ??
+              item.engagement,
             fecha_publicacion: updatedPublicationDate,
             fecha: updatedPublicationDate,
-            mensaje: alertData.contenido ?? item.mensaje,
-            ubicacion: alertData.ubicacion ?? item.ubicacion,
+            mensaje: updatedMensaje,
+            mensaje_formateado: updatedMensajeFormateado,
+            emojis: updatedEmojis,
+            ubicacion:
+              serverResponse?.ubicacion ?? alertData.ubicacion ?? item.ubicacion,
           };
         });
 
@@ -1110,7 +1137,10 @@ const IngestionResultado: React.FC = () => {
         setSelectedItems([]);
 
         setTimeout(() => {
-          navigate('/ingestion');
+          navigate('/ingestion', {
+            replace: true,
+            state: { fromAlertSend: true }
+          });
         }, 2000);
       } else {
         showError(
