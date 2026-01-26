@@ -46,6 +46,7 @@ const ConsultaDatos: React.FC = () => {
   // const [captureLoading, setCaptureLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedItemsCache, setSelectedItemsCache] = useState<Map<string, any>>(new Map());
   const [showFilters, setShowFilters] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [downloadLoading, setDownloadLoading] = useState(false);
@@ -144,6 +145,7 @@ const ConsultaDatos: React.FC = () => {
   useEffect(() => {
     setIsInitializing(true);
     setSelectedItems([]);
+    setSelectedItemsCache(new Map());
     setSelectedProjectId('');
 
     if (activeTab === 'medios') {
@@ -413,26 +415,55 @@ const ConsultaDatos: React.FC = () => {
 
       return newSelection;
     });
+
+    // Actualizar el caché de items seleccionados
+    setSelectedItemsCache((prev) => {
+      const newCache = new Map(prev);
+      if (newCache.has(id)) {
+        newCache.delete(id);
+      } else {
+        newCache.set(id, item);
+      }
+      return newCache;
+    });
   };
 
   const handleSelectAll = () => {
     if (selectedItems.length === filteredData.length && selectedProjectId) {
       setSelectedItems([]);
       setSelectedProjectId('');
+      // Limpiar los items de la página actual del caché
+      setSelectedItemsCache((prev) => {
+        const newCache = new Map(prev);
+        filteredData.forEach((item) => newCache.delete(item.id));
+        return newCache;
+      });
     } else {
       if (!selectedProjectId && filteredData.length > 0) {
         const firstProject = filteredData[0].proyecto;
         setSelectedProjectId(firstProject);
 
         const sameProjectItems = filteredData
-          .filter((item) => item.proyecto === firstProject)
-          .map((item) => item.id);
-        setSelectedItems(sameProjectItems);
+          .filter((item) => item.proyecto === firstProject);
+        setSelectedItems(sameProjectItems.map((item) => item.id));
+
+        // Agregar items al caché
+        setSelectedItemsCache((prev) => {
+          const newCache = new Map(prev);
+          sameProjectItems.forEach((item) => newCache.set(item.id, item));
+          return newCache;
+        });
       } else {
         const sameProjectItems = filteredData
-          .filter((item) => item.proyecto === selectedProjectId)
-          .map((item) => item.id);
-        setSelectedItems(sameProjectItems);
+          .filter((item) => item.proyecto === selectedProjectId);
+        setSelectedItems(sameProjectItems.map((item) => item.id));
+
+        // Agregar items al caché
+        setSelectedItemsCache((prev) => {
+          const newCache = new Map(prev);
+          sameProjectItems.forEach((item) => newCache.set(item.id, item));
+          return newCache;
+        });
       }
     }
   };
@@ -731,9 +762,8 @@ const ConsultaDatos: React.FC = () => {
       return;
     }
 
-    const selectedData = filteredData.filter((item) =>
-      selectedItems.includes(item.id)
-    );
+    // Obtener los datos seleccionados del caché
+    const selectedData = Array.from(selectedItemsCache.values());
 
     if (!selectedProjectId) {
       showError('Error de configuración', 'No se ha seleccionado un proyecto');
@@ -802,6 +832,7 @@ const ConsultaDatos: React.FC = () => {
         );
 
         setSelectedItems([]);
+        setSelectedItemsCache(new Map());
         setSelectedProjectId('');
 
         // Redirigir a la página de resultados con los datos
@@ -878,6 +909,7 @@ const ConsultaDatos: React.FC = () => {
         );
 
         setSelectedItems([]);
+        setSelectedItemsCache(new Map());
         setSelectedProjectId('');
         await loadData();
       } else {
