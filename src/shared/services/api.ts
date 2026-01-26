@@ -1544,7 +1544,7 @@ export const sendToBrightData = async (
   payload: BrightDataSnapshotRequest
 ): Promise<BrightDataSnapshotResponse> => {
   try {
-    const response = await apiClient.post('/api/brightdata/snapshot/', payload);
+    const response = await apiClient.post('/api/base/brightdata/snapshot/', payload);
     return {
       success: true,
       message: response.data?.message || 'Solicitud enviada a BrightData correctamente',
