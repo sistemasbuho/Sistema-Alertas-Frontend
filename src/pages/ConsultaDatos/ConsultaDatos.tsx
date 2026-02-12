@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@shared/components/layout/DashboardLayout';
 import Card from '@shared/components/ui/Card';
@@ -128,6 +128,18 @@ const ConsultaDatos: React.FC = () => {
   // const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   // const [editingAlert, setEditingAlert] = useState<any>(null);
   // const [isAlertLoading, setIsAlertLoading] = useState(false);
+
+  // Ref para rastrear timeouts y limpiarlos cuando el componente se desmonte
+  const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Limpiar timeout cuando el componente se desmonte
+  useEffect(() => {
+    return () => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const getCurrentFilters = () => {
     const filters = activeTab === 'medios' ? mediosFilters : redesFilters;
@@ -770,6 +782,10 @@ const ConsultaDatos: React.FC = () => {
       return;
     }
 
+    // Guardar valores actuales para usar en navegación
+    const currentProjectId = selectedProjectId;
+    const currentProjectName = getProjectName();
+
     try {
       setIsEnviandoAlertas(true);
       setAlertProgress({
@@ -835,22 +851,34 @@ const ConsultaDatos: React.FC = () => {
         setSelectedItemsCache(new Map());
         setSelectedProjectId('');
 
+        // Limpiar timeout anterior si existe
+        if (navigationTimeoutRef.current) {
+          clearTimeout(navigationTimeoutRef.current);
+        }
+
         // Redirigir a la página de resultados con los datos
-        setTimeout(() => {
-          navigate('/ingestion/resultados', {
-            state: {
-              ingestionResponse: {
-                mensaje: result.message,
-                listado: result.procesadas || [],
-                errores: [],
-                duplicados: result.duplicadas?.length || 0,
-                descartados: 0,
-                proveedor: 'consulta_datos',
+        navigationTimeoutRef.current = setTimeout(() => {
+          try {
+            navigate('/ingestion/resultados', {
+              state: {
+                ingestionResponse: {
+                  mensaje: result.message,
+                  listado: result.procesadas || [],
+                  errores: [],
+                  duplicados: result.duplicadas?.length || 0,
+                  descartados: 0,
+                  proveedor: 'consulta_datos',
+                },
+                projectId: currentProjectId,
+                projectName: currentProjectName,
               },
-              projectId: selectedProjectId,
-              projectName: getProjectName(),
-            },
-          });
+            });
+          } catch (navError) {
+            console.error('Error durante la navegación:', navError);
+            showError('Error al navegar', 'No se pudo redirigir a los resultados');
+            setIsEnviandoAlertas(false);
+            setAlertProgress({ current: 0, total: 0, message: '' });
+          }
         }, 1500);
       } else {
         setAlertProgress((prev) => ({
@@ -862,6 +890,8 @@ const ConsultaDatos: React.FC = () => {
           'Error al enviar',
           result.message || 'No se pudieron enviar las alertas'
         );
+        setIsEnviandoAlertas(false);
+        setAlertProgress({ current: 0, total: 0, message: '' });
       }
     } catch (error: any) {
       console.error('Error enviando alertas:', error);
@@ -875,11 +905,8 @@ const ConsultaDatos: React.FC = () => {
         'Error al enviar',
         error.message || 'No se pudieron enviar las alertas'
       );
-    } finally {
       setIsEnviandoAlertas(false);
-      setTimeout(() => {
-        setAlertProgress({ current: 0, total: 0, message: '' });
-      }, 2000);
+      setAlertProgress({ current: 0, total: 0, message: '' });
     }
   };
 
