@@ -141,7 +141,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     // Determinar si es medio o red basado en el tipo
-    const isRed = formData.tipo?.toLowerCase() === 'redes' || formData.red_social;
+    const isRed = formData.tipo?.toLowerCase() === 'redes' || formData.tipo?.toLowerCase() === 'red' || formData.red_social;
 
     // URL es obligatorio para ambos
     if (!formData.url.trim()) {
@@ -268,7 +268,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
         />
 
         <Input
-          label={`Título${!formData.red_social && formData.tipo?.toLowerCase() !== 'redes' ? ' *' : ''}`}
+          label={`Título${!formData.red_social && formData.tipo?.toLowerCase() !== 'redes' && formData.tipo?.toLowerCase() !== 'red' ? ' *' : ''}`}
           type="text"
           value={formData.titulo || ''}
           onChange={handleInputChange('titulo')}
@@ -279,7 +279,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
         <div className="w-full">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contenido{formData.red_social || formData.tipo?.toLowerCase() === 'redes' ? ' *' : ''}
+            Contenido{formData.red_social || formData.tipo?.toLowerCase() === 'redes' || formData.tipo?.toLowerCase() === 'red' ? ' *' : ''}
           </label>
           <textarea
             value={formData.contenido}
@@ -360,7 +360,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
           />
 
           <Input
-            label={`Interacción (Engagement)${formData.red_social || formData.tipo?.toLowerCase() === 'redes' ? ' *' : ''}`}
+            label={`Interacción (Engagement)${formData.red_social || formData.tipo?.toLowerCase() === 'redes' || formData.tipo?.toLowerCase() === 'red' ? ' *' : ''}`}
             type="text"
             value={formData.engagement !== undefined && formData.engagement !== null && formData.engagement !== 0
               ? new Intl.NumberFormat('es-CO').format(Number(formData.engagement))

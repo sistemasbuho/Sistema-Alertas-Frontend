@@ -586,7 +586,7 @@ const IngestionResultado: React.FC = () => {
   const activeTab = useMemo(() => {
     // Primero verificar si la respuesta del backend indicó el tipo
     const tipoFromResponse = ingestionResponseFromState?.tipo?.toLowerCase();
-    if (tipoFromResponse === 'redes') {
+    if (tipoFromResponse === 'redes' || tipoFromResponse === 'red') {
       return 'redes';
     }
     if (tipoFromResponse === 'medios') {
@@ -594,9 +594,9 @@ const IngestionResultado: React.FC = () => {
     }
 
     // Si no hay tipo en la respuesta, verificar los items
-    // Si hay al menos un item con red_social o tipo "redes", considerarlo como redes
+    // Si hay al menos un item con red_social o tipo "redes"/"red", considerarlo como redes
     const hasRedes = medios.some(
-      (item) => item.red_social || item.tipo?.toLowerCase() === 'redes'
+      (item) => item.red_social || item.tipo?.toLowerCase() === 'redes' || item.tipo?.toLowerCase() === 'red'
     );
     return hasRedes ? 'redes' : 'medios';
   }, [medios, ingestionResponseFromState]);
@@ -604,7 +604,7 @@ const IngestionResultado: React.FC = () => {
   const ingestionSummary: IngestionSummary = useMemo(() => {
     const totalItems = medios.length;
     const totalRedes = medios.filter(
-      (item) => item.red_social || item.tipo?.toLowerCase() === 'redes'
+      (item) => item.red_social || item.tipo?.toLowerCase() === 'redes' || item.tipo?.toLowerCase() === 'red'
     ).length;
     const totalMedios = totalItems - totalRedes;
 
