@@ -130,7 +130,7 @@ const ConsultaDatos: React.FC = () => {
   // const [isAlertLoading, setIsAlertLoading] = useState(false);
 
   // Ref para rastrear timeouts y limpiarlos cuando el componente se desmonte
-  const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Limpiar timeout cuando el componente se desmonte
   useEffect(() => {
