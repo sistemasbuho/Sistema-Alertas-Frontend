@@ -7,3 +7,10 @@ export { default as Toast } from './Toast';
 export { default as SlideOver } from './SlideOver';
 export { default as Modal } from './Modal';
 export { default as CamposFormatoModal } from './CamposFormatoModal';
+export {
+  ConfianzaBadge,
+  TonalidadChip,
+  SemaforoBadge,
+  EstadoIaBadge,
+  PaisFlag,
+} from './AiBadges';

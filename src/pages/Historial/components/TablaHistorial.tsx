@@ -1,7 +1,13 @@
 import {
   HistorialEnvio,
   getHistorialEnvioDetalle,
+  getEvaluacionIa,
+  type EvaluacionIaDetalle,
 } from '@/shared/services/api';
+import {
+  TonalidadChip,
+  ConfianzaBadge,
+} from '@/shared/components/ui/AiBadges';
 import { Card, Modal } from '@/shared/components/ui';
 import {
   ClockIcon,
@@ -42,6 +48,10 @@ export const TablaHistorial = ({
   const [selectedItem, setSelectedItem] = useState<HistorialEnvio | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [evaluacionIa, setEvaluacionIa] = useState<EvaluacionIaDetalle | null>(
+    null
+  );
+  const [evaluacionLoading, setEvaluacionLoading] = useState(false);
 
   const handleVerDetalle = async (id: string) => {
     try {
@@ -49,6 +59,16 @@ export const TablaHistorial = ({
       const detalle = await getHistorialEnvioDetalle(id);
       setSelectedItem(detalle);
       setModalOpen(true);
+      setEvaluacionIa(null);
+      if (detalle.evaluacion_ia_id) {
+        setEvaluacionLoading(true);
+        getEvaluacionIa(detalle.evaluacion_ia_id)
+          .then(setEvaluacionIa)
+          .catch((error) =>
+            console.error('Error cargando evaluación IA:', error)
+          )
+          .finally(() => setEvaluacionLoading(false));
+      }
     } catch (error) {
       console.error('Error al obtener detalle:', error);
     } finally {
@@ -59,6 +79,22 @@ export const TablaHistorial = ({
   const closeModal = () => {
     setModalOpen(false);
     setSelectedItem(null);
+    setEvaluacionIa(null);
+  };
+
+  const getOrigenPill = (origen?: string | null) => {
+    const isAuto = origen === 'auto_ia';
+    return (
+      <span
+        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          isAuto
+            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+        }`}
+      >
+        {isAuto ? 'Auto (IA)' : 'Manual'}
+      </span>
+    );
   };
 
   const getTipoIcon = (item: HistorialEnvio) => {
@@ -160,6 +196,9 @@ export const TablaHistorial = ({
                     Tiempo Envío
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Origen
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -216,6 +255,9 @@ export const TablaHistorial = ({
                       <div className="text-sm text-gray-900 dark:text-white">
                         {formatTiempoEnvio(item.tiempo_envio)}
                       </div>
+                    </td>
+                    <td className="px-4 py-4 w-28">
+                      {getOrigenPill(item.origen_envio)}
                     </td>
                     <td className="px-4 py-4 w-20">
                       <button
@@ -358,7 +400,72 @@ export const TablaHistorial = ({
                   {selectedItem.red_social || 'No aplica'}
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Origen
+                </label>
+                {getOrigenPill(selectedItem.origen_envio)}
+              </div>
             </div>
+
+            {selectedItem.evaluacion_ia_id && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  ¿Por qué se envió?
+                </h4>
+                {evaluacionLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                    Cargando evaluación IA...
+                  </div>
+                ) : evaluacionIa ? (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <TonalidadChip value={evaluacionIa.tonalidad} />
+                      <ConfianzaBadge value={evaluacionIa.confianza_global} />
+                      {evaluacionIa.modelo && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Modelo: {evaluacionIa.modelo}
+                        </span>
+                      )}
+                      {evaluacionIa.latencia_ms !== null &&
+                        evaluacionIa.latencia_ms !== undefined && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            Latencia: {evaluacionIa.latencia_ms} ms
+                          </span>
+                        )}
+                    </div>
+                    {evaluacionIa.razones &&
+                      evaluacionIa.razones.length > 0 && (
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {evaluacionIa.razones.map((razon, index) => (
+                            <li
+                              key={index}
+                              className="text-sm text-gray-700 dark:text-gray-300"
+                            >
+                              {razon}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    {evaluacionIa.correccion && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Corrección humana
+                        </label>
+                        <pre className="text-xs text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-md overflow-x-auto whitespace-pre-wrap">
+                          {JSON.stringify(evaluacionIa.correccion, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                    No se pudo cargar la evaluación IA
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </Modal>

@@ -1,6 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import Button from '@shared/components/ui/Button';
 import { PencilIcon, EyeIcon } from '@heroicons/react/24/outline';
+import {
+  EstadoIaBadge,
+  TonalidadChip,
+  ConfianzaBadge,
+  SemaforoBadge,
+} from '@shared/components/ui/AiBadges';
 
 // Estilos CSS para scrollbar sutil
 const scrollbarStyles = `
@@ -49,6 +55,7 @@ interface DataTableProps {
   hideCreationDateColumn?: boolean;
   hideSentStatusColumn?: boolean;
   hideTopScroll?: boolean;
+  showAiColumn?: boolean;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -70,7 +77,33 @@ const DataTable: React.FC<DataTableProps> = ({
   hideCreationDateColumn = false,
   hideSentStatusColumn = false,
   hideTopScroll = false,
+  showAiColumn = false,
 }) => {
+  const renderAiCell = (item: any) => {
+    const ev = item.evaluacion_ia;
+    const estado = item.estado_pipeline || ev?.estado_ia;
+    return (
+      <td
+        className={`px-4 py-4 w-36 ${
+          estado === 'cola_excepciones'
+            ? 'bg-orange-50 dark:bg-orange-900/20'
+            : ''
+        }`}
+      >
+        <div className="flex flex-col items-start gap-1">
+          <EstadoIaBadge estado={estado} />
+          {ev && (
+            <div className="flex flex-wrap items-center gap-1">
+              <TonalidadChip value={ev.tonalidad} />
+              <ConfianzaBadge value={ev.confianza_global} />
+              <SemaforoBadge nivel={ev.riesgo} />
+            </div>
+          )}
+        </div>
+      </td>
+    );
+  };
+
   const topScrollRef = useRef<HTMLDivElement>(null);
   const bottomScrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -131,6 +164,7 @@ const DataTable: React.FC<DataTableProps> = ({
                       <th className="px-4 py-0 w-32"></th>
                       {!hideCreationDateColumn && <th className="px-4 py-0 w-32"></th>}
                       {!hideSentStatusColumn && <th className="px-4 py-0 w-28"></th>}
+                      {showAiColumn && <th className="px-4 py-0 w-36"></th>}
                       <th className="px-4 py-0 w-32"></th>
                     </>
                   ) : (
@@ -146,6 +180,7 @@ const DataTable: React.FC<DataTableProps> = ({
                       <th className="px-4 py-0 w-32"></th>
                       {!hideCreationDateColumn && <th className="px-4 py-0 w-32"></th>}
                       {!hideSentStatusColumn && <th className="px-4 py-0 w-28"></th>}
+                      {showAiColumn && <th className="px-4 py-0 w-36"></th>}
                       <th className="px-4 py-0 w-32"></th>
                     </>
                   )}
@@ -218,6 +253,11 @@ const DataTable: React.FC<DataTableProps> = ({
                       Estado Enviado
                     </th>
                   )}
+                  {showAiColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-36">
+                      Evaluación IA
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
                     Acciones
                   </th>
@@ -267,6 +307,11 @@ const DataTable: React.FC<DataTableProps> = ({
                   {!hideSentStatusColumn && (
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">
                       Estado Enviado
+                    </th>
+                  )}
+                  {showAiColumn && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-36">
+                      Evaluación IA
                     </th>
                   )}
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
@@ -449,6 +494,7 @@ const DataTable: React.FC<DataTableProps> = ({
                         </span>
                       </td>
                     )}
+                    {showAiColumn && renderAiCell(item)}
                     <td className="px-4 py-4 w-32">
                       <div className="flex items-center justify-center gap-1">
                         <Button
@@ -642,6 +688,7 @@ const DataTable: React.FC<DataTableProps> = ({
                         </span>
                       </td>
                     )}
+                    {showAiColumn && renderAiCell(item)}
                     <td className="px-4 py-4 w-32">
                       <div className="flex items-center justify-center gap-1">
                         <Button

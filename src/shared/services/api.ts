@@ -54,6 +54,10 @@ export interface HistorialEnvio {
   tiempo_envio: number | null;
   estado_enviado: boolean;
   red_social: any | null;
+  estado_pipeline?: string | null;
+  proveedor_envio?: string | null;
+  origen_envio?: 'auto_ia' | 'humano' | null;
+  evaluacion_ia_id?: string | null;
 }
 
 export interface PaginatedResponse<T> {
@@ -1556,6 +1560,315 @@ export const sendToBrightData = async (
       success: false,
       message: error.response?.data?.message || 'Error al enviar a BrightData',
     };
+  }
+};
+
+// ===== IA: Cola de Excepciones / Evaluaciones / Matriz de Cliente =====
+
+export type EstadoIa =
+  | 'pendiente_ia'
+  | 'clasificando'
+  | 'enriqueciendo'
+  | 'auto_aprobada'
+  | 'cola_excepciones'
+  | 'aprobada_humana'
+  | 'descartada_ia'
+  | 'descartada_humana'
+  | 'enviada'
+  | 'error_envio'
+  | 'manual';
+
+export interface EvaluacionIaResumen {
+  id: string;
+  estado_ia?: string;
+  estado?: string;
+  decision?: string | null;
+  decision_por?: string | null;
+  relevante?: boolean | null;
+  relevancia_score?: number | null;
+  tonalidad?: string | null;
+  tonalidad_score?: number | null;
+  categoria_sector?: string | null;
+  pais_detectado?: string | null;
+  confianza_global?: number | null;
+  riesgo?: 'bajo' | 'medio' | 'alto' | null;
+  razones?: string[];
+  datos_faltantes?: string[];
+  datos_completados?: any[];
+  revision_humana?: boolean;
+  created_at?: string;
+}
+
+export interface EvaluacionIaDetalle extends EvaluacionIaResumen {
+  reglas_aplicadas?: any[];
+  riesgo_detalle?: any;
+  modelo?: string | null;
+  version_prompt?: string | null;
+  latencia_ms?: number | null;
+  respuesta_cruda?: any;
+  snapshot_matriz?: any;
+  correccion?: any;
+  revisado_por?: string | null;
+  revisado_en?: string | null;
+  comentario_revision?: string | null;
+}
+
+export interface AlertaExcepcion {
+  id: string;
+  alerta_id: string;
+  tipo: 'redes' | 'medios';
+  proyecto: string;
+  proyecto_nombre: string;
+  proyecto_keywords: string[];
+  titulo: string | null;
+  contenido: string | null;
+  url: string | null;
+  autor: string | null;
+  ubicacion: string | null;
+  fecha_publicacion: string | null;
+  reach: number | null;
+  engagement: number | null;
+  red_social_nombre: string | null;
+  estado_pipeline: EstadoIa;
+  mensaje_formateado: string | null;
+  evaluacion_ia: EvaluacionIaResumen | null;
+  created_at: string;
+}
+
+export interface ColaExcepcionesParams {
+  page?: number;
+  page_size?: number;
+  proyecto?: string;
+  tipo?: string;
+  tonalidad?: string;
+  decision_por?: string;
+  confianza_min?: number;
+  confianza_max?: number;
+}
+
+export interface ColaResumen {
+  pendientes: number;
+  por_proyecto: Array<{
+    proyecto: string;
+    proyecto_nombre: string;
+    pendientes: number;
+  }>;
+}
+
+export interface ResolverExcepcionRequest {
+  accion: 'confirmar' | 'corregir' | 'descartar';
+  enviar: boolean;
+  correccion?: {
+    relevante?: boolean;
+    tonalidad?: string;
+    categoria_sector?: string;
+    pais?: string;
+    semaforo?: string;
+  };
+  campos?: {
+    titulo?: string;
+    contenido?: string;
+    url?: string;
+    autor?: string;
+    ubicacion?: string;
+    fecha_publicacion?: string;
+    reach?: number | null;
+    engagement?: number | null;
+  };
+  motivo?: string;
+}
+
+export interface ResolverExcepcionResponse {
+  success: boolean;
+  estado_pipeline: EstadoIa;
+  envio?: any;
+}
+
+export interface BulkExcepcionRequest {
+  ids: string[];
+  accion: 'confirmar' | 'descartar';
+  enviar?: boolean;
+  motivo?: string;
+}
+
+export interface BulkExcepcionResponse {
+  success: boolean;
+  message: string;
+  procesadas: string[];
+  fallidas: Array<{ id: string; error: string }>;
+}
+
+export interface VoceroMatriz {
+  nombre: string;
+  notas: string;
+}
+
+export interface ReglaNoAlertar {
+  tipo: string;
+  valor?: string;
+  clave?: string;
+  descripcion: string;
+  ejecutor: 'codigo' | 'llm';
+}
+
+export interface CriterioSector {
+  clave: string;
+  emoji: string;
+  descripcion: string;
+}
+
+export interface EsquemaTonalidad {
+  escala: string[];
+  foco: string;
+  definiciones: Record<string, string>;
+}
+
+export interface ConfigSemaforo {
+  tipo: string;
+  engagement_alto: Record<string, number>;
+  reach_niveles: {
+    bajo: [number, number];
+    medio: [number, number];
+    alto: number;
+  };
+  emojis: Record<string, string>;
+}
+
+export interface UmbralConfianza {
+  redes?: { auto_envio: number; descarte: number };
+  medios?: { auto_envio: number; descarte: number };
+}
+
+export interface MatrizCliente {
+  id?: string | null;
+  proyecto: string;
+  activo: boolean;
+  modo: 'sombra' | 'activo';
+  descripcion_cliente: string;
+  voceros: VoceroMatriz[];
+  marcas: string[];
+  menciones_criterio: string;
+  paises: string[];
+  reglas_no_alertar: ReglaNoAlertar[];
+  criterios_sector: CriterioSector[];
+  esquema_tonalidad: EsquemaTonalidad;
+  config_semaforo: ConfigSemaforo;
+  umbral_confianza: UmbralConfianza;
+  reglas_nunca_autoenviar: any[];
+  incluir_bandera: boolean;
+  incluir_semaforo: boolean;
+  campos_requeridos_envio: Record<string, string[]> | string[] | null;
+  prompt_adicional: string;
+  observaciones: string;
+  created_at?: string;
+  modified_at?: string;
+}
+
+export const getColaExcepciones = async (
+  params?: ColaExcepcionesParams
+): Promise<PaginatedResponse<AlertaExcepcion>> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.page_size)
+      queryParams.append('page_size', params.page_size.toString());
+    if (params?.proyecto) queryParams.append('proyecto', params.proyecto);
+    if (params?.tipo) queryParams.append('tipo', params.tipo);
+    if (params?.tonalidad) queryParams.append('tonalidad', params.tonalidad);
+    if (params?.decision_por)
+      queryParams.append('decision_por', params.decision_por);
+    if (params?.confianza_min !== undefined)
+      queryParams.append('confianza_min', params.confianza_min.toString());
+    if (params?.confianza_max !== undefined)
+      queryParams.append('confianza_max', params.confianza_max.toString());
+
+    const url = `/api/ia/cola-excepciones/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo cola de excepciones:', error);
+    throw error;
+  }
+};
+
+export const getColaExcepcionesResumen = async (): Promise<ColaResumen> => {
+  try {
+    const response = await apiClient.get('/api/ia/cola-excepciones/resumen/');
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo resumen de cola de excepciones:', error);
+    throw error;
+  }
+};
+
+export const resolverExcepcion = async (
+  detalleId: string,
+  data: ResolverExcepcionRequest
+): Promise<ResolverExcepcionResponse> => {
+  try {
+    const response = await apiClient.post(
+      `/api/ia/cola-excepciones/${detalleId}/resolver/`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error resolviendo excepción:', error);
+    throw error;
+  }
+};
+
+export const resolverExcepcionesBulk = async (
+  data: BulkExcepcionRequest
+): Promise<BulkExcepcionResponse> => {
+  try {
+    const response = await apiClient.post(
+      '/api/ia/cola-excepciones/resolver-bulk/',
+      data
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error resolviendo excepciones en bloque:', error);
+    throw error;
+  }
+};
+
+export const getMatrizCliente = async (
+  proyectoId: string
+): Promise<MatrizCliente> => {
+  try {
+    const response = await apiClient.get(`/api/ia/matriz/${proyectoId}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo matriz de cliente:', error);
+    throw error;
+  }
+};
+
+export const updateMatrizCliente = async (
+  proyectoId: string,
+  data: Partial<MatrizCliente>
+): Promise<MatrizCliente> => {
+  try {
+    const response = await apiClient.put(`/api/ia/matriz/${proyectoId}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error actualizando matriz de cliente:', error);
+    throw error;
+  }
+};
+
+export const getEvaluacionIa = async (
+  id: string
+): Promise<EvaluacionIaDetalle> => {
+  try {
+    const response = await apiClient.get(`/api/ia/evaluaciones/${id}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo evaluación de IA:', error);
+    throw error;
   }
 };
 

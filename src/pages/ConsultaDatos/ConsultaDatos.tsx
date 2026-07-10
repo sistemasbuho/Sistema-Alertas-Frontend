@@ -1161,6 +1161,7 @@ const ConsultaDatos: React.FC = () => {
                 highlightKeywords={highlightKeywords}
                 showEmojiActions={false}
                 showEditActions={false}
+                showAiColumn={true}
               />
             )}
 

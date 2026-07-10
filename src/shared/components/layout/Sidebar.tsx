@@ -7,7 +7,9 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
   ArrowRightCircleIcon,
+  InboxStackIcon,
 } from '@heroicons/react/24/outline';
+import useColaPendientes from '@shared/hooks/useColaPendientes';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -23,8 +25,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { pendientes } = useColaPendientes();
 
-  const menuItems = [
+  const menuItems: Array<{
+    name: string;
+    path: string;
+    icon: React.ReactNode;
+    badge?: number;
+  }> = [
     {
       name: 'Ingestion',
       path: '/ingestion',
@@ -82,25 +90,31 @@ const Sidebar: React.FC<SidebarProps> = ({
         </svg>
       ),
     },
-    // {
-    //   name: 'Historial',
-    //   path: '/historial',
-    //   icon: (
-    //     <svg
-    //       className="w-5 h-5"
-    //       fill="none"
-    //       stroke="currentColor"
-    //       viewBox="0 0 24 24"
-    //     >
-    //       <path
-    //         strokeLinecap="round"
-    //         strokeLinejoin="round"
-    //         strokeWidth={2}
-    //         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    //       />
-    //     </svg>
-    //   ),
-    // },
+    {
+      name: 'Historial',
+      path: '/historial',
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: 'Cola de Excepciones',
+      path: '/cola-excepciones',
+      icon: <InboxStackIcon className="w-5 h-5" />,
+      badge: pendientes,
+    },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -230,8 +244,22 @@ const Sidebar: React.FC<SidebarProps> = ({
               }`}
               title={collapsed ? item.name : undefined}
             >
-              <span className={collapsed ? '' : 'mr-3'}>{item.icon}</span>
-              {!collapsed && item.name}
+              <span className={`relative ${collapsed ? '' : 'mr-3'}`}>
+                {item.icon}
+                {collapsed && !!item.badge && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800" />
+                )}
+              </span>
+              {!collapsed && (
+                <span className="flex-1 flex items-center justify-between">
+                  <span>{item.name}</span>
+                  {!!item.badge && item.badge > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-xs font-semibold bg-red-500 text-white">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
+                </span>
+              )}
             </button>
           ))}
         </nav>

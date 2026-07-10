@@ -5,6 +5,7 @@ import Button from '@shared/components/ui/Button';
 import Input from '@shared/components/ui/Input';
 import SlideOver from '@shared/components/ui/SlideOver';
 import CamposFormatoModal from '@shared/components/ui/CamposFormatoModal';
+import MatrizClienteModal from './components/MatrizClienteModal';
 import { useToast } from '@shared/contexts/ToastContext';
 import {
   getProyectos,
@@ -19,6 +20,7 @@ import {
   PencilIcon,
   MagnifyingGlassIcon,
   Cog6ToothIcon,
+  AdjustmentsHorizontalIcon,
   FunnelIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -56,6 +58,9 @@ const ProyectoPage = () => {
 
   const [isFormatoModalOpen, setIsFormatoModalOpen] = useState(false);
   const [selectedProyectoFormato, setSelectedProyectoFormato] =
+    useState<Proyecto | null>(null);
+  const [isMatrizModalOpen, setIsMatrizModalOpen] = useState(false);
+  const [selectedProyectoMatriz, setSelectedProyectoMatriz] =
     useState<Proyecto | null>(null);
   const [formData, setFormData] = useState<{
     nombre: string;
@@ -167,6 +172,16 @@ const ProyectoPage = () => {
   const handleCloseFormatoModal = () => {
     setIsFormatoModalOpen(false);
     setSelectedProyectoFormato(null);
+  };
+
+  const handleOpenMatrizModal = (proyecto: Proyecto) => {
+    setSelectedProyectoMatriz(proyecto);
+    setIsMatrizModalOpen(true);
+  };
+
+  const handleCloseMatrizModal = () => {
+    setIsMatrizModalOpen(false);
+    setSelectedProyectoMatriz(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -622,6 +637,13 @@ const ProyectoPage = () => {
                               title="Formato de Campos"
                             >
                               <Cog6ToothIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenMatrizModal(proyecto)}
+                              className="text-teal-600 hover:text-teal-900 dark:text-teal-400 dark:hover:text-teal-300 p-1"
+                              title="Matriz de cliente"
+                            >
+                              <AdjustmentsHorizontalIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleOpenEditSlideOver(proyecto)}
@@ -1094,6 +1116,13 @@ const ProyectoPage = () => {
           onClose={handleCloseFormatoModal}
           proyectoId={selectedProyectoFormato?.id || ''}
           proyectoNombre={selectedProyectoFormato?.nombre || ''}
+        />
+
+        <MatrizClienteModal
+          isOpen={isMatrizModalOpen}
+          onClose={handleCloseMatrizModal}
+          proyectoId={selectedProyectoMatriz?.id || ''}
+          proyectoNombre={selectedProyectoMatriz?.nombre || ''}
         />
       </div>
     </DashboardLayout>

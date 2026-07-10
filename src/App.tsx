@@ -7,6 +7,7 @@ import ProtectedRoute from '@shared/components/auth/ProtectedRoute';
 import useTocMetrics from '@shared/hooks/useTocMetrics';
 import ConsultaDatos from '@/pages/ConsultaDatos/ConsultaDatos';
 import Historial from '@/pages/Historial/Historial';
+import ColaExcepciones from '@/pages/ColaExcepciones/ColaExcepciones';
 import Proyecto from './pages/Proyecto/Proyecto';
 import LoginPage from './pages/auth/LoginPage';
 import Ingestion from './pages/Ingestion/Ingestion';
@@ -28,7 +29,22 @@ function App() {
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/proyecto" element={<Proyecto />} />
+                <Route
+                  path="/proyecto"
+                  element={
+                    <ProtectedRoute>
+                      <Proyecto />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/cola-excepciones"
+                  element={
+                    <ProtectedRoute>
+                      <ColaExcepciones />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/consulta-datos"
                   element={
