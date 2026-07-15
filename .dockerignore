@@ -1,2 +1,9 @@
-*
-!my_custom_config/
+.git
+.gitignore
+.dockerignore
+node_modules/
+dist/
+Dockerfile
+*.md
+.env
+.env.*
