@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import Modal from './Modal';
 import Button from './Button';
 import Input from './Input';
@@ -38,6 +39,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
     null
   );
   const [campos, setCampos] = useState<Campo[]>([]);
+  const [camposEliminados, setCamposEliminados] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -100,6 +102,7 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
         const todosCampos = [...camposConfigurados, ...camposBase];
 
         setCampos(todosCampos);
+        setCamposEliminados([]);
       }
     } catch (error: any) {
       showError(
@@ -145,14 +148,19 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
     [showSuccess]
   );
 
-  // const handleRemoveCampo = (index: number) => {
-  //   const newCampos = campos.filter((_, i) => i !== index);
-  //   const reorderedCampos = newCampos.map((campo, i) => ({
-  //     ...campo,
-  //     orden: i + 1,
-  //   }));
-  //   setCampos(reorderedCampos);
-  // };
+  const handleRemoveCampo = (index: number) => {
+    const campo = campos[index];
+    if (!campo) return;
+
+    // Solo los campos ya configurados existen en el backend y deben borrarse
+    // allí; los campos base solo se quitan de la vista local.
+    if (campo.id?.startsWith('config-')) {
+      setCamposEliminados((prev) =>
+        prev.includes(campo.campo) ? prev : [...prev, campo.campo]
+      );
+    }
+    setCampos((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSave = async () => {
     if (!selectedPlantilla) {
@@ -196,7 +204,11 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
           label: campo.label,
         }));
 
-      await guardarCamposPlantilla(selectedPlantilla.id, camposParaEnviar);
+      await guardarCamposPlantilla(
+        selectedPlantilla.id,
+        camposParaEnviar,
+        camposEliminados
+      );
       showSuccess(
         'Campos guardados',
         'La configuración se ha guardado correctamente'
@@ -418,19 +430,19 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
                             </div>
                           </div>
 
-                          {/* <div className="flex justify-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveCampo(index)}
-                          className="text-red-600 hover:text-red-800 hover:border-red-300"
-                          title="Eliminar campo"
-                        >
-                          <TrashIcon className="h-4 w-4 mr-1" />
-                          Eliminar
-                        </Button>
-                      </div> */}
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveCampo(index)}
+                              className="text-red-600 hover:text-red-800 hover:border-red-300"
+                              title="Eliminar campo del formato del mensaje"
+                            >
+                              <TrashIcon className="h-4 w-4 mr-1" />
+                              Eliminar
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -454,7 +466,9 @@ const CamposFormatoModal: React.FC<CamposFormatoModalProps> = ({
               variant="primary"
               onClick={handleSave}
               isLoading={saving}
-              disabled={saving || campos.length === 0}
+              disabled={
+                saving || (campos.length === 0 && camposEliminados.length === 0)
+              }
             >
               {saving ? 'Guardando...' : 'Guardar Configuración'}
             </Button>

@@ -1010,7 +1010,8 @@ export const getPlantillaCampos = async (
 
 export const guardarCamposPlantilla = async (
   plantillaId: string,
-  campos: Campo[]
+  campos: Campo[],
+  eliminar: string[] = []
 ) => {
   try {
     const payload = {
@@ -1020,6 +1021,7 @@ export const guardarCamposPlantilla = async (
         estilo: campo.estilo,
         label: campo.label,
       })),
+      ...(eliminar.length > 0 ? { eliminar } : {}),
     };
 
     const response = await apiClient.put(

@@ -7,9 +7,11 @@ import Button from '@shared/components/ui/Button';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 import {
   exportarHistorial,
+  getIngestionProjects,
   type HistorialPaginationParams,
+  type Proyecto,
 } from '@shared/services/api';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface FiltrosHistorialProps {
   filters: {
@@ -42,6 +44,54 @@ export const FiltrosHistorial = ({
   totalCount,
 }: FiltrosHistorialProps) => {
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [proyectosSugeridos, setProyectosSugeridos] = useState<Proyecto[]>([]);
+  const [showProyectoSuggestions, setShowProyectoSuggestions] = useState(false);
+  const proyectoSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const proyectoContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        proyectoContainerRef.current &&
+        !proyectoContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowProyectoSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleProyectoChange = (value: string) => {
+    filters.updateFilters({ proyecto_nombre: value });
+
+    if (proyectoSearchTimeout.current) {
+      clearTimeout(proyectoSearchTimeout.current);
+    }
+
+    if (!value.trim()) {
+      setProyectosSugeridos([]);
+      setShowProyectoSuggestions(false);
+      return;
+    }
+
+    proyectoSearchTimeout.current = setTimeout(async () => {
+      try {
+        const proyectos = await getIngestionProjects(value);
+        setProyectosSugeridos(proyectos);
+        setShowProyectoSuggestions(proyectos.length > 0);
+      } catch (error) {
+        console.error('Error al buscar proyectos:', error);
+      }
+    }, 300);
+  };
+
+  const handleProyectoSelect = (proyecto: Proyecto) => {
+    filters.updateFilters({ proyecto_nombre: proyecto.nombre });
+    setShowProyectoSuggestions(false);
+  };
 
   const formatToLocalDateTimeInput = (value?: string) => {
     if (!value) return '';
@@ -198,19 +248,39 @@ export const FiltrosHistorial = ({
               />
             </div>
 
-            <div>
+            <div className="relative" ref={proyectoContainerRef}>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Proyecto
               </label>
               <input
                 type="text"
                 value={filters.filters.proyecto_nombre || ''}
-                onChange={(e) =>
-                  filters.updateFilters({ proyecto_nombre: e.target.value })
-                }
-                placeholder="Ej: Marketing"
+                onChange={(e) => handleProyectoChange(e.target.value)}
+                onFocus={() => {
+                  if (
+                    filters.filters.proyecto_nombre &&
+                    proyectosSugeridos.length > 0
+                  ) {
+                    setShowProyectoSuggestions(true);
+                  }
+                }}
+                placeholder="Buscar proyecto..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
+              {showProyectoSuggestions && proyectosSugeridos.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {proyectosSugeridos.map((proyecto) => (
+                    <button
+                      key={proyecto.id}
+                      type="button"
+                      onClick={() => handleProyectoSelect(proyecto)}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-700"
+                    >
+                      {proyecto.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
